@@ -91,6 +91,10 @@ export function losVegg(inndata) {
     ok: felt.every((f) => f.ok),
     lengde: W,
     hoyde: H,
+    bu, bo,
+    karmBord: inn.karmBord,
+    hjorneVenstre: inn.hjorneVenstre,
+    hjorneHoyre: inn.hjorneHoyre,
     apninger: apninger.map((a, j) => ({
       ...a,
       innlegg: { venstre: e[2 * j], hoyre: e[2 * j + 1] },

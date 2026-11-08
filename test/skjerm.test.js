@@ -53,3 +53,32 @@ test('Veggtegningen har åpningene og markerer felt som ikke går opp', async ()
     .reduce((sum, f) => sum + f.underliggere.length + f.overliggere.length, 0);
   assert.equal(tell(svg, 'data-bord='), antallBord);
 });
+
+test('Horisontalsnitt gjennom vinduet viser karm, sidefelt og kloss bak påbordet', async () => {
+  const { tegnSnitt } = await import('../src/skjerm/tegning.js');
+  const { losVegg } = await import('../src/tommermann/vegg.js');
+  const r = losVegg({ lengde: 7599, hoyde: 2400, bu: 148, bo: 148, hjorneVenstre: 'U', hjorneHoyre: 'U',
+    apninger: [{ type: 'vindu', x: 1560, bredde: 1000, hoyde: 1000, bunn: 1000 }] });
+  const gjennom = tegnSnitt(r, 1500);
+  assert.equal(tell(gjennom, 'data-karm='), 1);
+  assert.equal(tell(gjennom, 'data-kloss='), 2); // én på hver side av vinduet
+  const sider = r.felt.filter((f) => f.type === 'side');
+  const antallSide = sider.reduce((s, f) => s + f.underliggere.length + f.overliggere.length, 0);
+  assert.equal(tell(gjennom, 'data-bord='), antallSide);
+  // Over vinduet er det ingen karm, men feltet over vinduet er med
+  const over = tegnSnitt(r, 2200);
+  assert.equal(tell(over, 'data-karm='), 0);
+  assert.equal(tell(over, 'data-kloss='), 0);
+  const overFelt = r.felt.find((f) => f.type === 'over');
+  assert.equal(tell(over, 'data-bord='), antallSide + overFelt.underliggere.length + overFelt.overliggere.length);
+});
+
+test('Veggtegningen legger alle underbord bak alle påbord', async () => {
+  const { tegnVegg } = await import('../src/skjerm/tegning.js');
+  const { losVegg } = await import('../src/tommermann/vegg.js');
+  const r = losVegg({ lengde: 7599, hoyde: 2400, bu: 148, bo: 148,
+    apninger: [{ type: 'vindu', x: 1560, bredde: 1000, hoyde: 1000, bunn: 1000 }] });
+  const svg = tegnVegg(r);
+  assert.ok(svg.lastIndexOf('data-bord="u"') < svg.indexOf('data-bord="o"'),
+    'ingen underbord skal tegnes etter første påbord');
+});

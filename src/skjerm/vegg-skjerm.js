@@ -3,7 +3,7 @@
 
 import { losVegg } from '../tommermann/vegg.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from '../tommermann/fagverdier.js';
-import { tegnVegg } from './tegning.js';
+import { tegnVegg, tegnSnitt } from './tegning.js';
 import { lesTall, mm } from './format.js';
 import { fyllBreddevalg, lesBredde, kort, boks, tabell } from './biter.js';
 
@@ -15,6 +15,9 @@ const liste = finn('apninger');
 const TYPENAVN = { vindu: 'Vindu', dor: 'Dør', port: 'Port' };
 const INNSTILLINGER = ['innleggMin', 'innleggStandard', 'innleggMax', 'oMin', 'oIdeal', 'oMax'];
 const STANDARD = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG };
+
+// Hvilket horisontalsnitt som vises (etiketten i nedtrekkslista). Huskes mellom omregninger.
+let valgtSnitt = null;
 
 // ---------- Oppstart ----------
 
@@ -53,6 +56,14 @@ skjema.addEventListener('click', (hendelse) => {
   }
   oppdaterStartvalg();
   oppdater();
+});
+
+// Bytte høyde for horisontalsnittet
+resultat.addEventListener('input', (hendelse) => {
+  if (hendelse.target.id === 'v-snitt') {
+    valgtSnitt = hendelse.target.value;
+    oppdater();
+  }
 });
 
 // ---------- Åpninger ----------
@@ -165,7 +176,25 @@ function oppdater() {
   resultat.innerHTML = visVegg(r);
 }
 
+// Høyder det er naturlig å ta snitt i: gjennom, over og under hver åpning.
+function lagSnittValg(r) {
+  const valg = [];
+  for (const a of r.apninger) {
+    const navn = a.navn.toLowerCase();
+    valg.push({ etikett: `Gjennom ${navn} (${mm(a.bunn + a.hoyde / 2)} mm)`, hoyde: a.bunn + a.hoyde / 2 });
+    if (a.bunn + a.hoyde < r.hoyde) {
+      const h = (a.bunn + a.hoyde + r.hoyde) / 2;
+      valg.push({ etikett: `Over ${navn} (${mm(h)} mm)`, hoyde: h });
+    }
+    if (a.bunn > 0) valg.push({ etikett: `Under ${navn} (${mm(a.bunn / 2)} mm)`, hoyde: a.bunn / 2 });
+  }
+  if (valg.length === 0) valg.push({ etikett: `Midt på veggen (${mm(r.hoyde / 2)} mm)`, hoyde: r.hoyde / 2 });
+  return valg;
+}
+
 function visVegg(r) {
+  const snittValg = lagSnittValg(r);
+  const snitt = snittValg.find((v) => v.etikett === valgtSnitt) ?? snittValg[0];
   const okFelt = r.felt.filter((f) => f.ok);
   const ikkeOpp = r.felt.filter((f) => !f.ok);
   const overMaks = okFelt.filter((f) => !f.losning.innenforAnbefalt);
@@ -191,8 +220,17 @@ function visVegg(r) {
     ${!ikkeOpp.length && !andre.length ? boks('ok', '<p>Alle felt går opp med omlegg innenfor anbefalt.</p>') : ''}
 
     <h3>Tegning</h3>
-    ${tegnVegg(r)}
-    <p class="hjelp">Sett forfra. Lyse bord er underbord, blå er påbord. Rød stiplet = feltet går ikke opp.</p>
+    ${tegnVegg(r, snitt.hoyde)}
+    <p class="hjelp">Sett forfra. Lyse bord er underbord, blå er påbord, grått er karm.
+      Rød stiplet = feltet går ikke opp. Oransje linje = der snittet under er tatt.</p>
+
+    <h3>Horisontalsnitt A–A</h3>
+    <label class="felt"><span>Snitt i høyde</span>
+      <select id="v-snitt">${snittValg.map((v) => `<option ${v.etikett === snitt.etikett ? 'selected' : ''}>${v.etikett}</option>`).join('')}</select></label>
+    <div class="snitt-boks">${tegnSnitt(r, snitt.hoyde)}</div>
+    <p class="hjelp">Sett ovenfra, utsiden opp. Skyv sidelengs for å se hele veggen.
+      Tallene over karmen er innlegget i mm. Oransje stiplet = kloss eller underlag.
+      Bordtykkelsen er tegnet tykkere enn den er.</p>
 
     ${klosser}
 

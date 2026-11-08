@@ -24,6 +24,8 @@
   --underligger: #EAF0F7;
   --overligger: #AFCBEC;
   --bord-kant: #074EA2;
+  --karm: #D7DEE6;
+  --glass: #FFFFFF;
 
   --font: Aptos, system-ui, sans-serif;
 }
@@ -396,6 +398,16 @@ input[type="text"]:focus, select:focus {
 .merke-ok { background: var(--ok-flate); color: var(--ok-tekst); }
 .merke-varsel { background: var(--varsel-flate); color: var(--varsel-tekst); }
 .merke-feil { background: var(--feil-flate); color: var(--feil-tekst); }
+
+.snitt-boks {
+  overflow-x: auto;
+  border: 1px solid var(--linje);
+  border-radius: 8px;
+  background: var(--hvit);
+  -webkit-overflow-scrolling: touch;
+}
+
+.snitt { display: block; }
 
 .liste { padding-left: 20px; margin: 8px 0; }
 .liste li { margin: 4px 0; }
