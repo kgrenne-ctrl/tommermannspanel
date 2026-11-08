@@ -16,12 +16,61 @@
   </header>
 
   <main>
-    <div class="infoboks">
-      <p><strong>Under arbeid.</strong></p>
-      <p>Regnemodellen lages først. Skjemaet for å legge inn et felt kommer i neste fase.</p>
-    </div>
+    <form id="skjema" autocomplete="off" onsubmit="return false">
+      <h2>Feltet</h2>
+
+      <label class="felt">
+        <span>Feltlengde (mm)</span>
+        <input id="L" type="text" inputmode="decimal" placeholder="f.eks. 1350">
+      </label>
+
+      <div class="to-kol">
+        <div class="felt">
+          <label for="bu-valg">Underligger (mm)</label>
+          <select id="bu-valg"></select>
+          <input id="bu-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
+        </div>
+        <div class="felt">
+          <label for="bo-valg">Overligger (mm)</label>
+          <select id="bo-valg"></select>
+          <input id="bo-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
+        </div>
+      </div>
+
+      <fieldset class="felt">
+        <legend>Starter med</legend>
+        <div class="valgknapper">
+          <label><input type="radio" name="start" value="U" checked><span>Underligger</span></label>
+          <label><input type="radio" name="start" value="O"><span>Overligger</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="felt">
+        <legend>Slutter med</legend>
+        <div class="valgknapper">
+          <label><input type="radio" name="slutt" value="U" checked><span>Underligger</span></label>
+          <label><input type="radio" name="slutt" value="O"><span>Overligger</span></label>
+        </div>
+      </fieldset>
+
+      <details class="innstillinger">
+        <summary>Innstillinger</summary>
+        <div class="to-kol">
+          <label class="felt"><span>Minste omlegg</span><input id="oMin" type="text" inputmode="decimal"></label>
+          <label class="felt"><span>Ideelt omlegg</span><input id="oIdeal" type="text" inputmode="decimal"></label>
+          <label class="felt"><span>Største omlegg (varsel)</span><input id="oMax" type="text" inputmode="decimal"></label>
+          <label class="felt"><span>To spikre fra bredde</span><input id="toSpikreFraBredde" type="text" inputmode="decimal"></label>
+          <label class="felt"><span>Avstand mellom spikre</span><input id="spikeravstand" type="text" inputmode="decimal"></label>
+        </div>
+        <p class="hjelp">Alle mål i mm. Verdiene bygger på Treteknisk, G3 Gausdal og Talgø.</p>
+      </details>
+    </form>
+
+    <section id="resultat" aria-live="polite"></section>
   </main>
 
   <footer>Bakøy Entreprenør AS</footer>
+
+  <script type="module" src="src/skjerm/app.js"></script>
 </body>
 </html>

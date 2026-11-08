@@ -8,8 +8,22 @@
   --tekst-gra: #5B6472;        /* undertitler, hjelpetekst */
   --linje: #D7DEE6;            /* hårstreker */
   --flate: #EEF3FA;            /* infobokser */
+  --stripe: #F7F9FC;           /* annenhver rad i tabeller */
   --bakgrunn: #FFFFFF;
   --hvit: #FFFFFF;
+
+  /* Statusbokser */
+  --varsel-flate: #FDE7D7;
+  --varsel-tekst: #8A3A06;
+  --ok-flate: #E9F6EE;
+  --ok-tekst: #1E5B34;
+  --feil-flate: #FDEDED;
+  --feil-tekst: #8A1C1C;
+
+  /* Tegningen */
+  --underligger: #EAF0F7;
+  --overligger: #AFCBEC;
+  --bord-kant: #074EA2;
 
   --font: Aptos, system-ui, sans-serif;
 }
@@ -44,9 +58,7 @@ body {
   display: block;
 }
 
-.toppband .tittel {
-  text-align: right;
-}
+.toppband .tittel { text-align: right; }
 
 .toppband h1 {
   margin: 0;
@@ -66,12 +78,239 @@ main {
   margin: 0 auto;
 }
 
-.infoboks {
-  background: var(--flate);
+h2 {
+  font-size: 20px;
+  color: var(--bakoy-bla);
+  margin: 8px 0 12px;
+}
+
+h3 {
+  font-size: 17px;
+  color: var(--bakoy-bla);
+  margin: 24px 0 8px;
+}
+
+/* ---------- Skjema ---------- */
+
+.felt {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 16px;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.felt > span, .felt > label, .felt legend {
+  font-weight: 600;
+  font-size: 16px;
+  padding: 0;
+}
+
+input[type="text"], select {
+  font: inherit;
+  font-size: 20px;
+  min-height: 52px;
+  padding: 8px 12px;
   border: 1px solid var(--linje);
   border-radius: 8px;
-  padding: 16px;
+  background: var(--hvit);
+  color: var(--tekst);
+  width: 100%;
 }
+
+input[type="text"]:focus, select:focus {
+  outline: 3px solid var(--bla-lys);
+  border-color: var(--bakoy-bla);
+}
+
+.to-kol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+
+/* Underligger/overligger som to store knapper */
+.valgknapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.valgknapper input {
+  position: absolute;
+  opacity: 0;
+}
+
+.valgknapper span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 2px solid var(--bakoy-bla);
+  border-radius: 8px;
+  color: var(--bakoy-bla);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.valgknapper input:checked + span {
+  background: var(--bakoy-bla);
+  color: var(--hvit);
+}
+
+.valgknapper input:focus-visible + span {
+  outline: 3px solid var(--bla-lys);
+}
+
+.innstillinger {
+  border: 1px solid var(--linje);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 24px;
+}
+
+.innstillinger summary {
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.innstillinger[open] summary { margin-bottom: 12px; }
+
+.innstillinger input[type="text"] {
+  font-size: 18px;
+  min-height: 44px;
+}
+
+.hjelp {
+  color: var(--tekst-gra);
+  font-size: 15px;
+  margin: 6px 0;
+}
+
+.hjelp.stor { font-size: 17px; }
+
+/* ---------- Resultat ---------- */
+
+#resultat {
+  border-top: 1px solid var(--linje);
+  padding-top: 8px;
+}
+
+.nokkeltall {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.kort {
+  background: var(--flate);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.kort-tittel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tekst-gra);
+}
+
+.kort-verdi {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--bakoy-bla);
+  line-height: 1.2;
+}
+
+.kort-under {
+  font-size: 13px;
+  color: var(--tekst-gra);
+}
+
+.boks {
+  border-radius: 8px;
+  padding: 4px 12px;
+  margin: 12px 0;
+}
+
+.boks p { margin: 8px 0; }
+.boks-varsel { background: var(--varsel-flate); color: var(--varsel-tekst); }
+.boks-ok { background: var(--ok-flate); color: var(--ok-tekst); }
+.boks-feil { background: var(--feil-flate); color: var(--feil-tekst); }
+
+.alternativer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alternativer button {
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--linje);
+  border-radius: 8px;
+  background: var(--hvit);
+  color: var(--tekst);
+  cursor: pointer;
+}
+
+.alternativer button.aktiv {
+  border: 2px solid var(--bakoy-bla);
+  background: var(--flate);
+  font-weight: 600;
+}
+
+.tegning {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--hvit);
+}
+
+.maltabell {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 16px;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.maltabell caption {
+  text-align: left;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 4px 0;
+}
+
+.maltabell th {
+  text-align: right;
+  font-size: 13px;
+  color: var(--bakoy-bla);
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--bakoy-bla);
+  padding: 6px 8px;
+}
+
+.maltabell td {
+  text-align: right;
+  padding: 8px;
+  border-bottom: 1px solid var(--linje);
+}
+
+.maltabell th:first-child, .maltabell td:first-child {
+  text-align: left;
+  color: var(--tekst-gra);
+  width: 3em;
+}
+
+.maltabell tbody tr:nth-child(even) { background: var(--stripe); }
 
 footer {
   padding: 16px;

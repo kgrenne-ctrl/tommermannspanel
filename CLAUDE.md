@@ -49,6 +49,16 @@ Alle skal kunne endres i innstillinger.
 - **Synlig underligger (lagt til i fase 1, 2026-11-08):** `bu − 2·o` kan ikke være negativ.
   Ellers ligger to overliggere oppå hverandre. Ikke i planen, men fysisk umulig å bygge.
 
+## Se appen lokalt
+- `npm start` og åpne http://localhost:8000. Dobbeltklikk på `index.html` virker ikke, fordi
+  nettleseren ikke laster JavaScript-moduler fra en fil på disken.
+
+## Skjermdelen (fase 2)
+- `src/skjerm/app.js` leser skjemaet og viser svaret. `tegning.js` lager SVG, `format.js` tall.
+- `tegning.js` og `format.js` har ingen kobling til nettleseren, så de testes med `node --test`.
+- Regn bare på nytt på `input`-hendelser, ikke `change`. `change` kommer også når man trykker
+  utenfor et tekstfelt, og da tegnes knappen man trykket på bort før trykket registreres.
+
 ## Tester
 - `npm test` (eller `node --test`) kjører alle tester i `test/`.
 - Alle tester skal være grønne før en fase er ferdig og før commit.
@@ -72,6 +82,7 @@ index.html            siden som åpnes i nettleseren
 css/stil.css          utseende, fargene øverst
 assets/               logo
 src/tommermann/       regnemodellen for tømmermannskledning
+src/skjerm/           skjermdelen (skjema, tegning, tallformat)
 test/                 automatiske tester
 PLAN.md               planen (fasit)
 ```
