@@ -53,6 +53,13 @@ Alle skal kunne endres i innstillinger.
 - `npm start` og åpne http://localhost:8000. Dobbeltklikk på `index.html` virker ikke, fordi
   nettleseren ikke laster JavaScript-moduler fra en fil på disken.
 
+## Publisering
+- Offentlig repo: https://github.com/kgrenne-ctrl/tommermannspanel (offentlig etter Kennys valg
+  2026-11-08, fordi gratis GitHub Pages krever det). Ikke legg passord, priser fra leverandører
+  eller annet internt i repoet.
+- Appen: https://kgrenne-ctrl.github.io/tommermannspanel/ . GitHub Pages bygger fra `main`,
+  rotmappa. Hver `git push` til `main` oppdaterer siden etter et par minutter.
+
 ## Skjermdelen (fase 2)
 - `src/skjerm/app.js` leser skjemaet og viser svaret. `tegning.js` lager SVG, `format.js` tall.
 - `tegning.js` og `format.js` har ingen kobling til nettleseren, så de testes med `node --test`.
