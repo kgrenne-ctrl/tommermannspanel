@@ -1,11 +1,11 @@
 // Skjermdelen for hel vegg: leser skjemaet, spør veggmodellen og viser svaret.
 // Regner aldri selv. All matematikk ligger i src/tommermann/.
 
-import { losVegg } from '../tommermann/vegg.js';
+import { losVegg, foreslaVegg, vurderVegg } from '../tommermann/vegg.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from '../tommermann/fagverdier.js';
 import { tegnVegg, tegnSnitt } from './tegning.js';
 import { lesTall, mm } from './format.js';
-import { fyllBreddevalg, lesBredde, kort, boks, tabell } from './biter.js';
+import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell } from './biter.js';
 
 const finn = (id) => document.getElementById(id);
 const skjema = finn('vegg-skjema');
@@ -18,6 +18,9 @@ const STANDARD = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG };
 
 // Hvilket horisontalsnitt som vises (etiketten i nedtrekkslista). Huskes mellom omregninger.
 let valgtSnitt = null;
+
+// Siste forslag som ble regnet ut (nullstilles når skjemaet endres).
+let sisteForslag = null;
 
 // ---------- Oppstart ----------
 
@@ -45,6 +48,7 @@ skjema.addEventListener('input', (hendelse) => {
   if (hendelse.target.classList.contains('a-type') && hendelse.target.value !== 'vindu') {
     hendelse.target.closest('.apning').querySelector('.a-bunn').value = '0';
   }
+  sisteForslag = null;
   oppdaterStartvalg();
   oppdater();
 });
@@ -73,6 +77,32 @@ resultat.addEventListener('click', (hendelse) => {
   kortet.open = true;
   kortet.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
+
+// Forslag: regn ut når knappen trykkes, og fyll inn et forslag når det trykkes
+resultat.addEventListener('click', (hendelse) => {
+  const knapp = hendelse.target.closest('button');
+  if (!knapp) return;
+  if (knapp.id === 'v-finn-forslag') {
+    sisteForslag = foreslaVegg(lesSkjema());
+    oppdater();
+    finn('v-forslag')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else if (knapp.dataset.forslag) {
+    const [gruppe, nr] = knapp.dataset.forslag.split(':');
+    brukForslag(sisteForslag[gruppe][Number(nr)].oppsett);
+  }
+});
+
+function brukForslag(o) {
+  settBredde('vbu', o.bu);
+  settBredde('vbo', o.bo);
+  skjema.elements.karmBord.value = o.karmBord;
+  finn('v-hjorneVenstre').value = o.hjorneVenstre;
+  finn('v-hjorneHoyre').value = o.hjorneHoyre;
+  finn('v-startvalg').value = o.startvalg;
+  sisteForslag = null;
+  oppdater();
+  resultat.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 // Bytte høyde for horisontalsnittet
 resultat.addEventListener('input', (hendelse) => {
@@ -235,6 +265,8 @@ function visVegg(r) {
     ${andre.length ? boks('varsel', varselListe(andre)) : ''}
     ${!alvorlige.length && !andre.length ? boks('ok', '<p>Alle felt går opp med omlegg innenfor anbefalt.</p>') : ''}
 
+    ${visForslag(r)}
+
     <h3>Oversikt</h3>
     <table class="maltabell oversikt"><thead><tr><th>Nr</th><th>Felt</th><th>Omlegg</th><th></th></tr></thead><tbody>
       ${r.felt.map((f, i) => `<tr data-ga-til="${i + 1}"><td>${i + 1}</td><td>${f.navn}</td>
@@ -263,6 +295,34 @@ function visVegg(r) {
     <h3>Felt for felt</h3>
     <p class="hjelp">Løpende mål fra venstre hjørne. Trykk på et felt for å se utdelingsmålene.</p>
     ${r.felt.map((f, i) => visFelt(f, i + 1)).join('')}`;
+}
+
+function visForslag(r) {
+  const v = vurderVegg(r);
+  if (v.ikkeOpp === 0 && v.spikring === 0 && v.overMaks === 0) return '';
+  const beskriv = (x) => [
+    x.ikkeOpp ? `${x.ikkeOpp} felt går ikke opp` : 'alle felt går opp',
+    `${x.antallFelt - x.ikkeOpp - x.overMaks} av ${x.antallFelt} innenfor anbefalt`,
+    `verste omlegg ${mm(x.verstOmlegg, 1)} mm`,
+    x.spikring ? `${x.spikring} spikervarsel` : '',
+  ].filter(Boolean).join(', ');
+
+  let innhold = '<button type="button" class="knapp lenkeknapp" id="v-finn-forslag">Finn bedre oppsett</button>';
+  if (sisteForslag) {
+    const gruppe = (navn, tittel) => {
+      const liste = sisteForslag[navn];
+      if (!liste.length) return `<p class="hjelp"><strong>${tittel}:</strong> fant ikke noe bedre.</p>`;
+      return `<p class="hjelp"><strong>${tittel}</strong></p><div class="alternativer">${liste.map((f, i) => `
+        <button type="button" data-forslag="${navn}:${i}">
+          <strong>${f.endring.join(', ').replace(/^./, (c) => c.toUpperCase())}</strong><br>
+          <span class="hjelp">${beskriv(f.vurdering)}</span>
+        </button>`).join('')}</div>`;
+    };
+    innhold = `<p class="hjelp">I dag: ${beskriv(sisteForslag.naa)}. Trykk på et forslag for å fylle det inn.</p>
+      ${gruppe('sammeBord', 'Med samme bord')}
+      ${gruppe('andreBord', 'Med andre bordbredder')}`;
+  }
+  return `<h3 id="v-forslag">Forslag</h3>${innhold}`;
 }
 
 function merkeFor(f) {

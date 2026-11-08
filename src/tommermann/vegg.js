@@ -351,3 +351,104 @@ function kontroller(inn, apninger) {
   }
   return feil;
 }
+
+// ---------- Forslag til bedre oppsett ----------
+
+// Hvor god en vegg er. Lavere er bedre, sammenlignes tall for tall:
+// felt som ikke går opp, spikervarsler, felt over anbefalt omlegg, og hvor langt over
+// anbefalt maks det verste feltet er. Omlegg innenfor 20–25 mm regnes som like bra.
+export function vurderVegg(r, oMax = STANDARD_INNSTILLINGER.oMax) {
+  const ok = r.felt.filter((f) => f.ok);
+  const verstOmlegg = ok.length ? Math.max(...ok.map((f) => f.losning.omlegg)) : Infinity;
+  return {
+    ikkeOpp: r.felt.length - ok.length,
+    spikring: r.varsler.filter((v) => v.type === 'spikring').length,
+    overMaks: ok.filter((f) => !f.losning.innenforAnbefalt).length,
+    overskudd: Math.max(0, verstOmlegg - oMax),
+    verstOmlegg,
+    antallFelt: r.felt.length,
+  };
+}
+
+function sammenlign(a, b) {
+  return a.ikkeOpp - b.ikkeOpp || a.spikring - b.spikring || a.overMaks - b.overMaks
+    || (Math.abs(a.overskudd - b.overskudd) < 1e-6 ? 0 : a.overskudd - b.overskudd);
+}
+
+// Prøver andre valg for samme vegg og gir de beste oppsettene som er bedre enn dagens.
+// To grupper: med samme bordbredder (bare karm, hjørner og startvalg endres), og med
+// andre standardbredder. Hvert forslag sier hva som er endret.
+export function foreslaVegg(inndata, { bredder = [73, 98, 123, 148, 173, 198, 223], antall = 3 } = {}) {
+  const inn = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG, ...inndata };
+  const naa = losVegg(inn);
+  if (naa.feil) return { feil: naa.feil };
+  const naaVurdering = vurderVegg(naa, inn.oMax);
+
+  const valg = [];
+  const proev = (endring) => {
+    const forsok = { ...inn, ...endring };
+    const r = losVegg(forsok);
+    if (r.feil) return;
+    const vurdering = vurderVegg(r, inn.oMax);
+    if (sammenlign(vurdering, naaVurdering) >= 0) return; // bare det som er bedre
+    valg.push({ endring: hvaErEndret(inn, forsok), oppsett: plukk(forsok), vurdering });
+  };
+
+  const hjorner = [['O', 'O'], ['U', 'U'], ['O', 'U'], ['U', 'O']];
+  const startvalg = ['venstre', 'hoyre', 'midten'];
+  const alleValg = (bu, bo) => {
+    for (const karmBord of ['O', 'U']) {
+      for (const [hjorneVenstre, hjorneHoyre] of hjorner) {
+        for (const sv of startvalg) proev({ bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg: sv });
+      }
+    }
+  };
+
+  alleValg(inn.bu, inn.bo);
+  const sammeBord = beste(valg.splice(0), antall);
+  for (const bu of bredder) {
+    for (const bo of bredder) {
+      if (bu !== inn.bu || bo !== inn.bo) alleValg(bu, bo);
+    }
+  }
+  const andreBord = beste(valg, antall);
+
+  return { naa: naaVurdering, sammeBord, andreBord };
+}
+
+// De beste, uten to forslag som gir helt likt resultat (for eksempel samme vegg
+// med to startvalg som ikke spiller noen rolle).
+function beste(liste, antall) {
+  liste.sort((a, b) => sammenlign(a.vurdering, b.vurdering) || a.endring.length - b.endring.length);
+  const ut = [];
+  const sett = new Set();
+  for (const v of liste) {
+    const nokkel = JSON.stringify([v.vurdering, v.oppsett.bu, v.oppsett.bo]);
+    if (sett.has(nokkel)) continue;
+    sett.add(nokkel);
+    ut.push(v);
+    if (ut.length === antall) break;
+  }
+  return ut;
+}
+
+function plukk(o) {
+  const { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg } = o;
+  return { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg };
+}
+
+const BORDNAVN = { O: 'påbord', U: 'underbord' };
+const STARTNAVN = { venstre: 'fra venstre hjørne', hoyre: 'fra høyre hjørne', midten: 'fra midten av veggen' };
+
+function hvaErEndret(fra, til) {
+  const e = [];
+  if (fra.bu !== til.bu || fra.bo !== til.bo) e.push(`underbord ${til.bu} mm og påbord ${til.bo} mm`);
+  if (fra.karmBord !== til.karmBord) e.push(`${BORDNAVN[til.karmBord]} inn på karmen`);
+  if (fra.hjorneVenstre !== til.hjorneVenstre || fra.hjorneHoyre !== til.hjorneHoyre) {
+    e.push(til.hjorneVenstre === til.hjorneHoyre
+      ? `${BORDNAVN[til.hjorneVenstre]} i hjørnene`
+      : `${BORDNAVN[til.hjorneVenstre]} i venstre og ${BORDNAVN[til.hjorneHoyre]} i høyre hjørne`);
+  }
+  if (fra.startvalg !== til.startvalg) e.push(`start ${STARTNAVN[til.startvalg] ?? til.startvalg}`);
+  return e;
+}

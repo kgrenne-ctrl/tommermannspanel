@@ -39,7 +39,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { losVegg } from '../src/tommermann/vegg.js';
+import { losVegg, foreslaVegg, vurderVegg } from '../src/tommermann/vegg.js';
 import { losFelt } from '../src/tommermann/solver.js';
 
 const naer = (faktisk, forventet, presisjon = 1e-6) =>
@@ -197,4 +197,33 @@ test('Åpenbart feile mål (1 mm høy dør) gir varsel om å sjekke målene', ()
   ] });
   assert.ok(r.varsler.some((v) => v.alvorlig && /Høyden er bare 1 mm/.test(v.tekst)));
   assert.ok(!losVegg(GARASJE).varsler.some((v) => /Sjekk målene/.test(v.tekst)));
+});
+
+test('Forslag: bare oppsett som er bedre, og hvert forslag gir det det lover', () => {
+  const f = foreslaVegg(GARASJE);
+  assert.equal(f.naa.ikkeOpp, 1);
+  const alle = [...f.sammeBord, ...f.andreBord];
+  assert.ok(f.andreBord.length > 0, 'skal finne andre bord som går bedre opp');
+  assert.equal(f.andreBord[0].vurdering.ikkeOpp, 0, 'beste forslag skal få alle felt til å gå opp');
+  for (const v of alle) {
+    // Bruk forslaget og regn på nytt: skal gi nøyaktig samme vurdering
+    const r = losVegg({ ...GARASJE, ...v.oppsett });
+    assert.deepEqual(vurderVegg(r), v.vurdering);
+    // Og være bedre enn dagens
+    const bedre = v.vurdering.ikkeOpp < f.naa.ikkeOpp
+      || (v.vurdering.ikkeOpp === f.naa.ikkeOpp && v.vurdering.spikring < f.naa.spikring)
+      || (v.vurdering.ikkeOpp === f.naa.ikkeOpp && v.vurdering.spikring === f.naa.spikring
+        && (v.vurdering.overMaks < f.naa.overMaks || v.vurdering.overskudd < f.naa.overskudd));
+    assert.ok(bedre, `forslaget ${v.endring.join(', ')} er ikke bedre`);
+    assert.ok(v.endring.length > 0, 'forslaget skal si hva som endres');
+  }
+  // Med samme bord skal bordbredden ikke endres
+  for (const v of f.sammeBord) assert.deepEqual([v.oppsett.bu, v.oppsett.bo], [148, 148]);
+});
+
+test('Forslag: en vegg som allerede er perfekt, får ingen forslag', () => {
+  // Ett felt på 640 mm med påbord i begge ender: 2 underbord, omlegg akkurat 25.
+  const f = foreslaVegg({ lengde: 640, hoyde: 2400, bu: 148, bo: 148 });
+  assert.equal(f.naa.overMaks, 0);
+  assert.equal(f.sammeBord.length + f.andreBord.length, 0);
 });
