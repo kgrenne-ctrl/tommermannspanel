@@ -10,7 +10,8 @@
 //     vinduet eller døra innenfor karmen.
 //  4. To underbord ligger aldri oppå hverandre, og to påbord ligger aldri oppå hverandre.
 //  5. Et påbord ligger alltid inn over underbordene på begge sider med omlegget for feltet.
-//     Unntaket er der det ikke finnes underbord: ved karm (kloss) og i hjørnet (underlag).
+//     Unntaket er der det ikke finnes underbord: ved karm (påbordet ligger an på karmen)
+//     og i hjørnet (underlag).
 //  6. Omlegget er aldri under 20 mm.
 //
 // Veggene lages med fast startverdi, så testen gir samme vegger hver gang.

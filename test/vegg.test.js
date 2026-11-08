@@ -100,15 +100,14 @@ test('Garasje: porten får innlegg 20, og over porten blir 22,6 mm (punkt 2)', (
   assert.deepEqual(f.deler, [[2100, 2400]]);
 });
 
-test('Garasje: kloss bak påbordet på hver side av hver åpning, lengde = åpningens høyde', () => {
-  const r = losVegg(GARASJE);
-  assert.deepEqual(r.klosser.map((k) => [k.apning, k.antall, k.lengde]),
-    [['Vindu 1', 2, 600], ['Port', 2, 2100], ['Vindu 2', 2, 600]]);
-});
-
-test('Underbord inn på karmen gir ingen klosser', () => {
-  const r = losVegg({ ...GARASJE, karmBord: 'U' });
-  assert.equal(r.klosser.length, 0);
+test('Påbord inn på karmen trenger ikke kloss, men påbord i hjørnet trenger underlag', () => {
+  const r = losVegg(GARASJE); // påbord både på karm og i hjørnene
+  assert.equal(r.klosser, undefined);
+  assert.ok(!r.varsler.some((v) => /kloss/i.test(v.tekst)));
+  const underlag = r.varsler.filter((v) => /underlag/.test(v.tekst)).map((v) => v.felt);
+  assert.deepEqual(underlag, ['Venstre hjørne', 'Høyre hjørne']);
+  const medUnderbordIHjornene = losVegg({ ...GARASJE, hjorneVenstre: 'U', hjorneHoyre: 'U' });
+  assert.ok(!medUnderbordIHjornene.varsler.some((v) => /underlag/.test(v.tekst)));
 });
 
 test('Innlegget brukes først: treffer ideelt omlegg når det går', () => {

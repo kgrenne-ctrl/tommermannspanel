@@ -55,14 +55,15 @@ test('Veggtegningen har åpningene og markerer felt som ikke går opp', async ()
   assert.equal(tell(svg, 'data-bord='), antallBord);
 });
 
-test('Horisontalsnitt gjennom vinduet viser karm, sidefelt og kloss bak påbordet', async () => {
+test('Horisontalsnitt gjennom vinduet viser karm og sidefelt, uten kloss ved karmen', async () => {
   const { tegnSnitt } = await import('../src/skjerm/tegning.js');
   const { losVegg } = await import('../src/tommermann/vegg.js');
   const r = losVegg({ lengde: 7599, hoyde: 2400, bu: 148, bo: 148, hjorneVenstre: 'U', hjorneHoyre: 'U',
     apninger: [{ type: 'vindu', x: 1560, bredde: 1000, hoyde: 1000, bunn: 1000 }] });
   const gjennom = tegnSnitt(r, 1500);
   assert.equal(tell(gjennom, 'data-karm='), 1);
-  assert.equal(tell(gjennom, 'data-kloss='), 2); // én på hver side av vinduet
+  assert.equal(tell(gjennom, 'data-kloss='), 0); // påbordet ligger an på karmen
+  assert.equal(tell(gjennom, 'data-underlag='), 0); // underbord i hjørnene i denne testen
   const sider = r.felt.filter((f) => f.type === 'side');
   const antallSide = sider.reduce((s, f) => s + f.underliggere.length + f.overliggere.length, 0);
   assert.equal(tell(gjennom, 'data-bord='), antallSide);
@@ -70,6 +71,10 @@ test('Horisontalsnitt gjennom vinduet viser karm, sidefelt og kloss bak påborde
   const over = tegnSnitt(r, 2200);
   assert.equal(tell(over, 'data-karm='), 0);
   assert.equal(tell(over, 'data-kloss='), 0);
+  // Med påbord i hjørnene vises underlag ved begge hjørner
+  const medPabord = losVegg({ lengde: 7599, hoyde: 2400, bu: 148, bo: 148,
+    apninger: [{ type: 'vindu', x: 1560, bredde: 1000, hoyde: 1000, bunn: 1000 }] });
+  assert.equal(tell(tegnSnitt(medPabord, 1500), 'data-underlag='), 2);
   const overFelt = r.felt.find((f) => f.type === 'overunder');
   assert.equal(tell(over, 'data-bord='), antallSide + overFelt.underliggere.length + overFelt.overliggere.length);
 });

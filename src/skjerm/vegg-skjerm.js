@@ -83,12 +83,21 @@ resultat.addEventListener('click', (hendelse) => {
   const knapp = hendelse.target.closest('button');
   if (!knapp) return;
   if (knapp.id === 'v-finn-forslag') {
-    sisteForslag = foreslaVegg(lesSkjema());
+    const inndata = lesSkjema();
+    sisteForslag = foreslaVegg(inndata);
+    // Husk utgangspunktet, så man kan gå tilbake til det
+    const { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg } = inndata;
+    sisteForslag.utgangspunkt = { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg };
+    sisteForslag.valgt = null;
     oppdater();
     finn('v-forslag')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else if (knapp.dataset.forslag) {
     const [gruppe, nr] = knapp.dataset.forslag.split(':');
+    sisteForslag.valgt = knapp.dataset.forslag;
     brukForslag(sisteForslag[gruppe][Number(nr)].oppsett);
+  } else if (knapp.id === 'v-utgangspunkt') {
+    sisteForslag.valgt = null;
+    brukForslag(sisteForslag.utgangspunkt);
   }
 });
 
@@ -99,9 +108,10 @@ function brukForslag(o) {
   finn('v-hjorneVenstre').value = o.hjorneVenstre;
   finn('v-hjorneHoyre').value = o.hjorneHoyre;
   finn('v-startvalg').value = o.startvalg;
-  sisteForslag = null;
+  // Forslagslista blir stående, så man kan prøve de andre også. Den nullstilles først når
+  // man selv endrer noe i skjemaet.
   oppdater();
-  resultat.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  finn('v-forslag')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Bytte høyde for horisontalsnittet
@@ -249,9 +259,6 @@ function visVegg(r) {
   const andre = r.varsler.filter((v) => !v.alvorlig);
   const varselListe = (vs) => vs.map((v) => `<p><strong>${v.felt}:</strong> ${v.tekst}</p>`).join('');
 
-  const klosser = r.klosser.length
-    ? `<h3>Klosser</h3><ul class="liste">${r.klosser.map((k) => `<li>${k.antall} stk. ${mm(k.lengde)} mm, ${k.tekst.charAt(0).toLowerCase()}${k.tekst.slice(1)}</li>`).join('')}</ul>`
-    : '';
 
   const innlegg = r.apninger.map((a) => `<tr><td>${a.navn}</td><td>${mm(a.innlegg.venstre, 1)}</td></tr>`).join('');
 
@@ -284,10 +291,9 @@ function visVegg(r) {
       <select id="v-snitt">${snittValg.map((v) => `<option ${v.etikett === snitt.etikett ? 'selected' : ''}>${v.etikett}</option>`).join('')}</select></label>
     <div class="snitt-boks">${tegnSnitt(r, snitt.hoyde)}</div>
     <p class="hjelp">Sett ovenfra, veggen øverst og utsiden ned. Skyv sidelengs for å se hele veggen.
-      Tallene under kledningen ved karmen er innlegget i mm. Oransje stiplet = kloss eller underlag.
+      Tallene under kledningen ved karmen er innlegget i mm. Oransje stiplet = underlag bak påbord i hjørnet.
       Bordtykkelsen er tegnet tykkere enn den er.</p>
 
-    ${klosser}
 
     ${r.apninger.length ? `<h3>Innlegg på karm</h3>
     <p class="hjelp">Bordet går like langt inn på karmen på begge sider.</p>
@@ -299,8 +305,9 @@ function visVegg(r) {
 }
 
 function visForslag(r) {
-  const v = vurderVegg(r);
-  if (v.ikkeOpp === 0 && v.spikring === 0 && v.overMaks === 0) return '';
+  const v = vurderVegg(r, r.rytme.maks);
+  // Vis seksjonen når veggen har noe å forbedre, eller når forslagene allerede er regnet ut
+  if (!sisteForslag && v.ikkeOpp === 0 && v.spikring === 0 && v.overMaks === 0) return '';
   const beskriv = (x) => [
     x.ikkeOpp ? `${x.ikkeOpp} felt går ikke opp` : 'alle felt går opp',
     `${x.antallFelt - x.ikkeOpp - x.overMaks} av ${x.antallFelt} innenfor anbefalt`,
@@ -314,14 +321,20 @@ function visForslag(r) {
       const liste = sisteForslag[navn];
       if (!liste.length) return `<p class="hjelp"><strong>${tittel}:</strong> fant ikke noe bedre.</p>`;
       return `<p class="hjelp"><strong>${tittel}</strong></p><div class="alternativer">${liste.map((f, i) => `
-        <button type="button" data-forslag="${navn}:${i}">
+        <button type="button" data-forslag="${navn}:${i}" class="${sisteForslag.valgt === `${navn}:${i}` ? 'aktiv' : ''}">
+          ${sisteForslag.valgt === `${navn}:${i}` ? '<span class="merke merke-ok">Valgt</span> ' : ''}
           <strong>${f.endring.join(', ').replace(/^./, (c) => c.toUpperCase())}</strong><br>
           <span class="hjelp">${beskriv(f.vurdering)}</span>
         </button>`).join('')}</div>`;
     };
-    innhold = `<p class="hjelp">I dag: ${beskriv(sisteForslag.naa)}. Trykk på et forslag for å fylle det inn.</p>
+    const tilbake = sisteForslag.valgt
+      ? '<button type="button" class="knapp lenkeknapp" id="v-utgangspunkt">Tilbake til utgangspunktet</button>'
+      : '';
+    innhold = `<p class="hjelp">Utgangspunkt: ${beskriv(sisteForslag.naa)}. Trykk på et forslag for å fylle det inn.
+      Lista blir stående til du endrer noe selv.</p>
       ${gruppe('sammeBord', 'Med samme bord')}
-      ${gruppe('andreBord', 'Med andre bordbredder')}`;
+      ${gruppe('andreBord', 'Med andre bordbredder')}
+      ${tilbake}`;
   }
   return `<h3 id="v-forslag">Forslag</h3>${innhold}`;
 }

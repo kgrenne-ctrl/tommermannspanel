@@ -53,8 +53,8 @@ Alle skal kunne endres i innstillinger.
   Innlegget er likt på begge sider av en åpning (Kenny 2026-11-08).
   Rekkefølge for å få delingen til å gå opp: juster innlegget innenfor 10–20 mm først, juster
   omlegget (20–30 mm) bare når innlegget ikke strekker til. Startvalget (venstre, høyre,
-  symmetrisk) avgjør hvor justeringen havner. Påbord inn på karm gir kloss i kapplista med
-  lengde lik åpningens høyde.
+  symmetrisk) avgjør hvor justeringen havner. Påbord inn på karm ligger an på karmen og
+  trenger IKKE kloss (Kenny 2026-11-08). Påbord i hjørnet trenger underlag.
 - **Synlig underligger (lagt til i fase 1, 2026-11-08):** `bu − 2·o` kan ikke være negativ.
   Ellers ligger to overliggere oppå hverandre. Ikke i planen, men fysisk umulig å bygge.
 

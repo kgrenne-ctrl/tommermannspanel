@@ -207,24 +207,17 @@ export function tegnSnitt(vegg, snittHoyde) {
     }
   }
 
-  // Der påbordet mangler underbord bak seg (mot karm eller i hjørnet): kloss/underlag
+  // Påbord i hjørnet har ingen underbord bak seg ytterst: underlag. (Påbord som går inn på
+  // karmen ligger an på karmen og trenger ikke kloss, Kenny 2026-11-08.)
   const underbord = aktive.filter((f) => f.ok).flatMap((f) => f.underliggere)
     .sort((a, b) => a.fraEksakt - b.fraEksakt);
-  const kloss = (fra, til) => {
+  const underlag = (fra, til) => {
     if (til - fra > 1) {
-      deler.push(`<rect data-kloss="ja" x="${fra}" y="${yU}" width="${til - fra}" height="${t}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="${strek * 2}" stroke-dasharray="10 6"/>`);
+      deler.push(`<rect data-underlag="ja" x="${fra}" y="${yU}" width="${til - fra}" height="${t}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="${strek * 2}" stroke-dasharray="10 6"/>`);
     }
   };
-  if (karmBord === 'O') {
-    for (const a of gjennom) {
-      const venstreU = underbord.filter((b) => b.tilEksakt <= a.x + 1).at(-1);
-      const hoyreU = underbord.find((b) => b.fraEksakt >= a.x + a.bredde - 1);
-      if (venstreU) kloss(venstreU.tilEksakt, a.x);
-      if (hoyreU) kloss(a.x + a.bredde, hoyreU.fraEksakt);
-    }
-  }
-  if (vegg.hjorneVenstre === 'O' && underbord.length) kloss(0, underbord[0].fraEksakt);
-  if (vegg.hjorneHoyre === 'O' && underbord.length) kloss(underbord.at(-1).tilEksakt, W);
+  if (vegg.hjorneVenstre === 'O' && underbord.length) underlag(0, underbord[0].fraEksakt);
+  if (vegg.hjorneHoyre === 'O' && underbord.length) underlag(underbord.at(-1).tilEksakt, W);
 
   // Innlegg på karm skrevet under kledningen ved karmkantene
   for (const a of gjennom) {

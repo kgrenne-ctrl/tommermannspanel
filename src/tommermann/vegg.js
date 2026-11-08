@@ -61,9 +61,8 @@ export function losVegg(inndata) {
   }
 
   const varsler = [];
-  const klosser = [];
   for (const a of apninger) {
-    // Åpenbart feile mål (for eksempel 1 mm høy dør) gir rare klosser og felt. Si fra.
+    // Åpenbart feile mål (for eksempel 1 mm høy dør) gir rare felt. Si fra.
     for (const [mal, verdi] of [['Høyden', a.hoyde], ['Bredden', a.bredde]]) {
       if (verdi < MINSTE_APNING) {
         varsler.push({ felt: a.navn, alvorlig: true,
@@ -81,12 +80,8 @@ export function losVegg(inndata) {
   if (inn.hjorneHoyre === 'O') {
     varsler.push({ felt: 'Høyre hjørne', tekst: 'Påbord i hjørnet trenger underlag.' });
   }
-  if (inn.karmBord === 'O') {
-    for (const a of apninger) {
-      klosser.push({ apning: a.navn, antall: 2, lengde: a.hoyde,
-        tekst: `Kloss bak påbordet på hver side av ${a.navn.toLowerCase()}` });
-    }
-  }
+  // Påbord som går inn på karmen ligger an på karmen, slik det ellers ligger an på et
+  // underbord. Det trenger ikke kloss bak (Kenny 2026-11-08).
   for (const f of felt) {
     if (!f.ok) {
       varsler.push({ felt: f.navn, tekst: f.melding, alvorlig: true });
@@ -116,7 +111,6 @@ export function losVegg(inndata) {
       innlegg: { venstre: e[2 * j], hoyre: e[2 * j + 1] },
     })),
     felt,
-    klosser,
     varsler,
     rytme: { senteravstand, omlegg: inn.oIdeal, maks: inn.oMax },
   };
