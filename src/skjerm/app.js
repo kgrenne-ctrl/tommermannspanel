@@ -7,6 +7,7 @@ import { STANDARD_INNSTILLINGER } from '../tommermann/fagverdier.js';
 import { tegnFelt } from './tegning.js';
 import { lesTall, mm } from './format.js';
 import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
+import { lagre, hent } from './lagring.js';
 import './vegg-skjerm.js';
 
 const INNSTILLING_FELT = ['oMin', 'oIdeal', 'oMax', 'toSpikreFraBredde', 'spikeravstand'];
@@ -31,6 +32,10 @@ for (const navn of INNSTILLING_FELT) {
   finn(navn).value = String(STANDARD_INNSTILLINGER[navn]);
 }
 
+// Hent feltet som sist ble skrevet inn på denne telefonen
+const lagret = hent('felt');
+if (lagret) settTilstand(lagret);
+
 // Regn på nytt bare når noe faktisk endres. (Ikke på 'change': den kommer også når man
 // trykker utenfor et tekstfelt, og da ville knappen man trykket på blitt tegnet bort.)
 skjema.addEventListener('input', () => { valgtIndeks = 0; oppdater(); });
@@ -50,6 +55,36 @@ resultat.addEventListener('click', (hendelse) => {
 oppdater();
 
 // ---------- Lese og skrive skjemaet ----------
+
+// Alt i skjemaet som tekst, slik det står, for lagring på telefonen
+function lesTilstand() {
+  const bredde = (id) => ({ valg: finn(`${id}-valg`).value, egen: finn(`${id}-egen`).value });
+  return {
+    L: finn('L').value,
+    bu: bredde('bu'),
+    bo: bredde('bo'),
+    start: skjema.elements.start.value,
+    slutt: skjema.elements.slutt.value,
+    innstillinger: Object.fromEntries(INNSTILLING_FELT.map((n) => [n, finn(n).value])),
+  };
+}
+
+function settTilstand(t) {
+  try {
+    finn('L').value = t.L ?? '';
+    for (const id of ['bu', 'bo']) {
+      if (!t[id]) continue;
+      finn(`${id}-valg`).value = t[id].valg;
+      finn(`${id}-egen`).value = t[id].egen ?? '';
+      finn(`${id}-egen`).hidden = t[id].valg !== 'egen';
+    }
+    if (t.start) skjema.elements.start.value = t.start;
+    if (t.slutt) skjema.elements.slutt.value = t.slutt;
+    for (const [n, v] of Object.entries(t.innstillinger ?? {})) if (finn(n)) finn(n).value = v;
+  } catch {
+    // Lagret tilstand fra en eldre versjon som ikke passer: start blankt
+  }
+}
 
 function lesSkjema() {
   const inndata = {
@@ -79,6 +114,7 @@ function brukForslag(f) {
 // ---------- Vise resultatet ----------
 
 function oppdater() {
+  lagre('felt', lesTilstand());
   const inndata = lesSkjema();
   if (inndata.L === null) {
     sisteSvar = null;

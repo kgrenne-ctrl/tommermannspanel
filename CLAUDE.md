@@ -100,6 +100,12 @@ Alle skal kunne endres i innstillinger.
 - `solver.js` har `losFeltFleksibel` for felt med slingringsmonn i lengden. `losFelt` er det
   samme med fast lengde.
 
+## Lagring og merkeliste
+- `src/skjerm/lagring.js` lagrer skjemaene (hel vegg, ett felt og valgt visning) i nettleseren
+  (localStorage) ved hver endring, med try/catch. Bare på telefonen, ikke på nett.
+- `lagMerkeliste(r)` i `vegg.js`: alle underbord fra venstre, med mål fra hjørnet og fra nærmeste
+  karmkant til venstre, høyde (full / over og under), felt og distanseklosse.
+
 ## Tester
 - `npm test` (eller `node --test`) kjører alle tester i `test/`.
 - Alle tester skal være grønne før en fase er ferdig og før commit.

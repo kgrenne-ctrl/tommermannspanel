@@ -365,6 +365,9 @@ input[type="text"]:focus, select:focus {
   border-style: dashed;
 }
 
+.knapperad.to { grid-template-columns: 1fr 1fr; margin-bottom: 4px; }
+.knapperad.to .lenkeknapp { margin-bottom: 0; }
+
 .feltkort {
   border: 1px solid var(--linje);
   border-radius: 8px;
@@ -451,6 +454,21 @@ input[type="text"]:focus, select:focus {
 .oversikt td:nth-child(2) { font-size: 16px; }
 .oversikt td:last-child { text-align: right; }
 .oversikt tbody tr { cursor: pointer; }
+
+/* Merkeliste */
+.merkeliste td, .merkeliste th { text-align: left; vertical-align: top; }
+.merkeliste td:last-child, .merkeliste th:last-child { text-align: right; white-space: nowrap; }
+.merkeliste td:nth-child(3) { font-size: 15px; }
+.merkeliste .liten {
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--tekst-gra);
+}
+.merkeliste tr.ny-kloss td { border-top: 2px solid var(--bakoy-bla); }
+.merkeliste tbody tr:first-child td { border-top: 0; }
+
+.hopp { display: block; text-align: center; text-decoration: none; margin-bottom: 12px; }
 
 .liste { padding-left: 20px; margin: 8px 0; }
 .liste li { margin: 4px 0; }

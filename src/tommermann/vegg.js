@@ -473,3 +473,43 @@ function hvaErEndret(fra, til) {
   if (fra.startvalg !== til.startvalg) e.push(`start ${STARTNAVN[til.startvalg] ?? til.startvalg}`);
   return e;
 }
+
+// ---------- Merkeliste ----------
+
+// Alle underbord på veggen i rekkefølge fra venstre, slik tømreren merker dem.
+// For hvert bord: løpende mål fra venstre hjørne, mål fra nærmeste karmkant til venstre
+// (tryggere enn å måle hele veien fra hjørnet), om bordet går i full høyde eller bare over
+// og under en åpning, og distanseklossen (klaringen) i feltet.
+export function lagMerkeliste(r) {
+  const rader = [];
+  r.felt.forEach((f, i) => {
+    if (!f.ok) return;
+    // Referanse: karmkanten til venstre for feltet, ellers venstre hjørne
+    let ref = { navn: 'hjørnet', x: 0 };
+    if (f.type === 'overunder') {
+      const a = r.apninger.find((x) => x.navn === f.apning);
+      ref = { navn: `venstre karm ${a.navn.toLowerCase()}`, x: a.x };
+    } else {
+      const venstre = r.apninger.filter((a) => a.x + a.bredde <= f.x0 + 50).at(-1);
+      if (venstre) ref = { navn: `høyre karm ${venstre.navn.toLowerCase()}`, x: venstre.x + venstre.bredde };
+    }
+    const hoyde = f.type === 'side' ? 'Full høyde' : f.navn;
+    for (const b of f.underliggere) {
+      rader.push({
+        fra: b.fra,
+        til: b.til,
+        fraEksakt: b.fraEksakt,
+        fraReferanse: Math.round(b.fraEksakt - ref.x),
+        referanse: ref.navn,
+        hoyde,
+        deler: f.deler,
+        feltNr: i + 1,
+        feltNavn: f.navn,
+        klaring: f.losning.klaring,
+      });
+    }
+  });
+  rader.sort((a, b) => a.fraEksakt - b.fraEksakt);
+  rader.forEach((rad, i) => { rad.nr = i + 1; });
+  return rader;
+}

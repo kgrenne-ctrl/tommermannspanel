@@ -36,7 +36,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { losVegg, foreslaVegg, vurderVegg } from '../src/tommermann/vegg.js';
+import { losVegg, foreslaVegg, vurderVegg, lagMerkeliste } from '../src/tommermann/vegg.js';
 import { losFelt } from '../src/tommermann/solver.js';
 
 const naer = (faktisk, forventet, presisjon = 1e-6) =>
@@ -230,4 +230,39 @@ test('Forslag: en vegg som allerede er perfekt, får ingen forslag', () => {
   const f = foreslaVegg({ lengde: 640, hoyde: 2400, bu: 148, bo: 148 });
   assert.equal(f.naa.overMaks, 0);
   assert.equal(f.sammeBord.length + f.andreBord.length, 0);
+});
+
+test('Merkeliste: alle underbord i rekkefølge, med mål fra hjørnet og fra karmkanten', () => {
+  const r = losVegg(GARASJE);
+  const liste = lagMerkeliste(r);
+  // Like mange rader som underbord i feltene som går opp
+  const antall = r.felt.filter((f) => f.ok).reduce((sum, f) => sum + f.underliggere.length, 0);
+  assert.equal(liste.length, antall);
+  // Sortert fra venstre, nummerert 1, 2, 3 ...
+  liste.forEach((m, i) => {
+    assert.equal(m.nr, i + 1);
+    if (i > 0) assert.ok(m.fraEksakt > liste[i - 1].fraEksakt);
+  });
+  // Felt 1 (håndregning punkt 1): underbord på 118 og 354 fra hjørnet, full høyde, kloss 88
+  assert.deepEqual(liste.slice(0, 2).map((m) => [m.fra, m.referanse, m.hoyde]),
+    [[118, 'hjørnet', 'Full høyde'], [354, 'hjørnet', 'Full høyde']]);
+  naer(liste[0].klaring, 88);
+  // Første underbord over og under vindu 1 starter 17 mm før karmkanten (600): 583
+  assert.equal(liste[2].fra, 583);
+  assert.equal(liste[2].fraReferanse, -17);
+  assert.equal(liste[2].referanse, 'venstre karm vindu 1');
+  assert.equal(liste[2].hoyde, 'Over og under vindu 1');
+  // Mål fra karm og mål fra hjørnet henger sammen for alle rader
+  for (const m of liste) {
+    const refX = m.referanse === 'hjørnet' ? 0
+      : m.referanse.startsWith('venstre karm') ? r.apninger.find((a) => m.referanse.endsWith(a.navn.toLowerCase())).x
+        : (() => { const a = r.apninger.find((x) => m.referanse.endsWith(x.navn.toLowerCase())); return a.x + a.bredde; })();
+    assert.ok(Math.abs(m.fraEksakt - refX - m.fraReferanse) <= 0.5, `rad ${m.nr}`);
+  }
+});
+
+test('Merkeliste: felt som ikke går opp, er ikke med', () => {
+  const r = losVegg(GARASJE);
+  const liste = lagMerkeliste(r);
+  assert.ok(!liste.some((m) => m.feltNavn === 'Vindu 1 – Port'));
 });

@@ -1,11 +1,12 @@
 // Skjermdelen for hel vegg: leser skjemaet, spør veggmodellen og viser svaret.
 // Regner aldri selv. All matematikk ligger i src/tommermann/.
 
-import { losVegg, foreslaVegg, vurderVegg } from '../tommermann/vegg.js';
+import { losVegg, foreslaVegg, vurderVegg, lagMerkeliste } from '../tommermann/vegg.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from '../tommermann/fagverdier.js';
 import { tegnVegg, tegnSnitt } from './tegning.js';
 import { lesTall, mm } from './format.js';
 import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
+import { lagre, hent, slett } from './lagring.js';
 
 const finn = (id) => document.getElementById(id);
 const skjema = finn('vegg-skjema');
@@ -33,14 +34,24 @@ finn('v-hjorneHoyre').value = STANDARD.hjorneHoyre;
 skjema.elements.karmBord.value = STANDARD.karmBord;
 oppdaterStartvalg();
 
-// Bytte mellom «Ett felt» og «Hel vegg»
+// Hent veggen som sist ble skrevet inn på denne telefonen
+const lagret = hent('vegg');
+if (lagret) settTilstand(lagret);
+
+// Bytte mellom «Ett felt» og «Hel vegg». Valget huskes også.
+function visModus(modus) {
+  const vegg = modus === 'vegg';
+  finn('vegg-del').hidden = !vegg;
+  finn('felt-del').hidden = vegg;
+  lagre('modus', modus);
+  if (vegg) oppdater();
+}
 for (const radio of document.querySelectorAll('input[name="modus"]')) {
-  radio.addEventListener('input', () => {
-    const vegg = radio.value === 'vegg' && radio.checked;
-    finn('vegg-del').hidden = !vegg;
-    finn('felt-del').hidden = vegg;
-    if (vegg) oppdater();
-  });
+  radio.addEventListener('input', () => { if (radio.checked) visModus(radio.value); });
+}
+if (hent('modus') === 'vegg') {
+  document.querySelector('input[name="modus"][value="vegg"]').checked = true;
+  visModus('vegg');
 }
 
 // Regn på nytt bare på 'input' (se CLAUDE.md om hvorfor ikke 'change').
@@ -63,6 +74,8 @@ skjema.addEventListener('click', (hendelse) => {
     knapp.closest('.apning').remove();
   } else if (knapp.id === 'v-eksempel') {
     fyllEksempel();
+  } else if (knapp.id === 'v-tom') {
+    tomVeggen();
   } else {
     return;
   }
@@ -125,7 +138,7 @@ resultat.addEventListener('input', (hendelse) => {
 
 // ---------- Åpninger ----------
 
-function leggTilApning({ type, x = '', bredde = '', hoyde = '', bunn }) {
+function leggTilApning({ type, x = '', bredde = '', hoyde = '', bunn, fokus = true }) {
   const standardBunn = type === 'vindu' ? '' : '0';
   const kortet = document.createElement('div');
   kortet.className = 'apning';
@@ -143,7 +156,7 @@ function leggTilApning({ type, x = '', bredde = '', hoyde = '', bunn }) {
       <label class="felt"><span>Fra bakken til underkant karm</span><input class="a-bunn" type="text" inputmode="decimal" value="${bunn ?? standardBunn}"></label>
     </div>`;
   liste.append(kortet);
-  if (x === '') kortet.querySelector('.a-x').focus();
+  if (fokus && x === '') kortet.querySelector('.a-x').focus();
 }
 
 function lesApninger() {
@@ -179,6 +192,66 @@ function oppdaterStartvalg() {
   valg.value = [...valg.options].some((o) => o.value === forrige) ? forrige : 'venstre';
 }
 
+// ---------- Lagring av det som er skrevet inn ----------
+
+// Alt i skjemaet som tekst, akkurat slik det står (også halvskrevne tall).
+function lesTilstand() {
+  const bredde = (id) => ({ valg: finn(`${id}-valg`).value, egen: finn(`${id}-egen`).value });
+  return {
+    lengde: finn('v-lengde').value,
+    hoyde: finn('v-hoyde').value,
+    vbu: bredde('vbu'),
+    vbo: bredde('vbo'),
+    karmBord: skjema.elements.karmBord.value,
+    hjorneVenstre: finn('v-hjorneVenstre').value,
+    hjorneHoyre: finn('v-hjorneHoyre').value,
+    startvalg: finn('v-startvalg').value,
+    innstillinger: Object.fromEntries(INNSTILLINGER.map((n) => [n, finn(`v-${n}`).value])),
+    apninger: [...liste.querySelectorAll('.apning')].map((k) => ({
+      type: k.querySelector('.a-type').value,
+      x: k.querySelector('.a-x').value,
+      bredde: k.querySelector('.a-bredde').value,
+      hoyde: k.querySelector('.a-hoyde').value,
+      bunn: k.querySelector('.a-bunn').value,
+    })),
+  };
+}
+
+function settTilstand(t) {
+  try {
+    finn('v-lengde').value = t.lengde ?? '';
+    finn('v-hoyde').value = t.hoyde ?? '';
+    for (const id of ['vbu', 'vbo']) {
+      if (!t[id]) continue;
+      finn(`${id}-valg`).value = t[id].valg;
+      finn(`${id}-egen`).value = t[id].egen ?? '';
+      finn(`${id}-egen`).hidden = t[id].valg !== 'egen';
+    }
+    if (t.karmBord) skjema.elements.karmBord.value = t.karmBord;
+    if (t.hjorneVenstre) finn('v-hjorneVenstre').value = t.hjorneVenstre;
+    if (t.hjorneHoyre) finn('v-hjorneHoyre').value = t.hjorneHoyre;
+    for (const [n, v] of Object.entries(t.innstillinger ?? {})) {
+      if (finn(`v-${n}`)) finn(`v-${n}`).value = v;
+    }
+    liste.innerHTML = '';
+    for (const a of t.apninger ?? []) leggTilApning({ ...a, fokus: false });
+    oppdaterStartvalg();
+    if (t.startvalg && [...finn('v-startvalg').options].some((o) => o.value === t.startvalg)) {
+      finn('v-startvalg').value = t.startvalg;
+    }
+  } catch {
+    // Lagret tilstand fra en eldre versjon som ikke passer: start blankt
+  }
+}
+
+function tomVeggen() {
+  finn('v-lengde').value = '';
+  finn('v-hoyde').value = '';
+  liste.innerHTML = '';
+  slett('vegg');
+  sisteForslag = null;
+}
+
 function fyllEksempel() {
   finn('v-lengde').value = '6000';
   finn('v-hoyde').value = '2400';
@@ -210,6 +283,7 @@ function lesSkjema() {
 }
 
 function oppdater() {
+  lagre('vegg', lesTilstand());
   const inndata = lesSkjema();
   if (inndata.lengde === null || inndata.hoyde === null) {
     resultat.innerHTML = '<p class="hjelp stor">Skriv inn vegglengde og vegghøyde, og legg til vinduer, dører og porter.</p>';
@@ -265,6 +339,7 @@ function visVegg(r) {
 
   return `
     <h2>Resultat</h2>
+    <a class="knapp lenkeknapp hopp" href="#v-merkeliste">Gå til merkelista</a>
     <div class="nokkeltall">
       ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} av ${r.felt.length} innenfor anbefalt omlegg`)}
       ${kort('Rytme', `${mm(r.rytme.senteravstand, 1)} mm`, `Senteravstand ved ${mm(r.rytme.omlegg)} mm omlegg`)}
@@ -295,6 +370,8 @@ function visVegg(r) {
       Tallene under kledningen ved karmen er innlegget i mm. Oransje stiplet = underlag bak påbord i hjørnet.
       Bordtykkelsen er tegnet tykkere enn den er.</p>
 
+
+    ${visMerkeliste(r)}
 
     ${r.apninger.length ? `<h3>Innlegg på karm</h3>
     <p class="hjelp">Bordet går like langt inn på karmen på begge sider.</p>
@@ -338,6 +415,33 @@ function visForslag(r) {
       ${tilbake}`;
   }
   return `<h3 id="v-forslag">Forslag</h3>${innhold}`;
+}
+
+function visMerkeliste(r) {
+  const rader = lagMerkeliste(r);
+  const mangler = r.felt.map((f, i) => ({ f, nr: i + 1 })).filter(({ f }) => !f.ok);
+  let forrigeKloss = null;
+  const linjer = rader.map((m) => {
+    const nyKloss = forrigeKloss === null || Math.abs(m.klaring - forrigeKloss) > 0.05;
+    forrigeKloss = m.klaring;
+    const ref = m.referanse === 'hjørnet' ? '' : `<span class="liten">${m.fraReferanse >= 0 ? '' : '−'}${mm(Math.abs(m.fraReferanse))} fra ${m.referanse}</span>`;
+    return `<tr class="${nyKloss ? 'ny-kloss' : ''}">
+      <td>${m.nr}</td>
+      <td><strong>${mm(m.fra)}</strong>${ref}</td>
+      <td>${m.hoyde}<span class="liten">felt ${m.feltNr}</span></td>
+      <td>${nyKloss ? `<strong>${mm(m.klaring, 1)}</strong>` : mm(m.klaring, 1)}</td>
+    </tr>`;
+  }).join('');
+  return `<h3 id="v-merkeliste">Merkeliste</h3>
+    <p class="hjelp">Alle underbord fra venstre mot høyre. Merk venstre kant av hvert underbord,
+      målt fra hjørnet (store tall) eller fra karmkanten (små tall, tryggere ved vinduer og dører).
+      Kloss = distanseklosse mellom underbordene. Fet skrift betyr at klossen er ny fra den raden.
+      Påbordene settes midt over klaringen.</p>
+    ${mangler.length ? boks('feil', `<p>Mangler i lista fordi feltet ikke går opp: ${mangler.map(({ f, nr }) => `${nr}. ${f.navn}`).join(', ')}.</p>`) : ''}
+    <table class="maltabell merkeliste">
+      <thead><tr><th>Nr</th><th>Venstre kant (mm)</th><th>Høyde</th><th>Kloss</th></tr></thead>
+      <tbody>${linjer}</tbody>
+    </table>`;
 }
 
 function merkeFor(f, maks) {
