@@ -1,0 +1,81 @@
+/* Alle farger samlet her. Endre fargen ett sted, så endres den i hele appen.
+   Kilde: brand-assets.md (Bakøy Entreprenør AS). */
+:root {
+  --bakoy-bla: #074EA2;        /* merkeblå, toppbåndet */
+  --bakoy-oransje: #F36F21;    /* bare grafisk aksent, aldri på liten tekst */
+  --bla-lys: #AFCBEC;          /* undertekst på blått */
+  --tekst: #1D232C;            /* brødtekst */
+  --tekst-gra: #5B6472;        /* undertitler, hjelpetekst */
+  --linje: #D7DEE6;            /* hårstreker */
+  --flate: #EEF3FA;            /* infobokser */
+  --bakgrunn: #FFFFFF;
+  --hvit: #FFFFFF;
+
+  --font: Aptos, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--tekst);
+  background: var(--bakgrunn);
+}
+
+/* Toppbåndet med logo og tittel */
+.toppband {
+  background: var(--bakoy-bla);
+  color: var(--hvit);
+  padding: 16px;
+  border-bottom: 4px solid var(--bakoy-oransje);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toppband img {
+  height: 40px;
+  width: auto;
+  display: block;
+}
+
+.toppband .tittel {
+  text-align: right;
+}
+
+.toppband h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.toppband .undertittel {
+  margin: 2px 0 0;
+  font-size: 15px;
+  color: var(--bla-lys);
+}
+
+main {
+  padding: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.infoboks {
+  background: var(--flate);
+  border: 1px solid var(--linje);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+footer {
+  padding: 16px;
+  font-size: 14px;
+  color: var(--tekst-gra);
+  text-align: center;
+}
