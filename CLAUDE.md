@@ -46,6 +46,8 @@ Alle skal kunne endres i innstillinger.
 - **Standard bordbredder:** 73, 98, 123, 148, 173, 198 og 223 mm. Målt faktisk bredde kan alltid
   legges inn.
 - Kledningen kløyves ikke for å få det til å gå opp. Omlegget justeres i stedet.
+- **Synlig underligger (lagt til i fase 1, 2026-11-08):** `bu − 2·o` kan ikke være negativ.
+  Ellers ligger to overliggere oppå hverandre. Ikke i planen, men fysisk umulig å bygge.
 
 ## Tester
 - `npm test` (eller `node --test`) kjører alle tester i `test/`.
