@@ -40,7 +40,14 @@ for (const radio of document.querySelectorAll('input[name="modus"]')) {
 }
 
 // Regn på nytt bare på 'input' (se CLAUDE.md om hvorfor ikke 'change').
-skjema.addEventListener('input', () => { oppdaterStartvalg(); oppdater(); });
+skjema.addEventListener('input', (hendelse) => {
+  // Byttes typen til dør eller port, står den på bakken.
+  if (hendelse.target.classList.contains('a-type') && hendelse.target.value !== 'vindu') {
+    hendelse.target.closest('.apning').querySelector('.a-bunn').value = '0';
+  }
+  oppdaterStartvalg();
+  oppdater();
+});
 
 skjema.addEventListener('click', (hendelse) => {
   const knapp = hendelse.target.closest('button');
@@ -82,8 +89,8 @@ function leggTilApning({ type, x = '', bredde = '', hoyde = '', bunn }) {
     <div class="to-kol">
       <label class="felt"><span>Fra venstre hjørne</span><input class="a-x" type="text" inputmode="decimal" value="${x}"></label>
       <label class="felt"><span>Bredde</span><input class="a-bredde" type="text" inputmode="decimal" value="${bredde}"></label>
-      <label class="felt"><span>Høyde</span><input class="a-hoyde" type="text" inputmode="decimal" value="${hoyde}"></label>
-      <label class="felt"><span>Over bakken</span><input class="a-bunn" type="text" inputmode="decimal" value="${bunn ?? standardBunn}"></label>
+      <label class="felt"><span>Høyde på karm</span><input class="a-hoyde" type="text" inputmode="decimal" value="${hoyde}"></label>
+      <label class="felt"><span>Fra bakken til underkant karm</span><input class="a-bunn" type="text" inputmode="decimal" value="${bunn ?? standardBunn}"></label>
     </div>`;
   liste.append(kortet);
   if (x === '') kortet.querySelector('.a-x').focus();
@@ -215,9 +222,9 @@ function visVegg(r) {
       ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} innenfor 20–25 mm omlegg`)}
       ${kort('Rytme', `${mm(r.rytme.senteravstand, 1)} mm`, `Senteravstand ved ${mm(r.rytme.omlegg)} mm omlegg`)}
     </div>
-    ${ikkeOpp.length ? boks('feil', `<p><strong>${ikkeOpp.length} felt går ikke opp.</strong> Flytt en åpning, bytt bordbredde eller bytt mellom påbord og underbord inn på karmen.</p>${varselListe(alvorlige)}`) : ''}
+    ${alvorlige.length ? boks('feil', `${ikkeOpp.length ? `<p><strong>${ikkeOpp.length} felt går ikke opp.</strong> Flytt en åpning, bytt bordbredde eller bytt mellom påbord og underbord inn på karmen.</p>` : ''}${varselListe(alvorlige)}`) : ''}
     ${andre.length ? boks('varsel', varselListe(andre)) : ''}
-    ${!ikkeOpp.length && !andre.length ? boks('ok', '<p>Alle felt går opp med omlegg innenfor anbefalt.</p>') : ''}
+    ${!alvorlige.length && !andre.length ? boks('ok', '<p>Alle felt går opp med omlegg innenfor anbefalt.</p>') : ''}
 
     <h3>Tegning</h3>
     ${tegnVegg(r, snitt.hoyde)}

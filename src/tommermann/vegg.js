@@ -28,6 +28,7 @@ import { losFeltFleksibel } from './solver.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from './fagverdier.js';
 
 const SLINGRING = 1e-6;
+const MINSTE_APNING = 300; // mm. Mindre enn dette er nesten alltid et tastefeil.
 const TYPENAVN = { vindu: 'Vindu', dor: 'Dør', port: 'Port' };
 
 export function losVegg(inndata) {
@@ -59,6 +60,19 @@ export function losVegg(inndata) {
 
   const varsler = [];
   const klosser = [];
+  for (const a of apninger) {
+    // Åpenbart feile mål (for eksempel 1 mm høy dør) gir rare klosser og felt. Si fra.
+    for (const [mal, verdi] of [['Høyden', a.hoyde], ['Bredden', a.bredde]]) {
+      if (verdi < MINSTE_APNING) {
+        varsler.push({ felt: a.navn, alvorlig: true,
+          tekst: `${mal} er bare ${verdi} mm. Sjekk målene.` });
+      }
+    }
+    if (a.type !== 'vindu' && a.bunn > SLINGRING) {
+      varsler.push({ felt: a.navn, alvorlig: true,
+        tekst: `Står ${a.bunn} mm over bakken. En dør eller port står vanligvis på bakken. Sjekk målene.` });
+    }
+  }
   if (inn.hjorneVenstre === 'O') {
     varsler.push({ felt: 'Venstre hjørne', tekst: 'Påbord i hjørnet trenger underlag.' });
   }

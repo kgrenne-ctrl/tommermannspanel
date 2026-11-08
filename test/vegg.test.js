@@ -181,3 +181,20 @@ test('Feil i veggen gir tydelige meldinger', () => {
   assert.ok(r.feil.some((t) => /overlapper/.test(t)));
   assert.ok(r.feil.some((t) => /over toppen/.test(t)));
 });
+
+test('Dør som ikke står på bakken gir tydelig varsel', () => {
+  const r = losVegg({ lengde: 6509, hoyde: 2400, bu: 148, bo: 148, apninger: [
+    { type: 'dor', x: 3710, bredde: 1000, hoyde: 250, bunn: 2100 },
+  ] });
+  assert.ok(r.varsler.some((v) => v.felt === 'Dør' && v.alvorlig && /Står 2100 mm over bakken/.test(v.tekst)));
+  const paBakken = losVegg({ ...GARASJE });
+  assert.ok(!paBakken.varsler.some((v) => /over bakken/.test(v.tekst)));
+});
+
+test('Åpenbart feile mål (1 mm høy dør) gir varsel om å sjekke målene', () => {
+  const r = losVegg({ lengde: 6509, hoyde: 2400, bu: 148, bo: 148, apninger: [
+    { type: 'dor', x: 3710, bredde: 1000, hoyde: 1, bunn: 0 },
+  ] });
+  assert.ok(r.varsler.some((v) => v.alvorlig && /Høyden er bare 1 mm/.test(v.tekst)));
+  assert.ok(!losVegg(GARASJE).varsler.some((v) => /Sjekk målene/.test(v.tekst)));
+});
