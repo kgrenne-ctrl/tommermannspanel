@@ -1,6 +1,7 @@
 // Skjermdelen: leser skjemaet, spør regnemodellen og viser svaret.
 // Regner aldri selv. All matematikk ligger i src/tommermann/.
 
+import { sjekkVersjon } from './oppdater.js';
 import { losFelt } from '../tommermann/solver.js';
 import { STANDARD_INNSTILLINGER } from '../tommermann/fagverdier.js';
 import { tegnFelt } from './tegning.js';
@@ -19,6 +20,8 @@ let valgtIndeks = 0;
 let sisteSvar = null;
 
 // ---------- Oppstart ----------
+
+sjekkVersjon();
 
 fyllBreddevalg('bu');
 fyllBreddevalg('bo');

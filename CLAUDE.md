@@ -58,6 +58,15 @@ Alle skal kunne endres i innstillinger.
 - **Synlig underligger (lagt til i fase 1, 2026-11-08):** `bu − 2·o` kan ikke være negativ.
   Ellers ligger to overliggere oppå hverandre. Ikke i planen, men fysisk umulig å bygge.
 
+## Versjonsnummer (så telefonene alltid får nyeste versjon)
+- Alle JavaScript-filer lastes via et importkart i `index.html` med `?v=versjon`. Stilfila også.
+- `scripts/versjon.mjs` setter nytt nummer. Det kjøres automatisk ved hver commit
+  (`.githooks/pre-commit`, aktivert med `git config core.hooksPath .githooks`).
+  Manuelt: `npm run versjon`.
+- Ny JavaScript-fil i `src/`: kjør `npm run versjon`, ellers feiler `test/versjon.test.js`.
+- `src/skjerm/oppdater.js` sjekker `versjon.json` ved oppstart og laster siden på nytt hvis
+  telefonen har en eldre lagret side. Ikke start appen med `<script src=...>`, bruk `import`.
+
 ## Se appen lokalt
 - `npm start` og åpne http://localhost:8000. Dobbeltklikk på `index.html` virker ikke, fordi
   nettleseren ikke laster JavaScript-moduler fra en fil på disken.
@@ -113,7 +122,9 @@ index.html            siden som åpnes i nettleseren
 css/stil.css          utseende, fargene øverst
 assets/               logo
 src/tommermann/       regnemodellen for tømmermannskledning
-src/skjerm/           skjermdelen (felt, vegg, tegning, tallformat, felles biter)
+src/skjerm/           skjermdelen (felt, vegg, tegning, tallformat, felles biter, versjonssjekk)
+scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)
+.githooks/            git-kroker (pre-commit setter versjon)
 test/                 automatiske tester
 PLAN.md               planen (fasit)
 ```

@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "versjon": "node scripts/versjon.mjs",
     "start": "echo 'Åpne http://localhost:8000 i nettleseren. Stopp med Ctrl+C.' && python3 -m http.server 8000"
   }
 }

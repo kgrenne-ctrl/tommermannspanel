@@ -1,0 +1,5 @@
+#!/bin/sh
+# Setter nytt versjonsnummer på alle filene før hver commit (se scripts/versjon.mjs),
+# så telefonene alltid henter nyeste versjon etter en oppdatering.
+node scripts/versjon.mjs >/dev/null || exit 1
+git add index.html versjon.json
