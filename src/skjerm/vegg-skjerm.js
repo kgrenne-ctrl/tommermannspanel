@@ -270,7 +270,7 @@ function visVegg(r) {
     <h3>Oversikt</h3>
     <table class="maltabell oversikt"><thead><tr><th>Nr</th><th>Felt</th><th>Omlegg</th><th></th></tr></thead><tbody>
       ${r.felt.map((f, i) => `<tr data-ga-til="${i + 1}"><td>${i + 1}</td><td>${f.navn}</td>
-        <td>${f.ok ? `${mm(f.losning.omlegg, 1)} mm` : '–'}</td><td>${merkeFor(f)}</td></tr>`).join('')}
+        <td>${f.ok ? `${mm(f.losning.omlegg, 1)} mm` : '–'}</td><td>${merkeFor(f, r.rytme.maks)}</td></tr>`).join('')}
     </tbody></table>
     <p class="hjelp">Trykk på en rad for å se utdelingsmålene. Nummeret står også i tegningen.</p>
 
@@ -295,7 +295,7 @@ function visVegg(r) {
 
     <h3>Felt for felt</h3>
     <p class="hjelp">Løpende mål fra venstre hjørne. Trykk på et felt for å se utdelingsmålene.</p>
-    ${r.felt.map((f, i) => visFelt(f, i + 1)).join('')}`;
+    ${r.felt.map((f, i) => visFelt(f, i + 1, r.rytme.maks)).join('')}`;
 }
 
 function visForslag(r) {
@@ -326,20 +326,20 @@ function visForslag(r) {
   return `<h3 id="v-forslag">Forslag</h3>${innhold}`;
 }
 
-function merkeFor(f) {
+function merkeFor(f, maks) {
   if (!f.ok) return '<span class="merke merke-feil">Går ikke opp</span>';
   return f.losning.innenforAnbefalt
     ? '<span class="merke merke-ok">OK</span>'
-    : '<span class="merke merke-varsel">Over 25</span>';
+    : `<span class="merke merke-varsel">Over ${mm(maks)}</span>`;
 }
 
-function visFelt(f, nr) {
+function visFelt(f, nr, maks) {
   if (!f.ok) {
     return `<details class="feltkort feil" id="felt-${nr}"><summary><span>${nr}. ${f.navn}</span><span class="merke merke-feil">Går ikke opp</span></summary>
       <p>${f.melding}</p></details>`;
   }
   const l = f.losning;
-  const merke = merkeFor(f);
+  const merke = merkeFor(f, maks);
   const avvik = f.avvikRytme;
   return `<details class="feltkort" id="felt-${nr}"><summary><span>${nr}. ${f.navn}</span>${merke}</summary>
     <p>Omlegg <strong>${mm(l.omlegg, 1)} mm</strong>, distanseklosser <strong>${mm(l.klaring, 1)} mm</strong>,

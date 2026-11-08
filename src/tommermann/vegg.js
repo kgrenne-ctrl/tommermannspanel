@@ -117,7 +117,7 @@ export function losVegg(inndata) {
     felt,
     klosser,
     varsler,
-    rytme: { senteravstand, omlegg: inn.oIdeal },
+    rytme: { senteravstand, omlegg: inn.oIdeal, maks: inn.oMax },
   };
 }
 
@@ -384,7 +384,7 @@ function kontroller(inn, apninger) {
 
 // Hvor god en vegg er. Lavere er bedre, sammenlignes tall for tall:
 // felt som ikke går opp, spikervarsler, felt over anbefalt omlegg, og hvor langt over
-// anbefalt maks det verste feltet er. Omlegg innenfor 20–25 mm regnes som like bra.
+// anbefalt maks det verste feltet er. Omlegg mellom minimum og maks (20–30 mm) regnes som like bra.
 export function vurderVegg(r, oMax = STANDARD_INNSTILLINGER.oMax) {
   const ok = r.felt.filter((f) => f.ok);
   const verstOmlegg = ok.length ? Math.max(...ok.map((f) => f.losning.omlegg)) : Infinity;

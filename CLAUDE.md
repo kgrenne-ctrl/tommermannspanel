@@ -34,7 +34,8 @@ fasit. Er noe i planen uklart eller ser feil ut: spør Kenny før du koder, ikke
 ## Fagverdier (PLAN.md punkt 8)
 Byggforsk 542.101 er ikke lest i fulltekst. Verdiene bygger på Treteknisk, G3 Gausdal og Talgø.
 Alle skal kunne endres i innstillinger.
-- **Omlegg:** standard (ideelt) 25 mm, minimum 20 mm, anbefalt maks 25 mm. Over maks gir varsel,
+- **Omlegg:** standard (ideelt) 25 mm, minimum 20 mm, varsel over 30 mm (Kenny 2026-11-08, planen
+  sa 25; G3 og Talgø anbefaler maks 25, men Bakøy flagger først over 30). Over maks gir varsel,
   ikke sperre. Under minimum er aldri lov.
 - **Klaring:** ingen egen minsteverdi, den følger av omlegget (`g = bo − 2·o`).
 - **Spikring:** ikke spikre gjennom to bord. Én spiker i underligger, to i overligger.
@@ -51,7 +52,7 @@ Alle skal kunne endres i innstillinger.
   Feltlengde = mål fra karmkant + innlegg. Brukeren velger om underbord eller påbord går inn.
   Innlegget er likt på begge sider av en åpning (Kenny 2026-11-08).
   Rekkefølge for å få delingen til å gå opp: juster innlegget innenfor 10–20 mm først, juster
-  omlegget (20–25 mm) bare når innlegget ikke strekker til. Startvalget (venstre, høyre,
+  omlegget (20–30 mm) bare når innlegget ikke strekker til. Startvalget (venstre, høyre,
   symmetrisk) avgjør hvor justeringen havner. Påbord inn på karm gir kloss i kapplista med
   lengde lik åpningens høyde.
 - **Synlig underligger (lagt til i fase 1, 2026-11-08):** `bu − 2·o` kan ikke være negativ.
@@ -84,7 +85,7 @@ Alle skal kunne endres i innstillinger.
   omlegg i feltene som avgjøres der, velges. Startvalget bestemmer rekkefølgen åpningene velges i,
   og dermed hvor restjusteringen havner.
 - «Finn bedre oppsett» (`foreslaVegg`) prøver karm, hjørner, startvalg og standardbredder.
-  Omlegg innenfor 20–25 mm regnes som like bra.
+  Omlegg innenfor 20–30 mm regnes som like bra.
 - Påbord er standard både i hjørnene og inn på karmen (Kenny 2026-11-08).
 - `solver.js` har `losFeltFleksibel` for felt med slingringsmonn i lengden. `losFelt` er det
   samme med fast lengde.

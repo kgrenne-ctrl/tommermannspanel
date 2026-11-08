@@ -6,7 +6,7 @@ export const STANDARD_INNSTILLINGER = Object.freeze({
   // Omlegg: hvor langt overliggeren går inn over underliggeren på hver side.
   oMin: 20,    // aldri mindre enn dette
   oIdeal: 25,  // det vi sikter mot
-  oMax: 25,    // over dette gis varsel, men løsningen vises likevel
+  oMax: 30,    // over dette gis varsel, men løsningen vises likevel (Kenny 2026-11-08)
 
   // Spikersjekk (avklart med Kenny 2026-11-08).
   spikerKantavstand: 0,     // avstand fra spiker til kanten av underliggeren

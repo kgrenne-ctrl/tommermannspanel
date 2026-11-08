@@ -3,7 +3,8 @@
 // ===================================================================================
 // HÅNDREGNING – ett eksempel per start/slutt-kombinasjon
 // ===================================================================================
-// Standard: omlegg minimum 20, ideelt 25, maks 25 (varsel over 25).
+// Omlegg minimum 20, ideelt 25. Varsel over 30 er Bakøy-standard (Kenny 2026-11-08);
+// NDLA-eksempelet kontrolleres med varsel over 25, slik planen beskriver.
 // Omlegg o = (bo − g) / 2. Senteravstand cc = bu + g.
 //
 // -----------------------------------------------------------------------------------
@@ -13,7 +14,8 @@
 //   k = 5: g = (1350 − 740) / 4  = 152,5  → større enn bordet, umulig
 //   k = 6: g = (1350 − 888) / 5  = 92,4   → o = (148 − 92,4)/2 = 27,8  gyldig
 //   k = 7: g = (1350 − 1036) / 6 = 52,33  → o = 47,8                   gyldig
-// Ingen har omlegg 20–25. Da velges den nærmest maks 25: k = 6 (27,8), med varsel.
+// Med maks 25: ingen har omlegg 20–25, så den nærmest 25 velges: k = 6 (27,8), med varsel.
+// Med maks 30 (standard): k = 6 ligger innenfor og velges uten varsel.
 // Senteravstand cc = 148 + 92,4 = 240,4.
 // Underliggere: 0, 240,4, 480,8, 721,2, 961,6, 1202,0
 //   avrundet:   0, 240,   481,   721,   962,   1202
@@ -78,7 +80,9 @@ const harVarsel = (losning, type) => losning.varsler.some((v) => v.type === type
 
 // ---------- 1) NDLA (første test) ----------
 test('NDLA: U–U, L 1350, 148/148 gir 6 + 5 bord, klaring 92,4, omlegg 27,8 med varsel', () => {
-  const r = losFelt({ L: 1350, bu: 148, bo: 148, start: 'U', slutt: 'U' });
+  // PLAN.md punkt 3 regner med varsel over 25 mm. Bakøy flagger først over 30 mm
+  // (Kenny 2026-11-08), så her settes maks til 25 for å kontrollere planens eksempel.
+  const r = losFelt({ L: 1350, bu: 148, bo: 148, start: 'U', slutt: 'U', oMax: 25 });
   assert.equal(r.ok, true);
   const v = r.valgt;
   assert.equal(v.antallUnderliggere, 6);
@@ -194,9 +198,8 @@ test('Smal klaring gir spikervarsel i løsningen', () => {
   assert.equal(harVarsel(v, 'omlegg-over-maks'), true);
 });
 
-test('Innstillinger kan overstyres (eget minimum og maks)', () => {
-  // NDLA med maks 30: nå er 27,8 innenfor, og varselet forsvinner
-  const v = losFelt({ L: 1350, bu: 148, bo: 148, start: 'U', slutt: 'U', oMax: 30 }).valgt;
+test('Bakøy-standard: 27,8 mm omlegg gir ikke varsel, varsel kommer først over 30 mm', () => {
+  const v = losFelt({ L: 1350, bu: 148, bo: 148, start: 'U', slutt: 'U' }).valgt;
   naer(v.omlegg, 27.8, 1e-9);
   assert.equal(harVarsel(v, 'omlegg-over-maks'), false);
 });
@@ -224,7 +227,7 @@ test('Mange felt: alltid nøyaktig feltlengde, aldri under minste omlegg, riktig
             assert.ok(l.omlegg >= 20 - E && l.klaring > 0 && l.synligUnderligger >= -E);
           }
 
-          // Finnes en løsning innenfor 20–25, skal den være valgt
+          // Finnes en løsning innenfor minimum–maks, skal den være valgt
           assert.equal(v.innenforAnbefalt, r.alle.some((l) => l.innenforAnbefalt));
 
           // Antall overliggere etter kombinasjon
