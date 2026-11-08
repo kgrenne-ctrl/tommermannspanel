@@ -14,5 +14,17 @@ export const STANDARD_INNSTILLINGER = Object.freeze({
   spikeravstand: 30,        // minste avstand mellom to spikre i samme overligger
 });
 
+// Standardverdier for en hel vegg med åpninger (PLAN.md punkt 4, avklart 2026-11-08).
+export const STANDARD_VEGG = Object.freeze({
+  // Bordet går inn på karmen og dekker fugen. Ingen belistning.
+  innleggMin: 10,
+  innleggStandard: 15,
+  innleggMax: 20,
+  karmBord: 'O',        // hvilket bord som går inn på karmen: 'O' påbord, 'U' underbord
+  hjorneVenstre: 'O',   // hva veggen starter med i venstre hjørne
+  hjorneHoyre: 'O',     // hva veggen slutter med i høyre hjørne
+  startvalg: 'venstre', // 'venstre', 'hoyre', 'midten' eller 'apning:N' (midten av åpning N)
+});
+
 // Standard bordbredder (godkjent 2026-11-08).
 export const STANDARD_BREDDER = Object.freeze([73, 98, 123, 148, 173, 198, 223]);

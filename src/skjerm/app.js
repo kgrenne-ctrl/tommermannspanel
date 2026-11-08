@@ -2,12 +2,13 @@
 // Regner aldri selv. All matematikk ligger i src/tommermann/.
 
 import { losFelt } from '../tommermann/solver.js';
-import { STANDARD_BREDDER, STANDARD_INNSTILLINGER } from '../tommermann/fagverdier.js';
+import { STANDARD_INNSTILLINGER } from '../tommermann/fagverdier.js';
 import { tegnFelt } from './tegning.js';
 import { lesTall, mm } from './format.js';
+import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell } from './biter.js';
+import './vegg-skjerm.js';
 
 const INNSTILLING_FELT = ['oMin', 'oIdeal', 'oMax', 'toSpikreFraBredde', 'spikeravstand'];
-const EGEN = 'egen';
 
 const skjema = document.getElementById('skjema');
 const resultat = document.getElementById('resultat');
@@ -19,17 +20,8 @@ let sisteSvar = null;
 
 // ---------- Oppstart ----------
 
-for (const id of ['bu', 'bo']) {
-  const valg = finn(`${id}-valg`);
-  valg.innerHTML = STANDARD_BREDDER.map((b) => `<option value="${b}">${b}</option>`).join('')
-    + `<option value="${EGEN}">Målt bredde …</option>`;
-  valg.value = '148';
-  valg.addEventListener('change', () => {
-    const egen = finn(`${id}-egen`);
-    egen.hidden = valg.value !== EGEN;
-    if (!egen.hidden) egen.focus();
-  });
-}
+fyllBreddevalg('bu');
+fyllBreddevalg('bo');
 
 for (const navn of INNSTILLING_FELT) {
   finn(navn).value = String(STANDARD_INNSTILLINGER[navn]);
@@ -54,24 +46,6 @@ resultat.addEventListener('click', (hendelse) => {
 oppdater();
 
 // ---------- Lese og skrive skjemaet ----------
-
-function lesBredde(id) {
-  const valg = finn(`${id}-valg`).value;
-  return valg === EGEN ? lesTall(finn(`${id}-egen`).value) : Number(valg);
-}
-
-function settBredde(id, verdi) {
-  const valg = finn(`${id}-valg`);
-  const egen = finn(`${id}-egen`);
-  if (STANDARD_BREDDER.includes(verdi)) {
-    valg.value = String(verdi);
-    egen.hidden = true;
-  } else {
-    valg.value = EGEN;
-    egen.hidden = false;
-    egen.value = String(verdi).replace('.', ',');
-  }
-}
 
 function lesSkjema() {
   const inndata = {
@@ -177,21 +151,4 @@ function visIngenLosning(svar) {
     <h2>Resultat</h2>
     ${boks('feil', `<p>${svar.melding}</p>`)}
     ${forslag ? `<h3>Dette går opp</h3><div class="alternativer">${forslag}</div>` : ''}`;
-}
-
-function kort(tittel, verdi, under) {
-  return `<div class="kort"><span class="kort-tittel">${tittel}</span>
-    <span class="kort-verdi">${verdi}</span><span class="kort-under">${under}</span></div>`;
-}
-
-function boks(type, innhold) {
-  return `<div class="boks boks-${type}">${innhold}</div>`;
-}
-
-function tabell(tittel, bord) {
-  const rader = bord.map((b, i) => `<tr><td>${i + 1}</td><td>${mm(b.fra)}</td><td>${mm(b.til)}</td></tr>`).join('');
-  return `<table class="maltabell">
-    <caption>${tittel} (${bord.length})</caption>
-    <thead><tr><th>Nr</th><th>Fra (mm)</th><th>Til (mm)</th></tr></thead>
-    <tbody>${rader}</tbody></table>`;
 }

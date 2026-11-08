@@ -77,3 +77,53 @@ function rekt(b, y, h, type, strek) {
 function underlag(fra, til, y, h, strek) {
   return `<rect data-underlag="ja" x="${fra}" y="${y}" width="${til - fra}" height="${h}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="${strek * 2}" stroke-dasharray="${strek * 4} ${strek * 3}"/>`;
 }
+
+// Tegner hele veggen sett forfra ut fra resultatet av losVegg(). Bakken er nederst.
+// Feltene som ikke går opp, får rød skravur så de er lette å finne.
+export function tegnVegg(vegg) {
+  const { lengde: W, hoyde: H, felt, apninger } = vegg;
+  const kant = W * 0.02;
+  const skrift = Math.max(W, H) * 0.028;
+  const strek = Math.max(W, H) * 0.0012;
+  const yMal = H + kant * 2;
+  const hoyde = yMal + skrift * 1.6;
+  const y = (verdi) => H - verdi; // SVG teller ovenfra, veggen nedenfra
+
+  const deler = [];
+  deler.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="var(--bakgrunn)" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
+
+  for (const f of felt) {
+    if (!f.ok) {
+      const til = f.x1 ?? f.x0;
+      deler.push(`<rect data-feil="ja" x="${f.x0}" y="${y(f.y1)}" width="${Math.max(til - f.x0, 0)}" height="${f.y1 - f.y0}" fill="var(--feil-flate)" stroke="var(--feil-tekst)" stroke-width="${strek * 2}" stroke-dasharray="${strek * 6} ${strek * 4}"/>`);
+      continue;
+    }
+    for (const [liste, type] of [[f.underliggere, 'u'], [f.overliggere, 'o']]) {
+      for (const b of liste) {
+        const fyll = type === 'u' ? 'var(--underligger)' : 'var(--overligger)';
+        deler.push(`<rect data-bord="${type}" x="${b.fraEksakt}" y="${y(f.y1)}" width="${b.tilEksakt - b.fraEksakt}" height="${f.y1 - f.y0}" fill="${fyll}" stroke="var(--bord-kant)" stroke-width="${strek}"/>`);
+      }
+    }
+  }
+
+  // Åpningene tegnes oppå, med navn i midten
+  for (const a of apninger) {
+    deler.push(`<rect data-apning="${a.navn}" x="${a.x}" y="${y(a.bunn + a.hoyde)}" width="${a.bredde}" height="${a.hoyde}" fill="var(--flate)" stroke="var(--tekst)" stroke-width="${strek * 2}"/>`);
+    deler.push(`<text x="${a.x + a.bredde / 2}" y="${y(a.bunn + a.hoyde / 2) + skrift * 0.35}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)">${a.navn}</text>`);
+  }
+
+  // Målsetting av veggen
+  const pil = skrift * 0.4;
+  deler.push(
+    `<g stroke="var(--tekst)" stroke-width="${strek}">`
+    + `<line x1="0" y1="${yMal}" x2="${W}" y2="${yMal}"/>`
+    + `<line x1="0" y1="${yMal - pil}" x2="0" y2="${yMal + pil}"/>`
+    + `<line x1="${W}" y1="${yMal - pil}" x2="${W}" y2="${yMal + pil}"/>`
+    + '</g>',
+    `<text x="${W / 2}" y="${yMal + skrift * 1.3}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)">${mm(W)} mm</text>`,
+  );
+
+  return `<svg class="tegning" viewBox="${-kant} ${-kant} ${W + 2 * kant} ${hoyde + kant}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tegning av veggen med ${apninger.length} åpninger">`
+    + deler.join('')
+    + '</svg>';
+}

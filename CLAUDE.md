@@ -73,6 +73,17 @@ Alle skal kunne endres i innstillinger.
 - Regn bare på nytt på `input`-hendelser, ikke `change`. `change` kommer også når man trykker
   utenfor et tekstfelt, og da tegnes knappen man trykket på bort før trykket registreres.
 
+## Veggmodellen (fase 3)
+- `src/tommermann/vegg.js` deler veggen i felt og regner dem som en kjede fra hjørne til hjørne.
+- Sidebordet ved en åpning går i full høyde forbi åpningen (avklart 2026-11-08). Feltene over og
+  under åpningen ligger mellom de to sidebordene og fortsetter rytmen, så de deler innlegg med
+  feltene ved siden av.
+- Hvert ledd i kjeden har ett fritt innlegg. Startvalget bestemmer rekkefølgen og dermed hvor
+  restjusteringen havner (venstre: ved høyre hjørne, høyre: ved venstre, midten/åpning: ved hjørnene).
+- Påbord er standard både i hjørnene og inn på karmen (Kenny 2026-11-08).
+- `solver.js` har `losFeltFleksibel` for felt med slingringsmonn i lengden. `losFelt` er det
+  samme med fast lengde.
+
 ## Tester
 - `npm test` (eller `node --test`) kjører alle tester i `test/`.
 - Alle tester skal være grønne før en fase er ferdig og før commit.
@@ -96,7 +107,7 @@ index.html            siden som åpnes i nettleseren
 css/stil.css          utseende, fargene øverst
 assets/               logo
 src/tommermann/       regnemodellen for tømmermannskledning
-src/skjerm/           skjermdelen (skjema, tegning, tallformat)
+src/skjerm/           skjermdelen (felt, vegg, tegning, tallformat, felles biter)
 test/                 automatiske tester
 PLAN.md               planen (fasit)
 ```

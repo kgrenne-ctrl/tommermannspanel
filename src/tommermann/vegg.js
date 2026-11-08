@@ -1,0 +1,335 @@
+// Regnemodell for en hel vegg med vinduer, dører og porter (PLAN.md punkt 4).
+// Ingen skjermkode her, bare regning. Alle mål i mm, målt fra venstre hjørne og fra bakken.
+//
+// Slik er veggen bygd opp (avklart med Kenny 2026-11-08):
+// - Ingen belistning. Bordet ved siden av en åpning går 10–20 mm inn på karmen (innlegget)
+//   og dekker fugen. Det bordet står i full høyde forbi åpningen.
+// - Feltene over og under en åpning ligger mellom de to sidebordene og fortsetter rytmen.
+//
+// Veggen blir da en kjede av ledd fra venstre til høyre:
+//
+//   ledd 0      ledd 1         ledd 2      ledd 3         ledd 4
+//   [felt] | [over/under 1] | [felt] | [over/under 2] | [felt]
+//         e0               e1      e2               e3
+//
+// Mellom to ledd ligger ett innlegg (e0, e1, ...). Innlegget e0 er både slutten på feltet til
+// venstre for åpning 1 og starten på feltet over og under åpning 1. Derfor henger feltene sammen.
+//
+// Hvert ledd regnes ut med ett fritt innlegg. Det brukes først til å treffe ideelt omlegg.
+// Omlegget justeres bare når innlegget ikke strekker til. Startvalget bestemmer hvilken vei
+// kjeden regnes, og dermed hvilket ledd som får restjusteringen:
+// - venstre:   fra venstre mot høyre, resten havner i feltet ved høyre hjørne
+// - hoyre:     fra høyre mot venstre, resten havner ved venstre hjørne
+// - midten:    leddet midt på veggen regnes først med likt innlegg på begge sider,
+//              så utover mot hjørnene, resten havner ved hjørnene
+// - apning:N:  som midten, men om midten av åpning N
+
+import { losFeltFleksibel } from './solver.js';
+import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from './fagverdier.js';
+
+const SLINGRING = 1e-6;
+const TYPENAVN = { vindu: 'Vindu', dor: 'Dør', port: 'Port' };
+
+export function losVegg(inndata) {
+  const inn = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG, ...inndata };
+  const { lengde: W, hoyde: H, bu, bo } = inn;
+
+  const apninger = (inn.apninger ?? [])
+    .map((a, i) => ({ ...a, nr: i }))
+    .sort((a, b) => a.x - b.x);
+  navngi(apninger);
+
+  const feil = kontroller(inn, apninger);
+  if (feil.length > 0) return { ok: false, feil };
+
+  const n = apninger.length;
+  const antallLedd = 2 * n + 1;
+  const e = new Array(2 * n).fill(null); // innleggene, e[2j] venstre og e[2j+1] høyre side av åpning j
+  const ledd = new Array(antallLedd).fill(null);
+
+  for (const [m, frie] of rekkefolge(inn.startvalg, apninger, W)) {
+    ledd[m] = losLedd(m, frie, e, apninger, inn);
+  }
+
+  // Bygg felt med veggkoordinater
+  const felt = [];
+  for (let m = 0; m < antallLedd; m++) {
+    felt.push(...lagFelt(m, ledd[m], e, apninger, inn));
+  }
+
+  const varsler = [];
+  const klosser = [];
+  if (inn.hjorneVenstre === 'O') {
+    varsler.push({ felt: 'Venstre hjørne', tekst: 'Påbord i hjørnet trenger underlag.' });
+  }
+  if (inn.hjorneHoyre === 'O') {
+    varsler.push({ felt: 'Høyre hjørne', tekst: 'Påbord i hjørnet trenger underlag.' });
+  }
+  if (inn.karmBord === 'O') {
+    for (const a of apninger) {
+      klosser.push({ apning: a.navn, antall: 2, lengde: a.hoyde,
+        tekst: `Kloss bak påbordet på hver side av ${a.navn.toLowerCase()}` });
+    }
+  }
+  for (const f of felt) {
+    if (!f.ok) {
+      varsler.push({ felt: f.navn, tekst: f.melding, alvorlig: true });
+      continue;
+    }
+    for (const v of f.losning.varsler) {
+      if (v.type.startsWith('underlag')) continue; // håndteres for hele veggen over
+      varsler.push({ felt: f.navn, tekst: v.tekst, type: v.type });
+    }
+  }
+
+  const senteravstand = bu + bo - 2 * inn.oIdeal;
+  for (const f of felt) {
+    if (f.ok) f.avvikRytme = f.losning.senteravstand - senteravstand;
+  }
+
+  return {
+    ok: felt.every((f) => f.ok),
+    lengde: W,
+    hoyde: H,
+    apninger: apninger.map((a, j) => ({
+      ...a,
+      innlegg: { venstre: e[2 * j], hoyre: e[2 * j + 1] },
+    })),
+    felt,
+    klosser,
+    varsler,
+    rytme: { senteravstand, omlegg: inn.oIdeal },
+  };
+}
+
+// ---------- Kjeden ----------
+
+// Gir rekkefølgen leddene regnes i, og hvilke innlegg som er frie i hvert ledd.
+// Et ledd med to frie innlegg (bare midtleddet) får likt innlegg på begge sider.
+function rekkefolge(startvalg, apninger, W) {
+  const n = apninger.length;
+  const sist = 2 * n;
+  const venstreVar = (m) => (m > 0 ? m - 1 : null);
+  const hoyreVar = (m) => (m < sist ? m : null);
+  const bare = (...v) => v.filter((x) => x !== null);
+
+  if (startvalg === 'hoyre') {
+    const r = [];
+    for (let m = sist; m >= 0; m--) r.push([m, bare(venstreVar(m))]);
+    return r;
+  }
+  if (startvalg === 'midten' || String(startvalg).startsWith('apning:')) {
+    const p = startvalg === 'midten'
+      ? leddVed(W / 2, apninger)
+      : 2 * Number(String(startvalg).split(':')[1]) + 1;
+    const r = [[p, bare(venstreVar(p), hoyreVar(p))]];
+    for (let m = p - 1; m >= 0; m--) r.push([m, bare(venstreVar(m))]);
+    for (let m = p + 1; m <= sist; m++) r.push([m, bare(hoyreVar(m))]);
+    return r;
+  }
+  // venstre (standard)
+  const r = [];
+  for (let m = 0; m <= sist; m++) r.push([m, bare(hoyreVar(m))]);
+  return r;
+}
+
+// Hvilket ledd ligger ved punktet x?
+function leddVed(x, apninger) {
+  for (let j = 0; j < apninger.length; j++) {
+    const a = apninger[j];
+    if (x < a.x) return 2 * j;
+    if (x <= a.x + a.bredde) return 2 * j + 1;
+  }
+  return 2 * apninger.length;
+}
+
+// Geometrien til ledd m: L = grunn + koeff·(innlegg på venstre side) + koeff·(innlegg på høyre side).
+function geometri(m, apninger, inn) {
+  const n = apninger.length;
+  if (m % 2 === 0) {
+    // Felt i full høyde mellom hjørne/åpning og åpning/hjørne. Bordene går INN på karmen,
+    // så innlegget gjør feltet lengre.
+    const j = m / 2;
+    const fra = j === 0 ? 0 : apninger[j - 1].x + apninger[j - 1].bredde;
+    const til = j === n ? inn.lengde : apninger[j].x;
+    return {
+      grunn: til - fra,
+      koeff: 1,
+      start: j === 0 ? inn.hjorneVenstre : inn.karmBord,
+      slutt: j === n ? inn.hjorneHoyre : inn.karmBord,
+    };
+  }
+  // Over og under åpning j: fra ytterkant av sidebordet til venstre til ytterkant av sidebordet
+  // til høyre. Sidebordene er med som start og slutt, så rytmen fortsetter. Jo lenger
+  // sidebordene går inn på karmen, jo kortere blir feltet.
+  const a = apninger[(m - 1) / 2];
+  const b = inn.karmBord === 'U' ? inn.bu : inn.bo;
+  return { grunn: a.bredde + 2 * b, koeff: -1, start: inn.karmBord, slutt: inn.karmBord };
+}
+
+function losLedd(m, frie, e, apninger, inn) {
+  const geo = geometri(m, apninger, inn);
+  const n = apninger.length;
+  const vars = [m > 0 ? m - 1 : null, m < 2 * n ? m : null].filter((v) => v !== null);
+
+  // Fast del av lengden (innlegg som allerede er bestemt)
+  let fast = geo.grunn;
+  for (const v of vars) if (!frie.includes(v)) fast += geo.koeff * e[v];
+
+  // Frie innlegg. To frie er bundet sammen (likt innlegg på begge sider).
+  const faktor = geo.koeff * frie.length;
+  let Lmin = fast; let Lmax = fast; let Lstandard = fast;
+  if (frie.length > 0) {
+    const a = fast + faktor * inn.innleggMin;
+    const b = fast + faktor * inn.innleggMax;
+    Lmin = Math.min(a, b);
+    Lmax = Math.max(a, b);
+    Lstandard = fast + faktor * inn.innleggStandard;
+  }
+
+  // Åpning uten felt over eller under: ingen bord å regne, innlegget settes til standard.
+  if (m % 2 === 1 && !harOverEllerUnder(apninger[(m - 1) / 2], inn.hoyde)) {
+    for (const v of frie) e[v] = inn.innleggStandard;
+    return { tom: true };
+  }
+
+  const svar = losFeltFleksibel({
+    ...inn, Lmin, Lmax, Lstandard, start: geo.start, slutt: geo.slutt,
+  });
+
+  // Regn innlegget tilbake fra lengden som ble valgt
+  const L = svar.ok ? svar.valgt.L : Lstandard;
+  for (const v of frie) {
+    const verdi = frie.length > 0 ? (L - fast) / faktor : inn.innleggStandard;
+    e[v] = Math.min(inn.innleggMax, Math.max(inn.innleggMin, verdi));
+  }
+  return svar;
+}
+
+function harOverEllerUnder(a, H) {
+  return a.bunn > SLINGRING || a.bunn + a.hoyde < H - SLINGRING;
+}
+
+// ---------- Fra ledd til felt med veggkoordinater ----------
+
+function lagFelt(m, svar, e, apninger, inn) {
+  const n = apninger.length;
+  if (svar.tom) return [];
+
+  if (m % 2 === 0) {
+    const j = m / 2;
+    const venstre = j === 0 ? null : apninger[j - 1];
+    const hoyre = j === n ? null : apninger[j];
+    const x0 = venstre ? venstre.x + venstre.bredde - e[m - 1] : 0;
+    const navn = `${venstre ? venstre.navn : 'Venstre hjørne'} – ${hoyre ? hoyre.navn : 'Høyre hjørne'}`;
+    return [byggFelt({
+      type: 'side', navn, x0, x1: hoyre ? hoyre.x + e[m] : inn.lengde, y0: 0, y1: inn.hoyde, svar,
+      innlegg: { venstre: venstre ? e[m - 1] : null, hoyre: hoyre ? e[m] : null },
+      fjernDelte: false, karmBord: inn.karmBord,
+    })];
+  }
+
+  const j = (m - 1) / 2;
+  const a = apninger[j];
+  const b = inn.karmBord === 'U' ? inn.bu : inn.bo;
+  const x0 = a.x + e[m - 1] - b;
+  const felles = { x0, x1: a.x + a.bredde - e[m] + b, svar, innlegg: { venstre: e[m - 1], hoyre: e[m] }, fjernDelte: true,
+    karmBord: inn.karmBord, apning: a.navn };
+  const ut = [];
+  if (a.bunn + a.hoyde < inn.hoyde - SLINGRING) {
+    ut.push(byggFelt({ ...felles, type: 'over', navn: `Over ${a.navn.toLowerCase()}`,
+      y0: a.bunn + a.hoyde, y1: inn.hoyde }));
+  }
+  if (a.bunn > SLINGRING) {
+    ut.push(byggFelt({ ...felles, type: 'under', navn: `Under ${a.navn.toLowerCase()}`,
+      y0: 0, y1: a.bunn }));
+  }
+  return ut;
+}
+
+function byggFelt({ type, navn, x0, x1, y0, y1, svar, innlegg, fjernDelte, karmBord, apning }) {
+  if (!svar.ok) {
+    return { ok: false, type, navn, x0, x1, y0, y1, innlegg, apning,
+      melding: svar.melding ?? 'Feltet går ikke opp.' };
+  }
+  const l = svar.valgt;
+  const tilVegg = (b, bordtype) => ({
+    type: bordtype,
+    fraEksakt: x0 + b.fraEksakt,
+    tilEksakt: x0 + b.tilEksakt,
+    fra: Math.round(x0 + b.fraEksakt),
+    til: Math.round(x0 + b.tilEksakt),
+  });
+  let underliggere = l.underliggere.map((b) => tilVegg(b, 'U'));
+  let overliggere = l.overliggere.map((b) => tilVegg(b, 'O'));
+
+  // Over og under en åpning er første og siste bord sidebordene, som allerede står i
+  // feltene ved siden av. De tas ut her så de ikke telles to ganger.
+  if (fjernDelte) {
+    if (karmBord === 'U') underliggere = underliggere.slice(1, -1);
+    else overliggere = overliggere.slice(1, -1);
+  }
+
+  return {
+    ok: true, type, navn, apning, x0, x1: x0 + l.L, y0, y1, innlegg,
+    losning: l,
+    underliggere,
+    overliggere,
+  };
+}
+
+// ---------- Navn og kontroll ----------
+
+function navngi(apninger) {
+  const antall = {};
+  for (const a of apninger) antall[a.type] = (antall[a.type] ?? 0) + 1;
+  const teller = {};
+  for (const a of apninger) {
+    teller[a.type] = (teller[a.type] ?? 0) + 1;
+    const grunn = TYPENAVN[a.type] ?? 'Åpning';
+    a.navn = antall[a.type] > 1 ? `${grunn} ${teller[a.type]}` : grunn;
+  }
+}
+
+function kontroller(inn, apninger) {
+  const feil = [];
+  const tall = (v) => typeof v === 'number' && Number.isFinite(v);
+  for (const [navn, v] of [['Vegglengde', inn.lengde], ['Vegghøyde', inn.hoyde],
+    ['Bredde underligger', inn.bu], ['Bredde overligger', inn.bo]]) {
+    if (!tall(v) || v <= 0) feil.push(`${navn} må være et tall større enn 0.`);
+  }
+  for (const [navn, v] of [['Karmbord', inn.karmBord], ['Venstre hjørne', inn.hjorneVenstre],
+    ['Høyre hjørne', inn.hjorneHoyre]]) {
+    if (v !== 'U' && v !== 'O') feil.push(`${navn} må være 'U' eller 'O'.`);
+  }
+  if (!(inn.innleggMin <= inn.innleggStandard && inn.innleggStandard <= inn.innleggMax)) {
+    feil.push('Innlegg må ha minimum ≤ standard ≤ maks.');
+  }
+  const gyldigeStart = ['venstre', 'hoyre', 'midten'];
+  const sv = String(inn.startvalg);
+  if (!gyldigeStart.includes(sv)) {
+    const nr = Number(sv.split(':')[1]);
+    if (!sv.startsWith('apning:') || !Number.isInteger(nr) || nr < 0 || nr >= apninger.length) {
+      feil.push('Ukjent startvalg.');
+    }
+  }
+  if (feil.length > 0) return feil;
+
+  let forrigeSlutt = 0;
+  let forrigeNavn = 'venstre hjørne';
+  for (const a of apninger) {
+    for (const [navn, v, min] of [['avstand fra hjørnet', a.x, 0], ['bredde', a.bredde, 0],
+      ['høyde', a.hoyde, 0], ['høyde over bakken', a.bunn, -1]]) {
+      if (!tall(v) || v <= min) feil.push(`${a.navn}: ${navn} mangler eller er ugyldig.`);
+    }
+    if (feil.length > 0) continue;
+    if (a.x <= forrigeSlutt) feil.push(`${a.navn} overlapper eller står inntil ${forrigeNavn}.`);
+    if (a.bunn + a.hoyde > inn.hoyde + SLINGRING) feil.push(`${a.navn} går over toppen av veggen.`);
+    forrigeSlutt = a.x + a.bredde;
+    forrigeNavn = a.navn.toLowerCase();
+  }
+  if (apninger.length > 0 && forrigeSlutt >= inn.lengde) {
+    feil.push(`${apninger.at(-1).navn} går forbi høyre hjørne.`);
+  }
+  return feil;
+}

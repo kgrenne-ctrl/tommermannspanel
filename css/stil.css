@@ -312,6 +312,94 @@ input[type="text"]:focus, select:focus {
 
 .maltabell tbody tr:nth-child(even) { background: var(--stripe); }
 
+/* ---------- Hel vegg ---------- */
+
+.modusvalg { margin: 4px 0 20px; }
+
+.apning {
+  border: 1px solid var(--linje);
+  border-radius: 8px;
+  padding: 12px 12px 0;
+  margin-bottom: 12px;
+  background: var(--stripe);
+}
+
+.apning-topp {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.apning-topp select { flex: 1; }
+
+.knapperad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.knapp {
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--bakoy-bla);
+  border-radius: 8px;
+  background: var(--hvit);
+  color: var(--bakoy-bla);
+  cursor: pointer;
+}
+
+.knapp.fjern {
+  border-color: var(--linje);
+  color: var(--tekst-gra);
+}
+
+.lenkeknapp {
+  width: 100%;
+  margin-bottom: 24px;
+  border-style: dashed;
+}
+
+.feltkort {
+  border: 1px solid var(--linje);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--hvit);
+}
+
+.feltkort summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feltkort[open] summary { border-bottom: 1px solid var(--linje); }
+.feltkort > p, .feltkort > table { margin-left: 12px; margin-right: 12px; width: calc(100% - 24px); }
+.feltkort.feil { border-color: var(--feil-tekst); }
+
+.merke {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.merke-ok { background: var(--ok-flate); color: var(--ok-tekst); }
+.merke-varsel { background: var(--varsel-flate); color: var(--varsel-tekst); }
+.merke-feil { background: var(--feil-flate); color: var(--feil-tekst); }
+
+.liste { padding-left: 20px; margin: 8px 0; }
+.liste li { margin: 4px 0; }
+
 footer {
   padding: 16px;
   font-size: 14px;

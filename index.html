@@ -16,57 +16,137 @@
   </header>
 
   <main>
-    <form id="skjema" autocomplete="off" onsubmit="return false">
-      <h2>Feltet</h2>
+    <div class="valgknapper modusvalg" role="radiogroup" aria-label="Hva vil du regne ut?">
+      <label><input type="radio" name="modus" value="felt" checked><span>Ett felt</span></label>
+      <label><input type="radio" name="modus" value="vegg"><span>Hel vegg</span></label>
+    </div>
 
-      <label class="felt">
-        <span>Feltlengde (mm)</span>
-        <input id="L" type="text" inputmode="decimal" placeholder="f.eks. 1350">
-      </label>
+    <!-- ===================== ETT FELT ===================== -->
+    <div id="felt-del">
+      <form id="skjema" autocomplete="off" onsubmit="return false">
+        <h2>Feltet</h2>
 
-      <div class="to-kol">
-        <div class="felt">
-          <label for="bu-valg">Underligger (mm)</label>
-          <select id="bu-valg"></select>
-          <input id="bu-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
-        </div>
-        <div class="felt">
-          <label for="bo-valg">Overligger (mm)</label>
-          <select id="bo-valg"></select>
-          <input id="bo-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
-        </div>
-      </div>
+        <label class="felt">
+          <span>Feltlengde (mm)</span>
+          <input id="L" type="text" inputmode="decimal" placeholder="f.eks. 1350">
+        </label>
 
-      <fieldset class="felt">
-        <legend>Starter med</legend>
-        <div class="valgknapper">
-          <label><input type="radio" name="start" value="U" checked><span>Underligger</span></label>
-          <label><input type="radio" name="start" value="O"><span>Overligger</span></label>
-        </div>
-      </fieldset>
-
-      <fieldset class="felt">
-        <legend>Slutter med</legend>
-        <div class="valgknapper">
-          <label><input type="radio" name="slutt" value="U" checked><span>Underligger</span></label>
-          <label><input type="radio" name="slutt" value="O"><span>Overligger</span></label>
-        </div>
-      </fieldset>
-
-      <details class="innstillinger">
-        <summary>Innstillinger</summary>
         <div class="to-kol">
-          <label class="felt"><span>Minste omlegg</span><input id="oMin" type="text" inputmode="decimal"></label>
-          <label class="felt"><span>Ideelt omlegg</span><input id="oIdeal" type="text" inputmode="decimal"></label>
-          <label class="felt"><span>Største omlegg (varsel)</span><input id="oMax" type="text" inputmode="decimal"></label>
-          <label class="felt"><span>To spikre fra bredde</span><input id="toSpikreFraBredde" type="text" inputmode="decimal"></label>
-          <label class="felt"><span>Avstand mellom spikre</span><input id="spikeravstand" type="text" inputmode="decimal"></label>
+          <div class="felt">
+            <label for="bu-valg">Underligger (mm)</label>
+            <select id="bu-valg"></select>
+            <input id="bu-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
+          </div>
+          <div class="felt">
+            <label for="bo-valg">Overligger (mm)</label>
+            <select id="bo-valg"></select>
+            <input id="bo-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
+          </div>
         </div>
-        <p class="hjelp">Alle mål i mm. Verdiene bygger på Treteknisk, G3 Gausdal og Talgø.</p>
-      </details>
-    </form>
 
-    <section id="resultat" aria-live="polite"></section>
+        <fieldset class="felt">
+          <legend>Starter med</legend>
+          <div class="valgknapper">
+            <label><input type="radio" name="start" value="U" checked><span>Underligger</span></label>
+            <label><input type="radio" name="start" value="O"><span>Overligger</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="felt">
+          <legend>Slutter med</legend>
+          <div class="valgknapper">
+            <label><input type="radio" name="slutt" value="U" checked><span>Underligger</span></label>
+            <label><input type="radio" name="slutt" value="O"><span>Overligger</span></label>
+          </div>
+        </fieldset>
+
+        <details class="innstillinger">
+          <summary>Innstillinger</summary>
+          <div class="to-kol">
+            <label class="felt"><span>Minste omlegg</span><input id="oMin" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Ideelt omlegg</span><input id="oIdeal" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Største omlegg (varsel)</span><input id="oMax" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>To spikre fra bredde</span><input id="toSpikreFraBredde" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Avstand mellom spikre</span><input id="spikeravstand" type="text" inputmode="decimal"></label>
+          </div>
+          <p class="hjelp">Alle mål i mm. Verdiene bygger på Treteknisk, G3 Gausdal og Talgø.</p>
+        </details>
+      </form>
+
+      <section id="resultat" aria-live="polite"></section>
+    </div>
+
+    <!-- ===================== HEL VEGG ===================== -->
+    <div id="vegg-del" hidden>
+      <form id="vegg-skjema" autocomplete="off" onsubmit="return false">
+        <h2>Veggen</h2>
+
+        <div class="to-kol">
+          <label class="felt"><span>Vegglengde (mm)</span>
+            <input id="v-lengde" type="text" inputmode="decimal" placeholder="f.eks. 6000"></label>
+          <label class="felt"><span>Vegghøyde (mm)</span>
+            <input id="v-hoyde" type="text" inputmode="decimal" placeholder="f.eks. 2400"></label>
+        </div>
+
+        <div class="to-kol">
+          <div class="felt">
+            <label for="vbu-valg">Underbord (mm)</label>
+            <select id="vbu-valg"></select>
+            <input id="vbu-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
+          </div>
+          <div class="felt">
+            <label for="vbo-valg">Påbord (mm)</label>
+            <select id="vbo-valg"></select>
+            <input id="vbo-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
+          </div>
+        </div>
+
+        <h3>Vinduer, dører og porter</h3>
+        <p class="hjelp">Mål til utvendig karmkant. Avstand måles fra venstre hjørne, høyde fra bakken.</p>
+        <div id="apninger"></div>
+        <div class="knapperad">
+          <button type="button" class="knapp" data-ny="vindu">+ Vindu</button>
+          <button type="button" class="knapp" data-ny="dor">+ Dør</button>
+          <button type="button" class="knapp" data-ny="port">+ Port</button>
+        </div>
+
+        <fieldset class="felt">
+          <legend>Inn på karmen går</legend>
+          <div class="valgknapper">
+            <label><input type="radio" name="karmBord" value="O" checked><span>Påbord</span></label>
+            <label><input type="radio" name="karmBord" value="U"><span>Underbord</span></label>
+          </div>
+        </fieldset>
+
+        <div class="to-kol">
+          <label class="felt"><span>Venstre hjørne</span>
+            <select id="v-hjorneVenstre"><option value="O">Påbord</option><option value="U">Underbord</option></select></label>
+          <label class="felt"><span>Høyre hjørne</span>
+            <select id="v-hjorneHoyre"><option value="O">Påbord</option><option value="U">Underbord</option></select></label>
+        </div>
+
+        <label class="felt"><span>Start inndelingen</span>
+          <select id="v-startvalg"></select></label>
+
+        <details class="innstillinger">
+          <summary>Innstillinger</summary>
+          <div class="to-kol">
+            <label class="felt"><span>Minste innlegg på karm</span><input id="v-innleggMin" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Standard innlegg</span><input id="v-innleggStandard" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Største innlegg</span><input id="v-innleggMax" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Minste omlegg</span><input id="v-oMin" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Ideelt omlegg</span><input id="v-oIdeal" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Største omlegg (varsel)</span><input id="v-oMax" type="text" inputmode="decimal"></label>
+          </div>
+          <p class="hjelp">Alle mål i mm. Innlegget brukes først for å få delingen til å gå opp,
+            omlegget justeres bare når innlegget ikke strekker til.</p>
+        </details>
+
+        <button type="button" class="knapp lenkeknapp" id="v-eksempel">Fyll inn eksempel (garasjevegg)</button>
+      </form>
+
+      <section id="vegg-resultat" aria-live="polite"></section>
+    </div>
   </main>
 
   <footer>Bakøy Entreprenør AS</footer>

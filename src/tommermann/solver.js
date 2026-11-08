@@ -24,21 +24,22 @@ const KOMBINASJONER = [
   ['O', 'O'],
 ];
 
-// Løser ligningen for klaringen g når antall underliggere k er kjent.
-// Gir null hvis k ikke kan brukes for denne kombinasjonen.
-function klaringFor(L, bu, bo, start, slutt, k) {
+// Alle tre ligningene kan skrives på samme form: L = c + d·g.
+// Gir { c, d } for k underliggere, eller null hvis k ikke kan brukes.
+// Da er g = (L − c) / d, og omvendt L = c + d·g.
+function ligning(bu, bo, start, slutt, k) {
   const antallO = (start === 'O' ? 1 : 0) + (slutt === 'O' ? 1 : 0);
   if (antallO === 0) {
     // U–U: L = k·bu + (k−1)·g
     if (k < 2) return null;
-    return (L - k * bu) / (k - 1);
+    return { c: k * bu, d: k - 1 };
   }
   if (antallO === 1) {
-    // U–O og O–U: L = k·bu + (k−1)·g + (bo + g)/2
-    return (L - k * bu - bo / 2) / (k - 0.5);
+    // U–O og O–U: L = k·bu + (k−1)·g + (bo + g)/2  =  k·bu + bo/2 + (k − 0,5)·g
+    return { c: k * bu + bo / 2, d: k - 0.5 };
   }
   // O–O: L = k·bu + k·g + bo
-  return (L - k * bu - bo) / k;
+  return { c: k * bu + bo, d: k };
 }
 
 // Sjekker at spikrene i overliggeren får plass i klaringen, så det ikke spikres gjennom to bord.
@@ -152,12 +153,21 @@ function kontrollerInndata(L, bu, bo, start, slutt, inn) {
 // Gyldig: klaring større enn 0, omlegg minst oMin, og synlig underligger ikke negativ.
 // Rangering: først de med omlegg innenfor oMin–oMax, nærmest oIdeal.
 // Deretter de med for stort omlegg, nærmest oMax.
-function alleLosninger(L, bu, bo, start, slutt, inn) {
-  const kMaks = Math.ceil(L / bu) + 1;
+//
+// Feltlengden kan ha slingringsmonn (Lmin–Lmax), for eksempel når bordet går 10–20 mm inn
+// på en karm. For hvert antall bord velges da den lengden som gir omlegg nærmest det ideelle.
+// Slingringsmonnet brukes altså før omlegget justeres. Er Lmin = Lmax, er lengden fast.
+function alleLosninger(Lmin, Lmax, Lstandard, bu, bo, start, slutt, inn) {
+  const kMaks = Math.ceil(Lmax / bu) + 1;
   const losninger = [];
   for (let k = 1; k <= kMaks; k++) {
-    const g = klaringFor(L, bu, bo, start, slutt, k);
-    if (g === null || !(g > 0)) continue;
+    const lign = ligning(bu, bo, start, slutt, k);
+    if (lign === null) continue;
+    // Lengden som gir akkurat ideelt omlegg, holdt innenfor slingringsmonnet.
+    const Lideal = lign.c + lign.d * (bo - 2 * inn.oIdeal);
+    const L = Math.min(Lmax, Math.max(Lmin, Lideal));
+    const g = (L - lign.c) / lign.d;
+    if (!(g > 0)) continue;
     const o = (bo - g) / 2;
     if (o < inn.oMin - SLINGRING) continue;
     // Synlig del av underliggeren (bu − 2·o) kan ikke være negativ. Da ville to
@@ -169,6 +179,7 @@ function alleLosninger(L, bu, bo, start, slutt, inn) {
   const innenfor = losninger
     .filter((l) => l.innenforAnbefalt)
     .sort((a, b) => Math.abs(a.omlegg - inn.oIdeal) - Math.abs(b.omlegg - inn.oIdeal)
+      || Math.abs(a.L - Lstandard) - Math.abs(b.L - Lstandard)
       || a.antallUnderliggere - b.antallUnderliggere);
   const over = losninger
     .filter((l) => !l.innenforAnbefalt)
@@ -190,7 +201,7 @@ export function losFelt(inndata) {
   const feil = kontrollerInndata(L, bu, bo, start, slutt, inn);
   if (feil.length > 0) return { ok: false, feil };
 
-  const alle = alleLosninger(L, bu, bo, start, slutt, inn);
+  const alle = alleLosninger(L, L, L, bu, bo, start, slutt, inn);
   if (alle.length > 0) {
     return { ok: true, valgt: alle[0], alternativ: alle[1] ?? null, alle };
   }
@@ -204,11 +215,32 @@ export function losFelt(inndata) {
   };
 }
 
+// Regner ut ett felt der lengden kan variere innenfor Lmin–Lmax (slingringsmonn).
+// Brukes av veggmodellen, der bordet kan gå 10–20 mm inn på karmen.
+// Inn: { Lmin, Lmax, Lstandard, bu, bo, start, slutt } pluss eventuelle innstillinger.
+// Ut:  { ok: true, valgt, alle } der valgt.L er lengden som ble brukt, eller { ok: false, melding }.
+export function losFeltFleksibel(inndata) {
+  const { Lmin, Lmax, Lstandard = (Lmin + Lmax) / 2, bu, bo, start, slutt, ...resten } = inndata;
+  const inn = { ...STANDARD_INNSTILLINGER, ...resten };
+
+  const feil = kontrollerInndata(Lmax, bu, bo, start, slutt, inn);
+  if (!(Lmin <= Lmax)) feil.push('Minste feltlengde kan ikke være større enn største.');
+  if (feil.length > 0) return { ok: false, feil, melding: feil.join(' ') };
+
+  const alle = alleLosninger(Lmin, Lmax, Lstandard, bu, bo, start, slutt, inn);
+  if (alle.length > 0) return { ok: true, valgt: alle[0], alle };
+  return {
+    ok: false,
+    melding: `Ingen inndeling gir omlegg på minst ${inn.oMin} mm for et felt på `
+      + `${en(Lmin)}–${en(Lmax)} mm med ${start}–${slutt}.`,
+  };
+}
+
 // Når feltet ikke går opp: prøv andre start/slutt-valg og andre standardbredder.
 function finnForslag(L, bu, bo, start, slutt, inn) {
   const forslag = [];
   const leggTil = (endring, b_u, b_o, s, e) => {
-    const beste = alleLosninger(L, b_u, b_o, s, e, inn)[0];
+    const beste = alleLosninger(L, L, L, b_u, b_o, s, e, inn)[0];
     if (beste) {
       forslag.push({ endring, bu: b_u, bo: b_o, start: s, slutt: e, omlegg: beste.omlegg,
         innenforAnbefalt: beste.innenforAnbefalt });
