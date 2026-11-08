@@ -82,3 +82,15 @@ test('Veggtegningen legger alle underbord bak alle påbord', async () => {
   assert.ok(svg.lastIndexOf('data-bord="u"') < svg.indexOf('data-bord="o"'),
     'ingen underbord skal tegnes etter første påbord');
 });
+
+test('Veggtegningen har nummer på hvert felt, også felt som ikke går opp', async () => {
+  const { tegnVegg } = await import('../src/skjerm/tegning.js');
+  const { losVegg } = await import('../src/tommermann/vegg.js');
+  const r = losVegg({ lengde: 6000, hoyde: 2400, bu: 148, bo: 148, apninger: [
+    { type: 'vindu', x: 600, bredde: 1000, hoyde: 600, bunn: 1200 },
+    { type: 'port', x: 2000, bredde: 2400, hoyde: 2100, bunn: 0 },
+  ] });
+  const svg = tegnVegg(r);
+  assert.equal(tell(svg, 'data-feltnr='), r.felt.length);
+  for (let nr = 1; nr <= r.felt.length; nr++) assert.ok(svg.includes(`data-feltnr="${nr}"`));
+});

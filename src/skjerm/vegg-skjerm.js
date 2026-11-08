@@ -65,6 +65,15 @@ skjema.addEventListener('click', (hendelse) => {
   oppdater();
 });
 
+// Trykk på en rad i oversikten: åpne feltkortet og bla dit
+resultat.addEventListener('click', (hendelse) => {
+  const rad = hendelse.target.closest('tr[data-ga-til]');
+  if (!rad) return;
+  const kortet = finn(`felt-${rad.dataset.gaTil}`);
+  kortet.open = true;
+  kortet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
 // Bytte høyde for horisontalsnittet
 resultat.addEventListener('input', (hendelse) => {
   if (hendelse.target.id === 'v-snitt') {
@@ -219,12 +228,19 @@ function visVegg(r) {
   return `
     <h2>Resultat</h2>
     <div class="nokkeltall">
-      ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} innenfor 20–25 mm omlegg`)}
+      ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} av ${r.felt.length} innenfor anbefalt omlegg`)}
       ${kort('Rytme', `${mm(r.rytme.senteravstand, 1)} mm`, `Senteravstand ved ${mm(r.rytme.omlegg)} mm omlegg`)}
     </div>
     ${alvorlige.length ? boks('feil', `${ikkeOpp.length ? `<p><strong>${ikkeOpp.length} felt går ikke opp.</strong> Flytt en åpning, bytt bordbredde eller bytt mellom påbord og underbord inn på karmen.</p>` : ''}${varselListe(alvorlige)}`) : ''}
     ${andre.length ? boks('varsel', varselListe(andre)) : ''}
     ${!alvorlige.length && !andre.length ? boks('ok', '<p>Alle felt går opp med omlegg innenfor anbefalt.</p>') : ''}
+
+    <h3>Oversikt</h3>
+    <table class="maltabell oversikt"><thead><tr><th>Nr</th><th>Felt</th><th>Omlegg</th><th></th></tr></thead><tbody>
+      ${r.felt.map((f, i) => `<tr data-ga-til="${i + 1}"><td>${i + 1}</td><td>${f.navn}</td>
+        <td>${f.ok ? `${mm(f.losning.omlegg, 1)} mm` : '–'}</td><td>${merkeFor(f)}</td></tr>`).join('')}
+    </tbody></table>
+    <p class="hjelp">Trykk på en rad for å se utdelingsmålene. Nummeret står også i tegningen.</p>
 
     <h3>Tegning</h3>
     ${tegnVegg(r, snitt.hoyde)}
@@ -246,20 +262,25 @@ function visVegg(r) {
 
     <h3>Felt for felt</h3>
     <p class="hjelp">Løpende mål fra venstre hjørne. Trykk på et felt for å se utdelingsmålene.</p>
-    ${r.felt.map(visFelt).join('')}`;
+    ${r.felt.map((f, i) => visFelt(f, i + 1)).join('')}`;
 }
 
-function visFelt(f) {
+function merkeFor(f) {
+  if (!f.ok) return '<span class="merke merke-feil">Går ikke opp</span>';
+  return f.losning.innenforAnbefalt
+    ? '<span class="merke merke-ok">OK</span>'
+    : '<span class="merke merke-varsel">Over 25</span>';
+}
+
+function visFelt(f, nr) {
   if (!f.ok) {
-    return `<details class="feltkort feil"><summary><span>${f.navn}</span><span class="merke merke-feil">Går ikke opp</span></summary>
+    return `<details class="feltkort feil" id="felt-${nr}"><summary><span>${nr}. ${f.navn}</span><span class="merke merke-feil">Går ikke opp</span></summary>
       <p>${f.melding}</p></details>`;
   }
   const l = f.losning;
-  const merke = l.innenforAnbefalt
-    ? '<span class="merke merke-ok">OK</span>'
-    : '<span class="merke merke-varsel">Over 25</span>';
+  const merke = merkeFor(f);
   const avvik = f.avvikRytme;
-  return `<details class="feltkort"><summary><span>${f.navn}</span>${merke}</summary>
+  return `<details class="feltkort" id="felt-${nr}"><summary><span>${nr}. ${f.navn}</span>${merke}</summary>
     <p>Omlegg <strong>${mm(l.omlegg, 1)} mm</strong>, distanseklosser <strong>${mm(l.klaring, 1)} mm</strong>,
       senteravstand ${mm(l.senteravstand, 1)} mm (${avvik >= 0 ? '+' : '−'}${mm(Math.abs(avvik), 1)} mm fra rytmen).
       ${f.type !== 'side' ? 'Sidebordene står i feltene ved siden av og er ikke med her.' : ''}</p>

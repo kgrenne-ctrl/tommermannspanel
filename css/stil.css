@@ -409,6 +409,12 @@ input[type="text"]:focus, select:focus {
 
 .snitt { display: block; }
 
+.oversikt td, .oversikt th { text-align: left; }
+.oversikt td:nth-child(3), .oversikt th:nth-child(3) { text-align: right; white-space: nowrap; }
+.oversikt td:nth-child(2) { font-size: 16px; }
+.oversikt td:last-child { text-align: right; }
+.oversikt tbody tr { cursor: pointer; }
+
 .liste { padding-left: 20px; margin: 8px 0; }
 .liste li { margin: 4px 0; }
 

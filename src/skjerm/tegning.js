@@ -121,6 +121,18 @@ export function tegnVegg(vegg, snittHoyde = null) {
     deler.push(`<text x="${a.x + a.bredde / 2}" y="${y(a.bunn + a.hoyde / 2) + skrift * 0.35}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)">${a.navn}</text>`);
   }
 
+  // Nummer på hvert felt (samme nummer som i lista under tegningen). Sirkelen krymper i
+  // lave felt, for eksempel over en dør, så den holder seg innenfor feltet.
+  felt.forEach((f, i) => {
+    const x1 = f.x1 ?? f.x0;
+    const cx = (f.x0 + x1) / 2;
+    const cy = y((f.y0 + f.y1) / 2);
+    const r = Math.min(skrift * 0.75, ((f.y1 - f.y0) / 2) * 0.9, ((x1 - f.x0) / 2) * 0.9);
+    const ramme = f.ok ? 'var(--bakoy-bla)' : 'var(--feil-tekst)';
+    deler.push(`<g data-feltnr="${i + 1}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--hvit)" stroke="${ramme}" stroke-width="${strek * 2}"/>`
+      + `<text x="${cx}" y="${cy + r * 0.42}" font-size="${r * 1.2}" font-weight="700" text-anchor="middle" fill="${ramme}">${i + 1}</text></g>`);
+  });
+
   if (snittHoyde !== null) {
     deler.push(`<line data-snitt="ja" x1="${-kant}" y1="${y(snittHoyde)}" x2="${W + kant}" y2="${y(snittHoyde)}" stroke="var(--bakoy-oransje)" stroke-width="${strek * 3}" stroke-dasharray="${strek * 10} ${strek * 5}"/>`);
     deler.push(`<text x="${W}" y="${y(snittHoyde) - skrift * 0.4}" font-size="${skrift}" text-anchor="end" fill="var(--tekst)" font-weight="700">A–A</text>`);
