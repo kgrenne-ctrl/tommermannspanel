@@ -6,23 +6,25 @@
 //   og dekker fugen. Det bordet står i full høyde forbi åpningen.
 // - Feltene over og under en åpning ligger mellom de to sidebordene og fortsetter rytmen.
 //
+// - Innlegget er det samme på begge sider av en åpning (Kenny 2026-11-08).
+//
 // Veggen blir da en kjede av ledd fra venstre til høyre:
 //
 //   ledd 0      ledd 1         ledd 2      ledd 3         ledd 4
 //   [felt] | [over/under 1] | [felt] | [over/under 2] | [felt]
-//         e0               e1      e2               e3
+//          |<-- innlegg 1 -->|        |<-- innlegg 2 -->|
 //
-// Mellom to ledd ligger ett innlegg (e0, e1, ...). Innlegget e0 er både slutten på feltet til
-// venstre for åpning 1 og starten på feltet over og under åpning 1. Derfor henger feltene sammen.
+// Innlegget i åpning 1 påvirker tre ledd: feltet til venstre, feltet over og under, og
+// feltet til høyre. Derfor henger feltene sammen.
 //
-// Hvert ledd regnes ut med ett fritt innlegg. Det brukes først til å treffe ideelt omlegg.
-// Omlegget justeres bare når innlegget ikke strekker til. Startvalget bestemmer hvilken vei
-// kjeden regnes, og dermed hvilket ledd som får restjusteringen:
+// For hver åpning prøves alle innlegg fra minst til størst (i hele mm). Det som gir best
+// omlegg i leddene som avgjøres der, velges. Slik brukes innlegget først, og omlegget
+// justeres bare når innlegget ikke strekker til. Startvalget bestemmer rekkefølgen
+// åpningene velges i, og dermed hvilket felt som får restjusteringen:
 // - venstre:   fra venstre mot høyre, resten havner i feltet ved høyre hjørne
 // - hoyre:     fra høyre mot venstre, resten havner ved venstre hjørne
-// - midten:    leddet midt på veggen regnes først med likt innlegg på begge sider,
-//              så utover mot hjørnene, resten havner ved hjørnene
-// - apning:N:  som midten, men om midten av åpning N
+// - midten:    det som ligger midt på veggen velges først, så utover mot hjørnene
+// - apning:N:  åpning N velges først, så utover mot hjørnene
 
 import { losFeltFleksibel } from './solver.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from './fagverdier.js';
@@ -45,12 +47,11 @@ export function losVegg(inndata) {
 
   const n = apninger.length;
   const antallLedd = 2 * n + 1;
-  const e = new Array(2 * n).fill(null); // innleggene, e[2j] venstre og e[2j+1] høyre side av åpning j
-  const ledd = new Array(antallLedd).fill(null);
-
-  for (const [m, frie] of rekkefolge(inn.startvalg, apninger, W)) {
-    ledd[m] = losLedd(m, frie, e, apninger, inn);
-  }
+  // Innleggene, e[2j] er venstre og e[2j+1] høyre side av åpning j. De er alltid like.
+  const e = new Array(2 * n).fill(null);
+  velgInnlegg(inn.startvalg, apninger, inn, e);
+  const ledd = [];
+  for (let m = 0; m < antallLedd; m++) ledd.push(regnLedd(m, e, apninger, inn));
 
   // Bygg felt med veggkoordinater
   const felt = [];
@@ -122,33 +123,88 @@ export function losVegg(inndata) {
 
 // ---------- Kjeden ----------
 
-// Gir rekkefølgen leddene regnes i, og hvilke innlegg som er frie i hvert ledd.
-// Et ledd med to frie innlegg (bare midtleddet) får likt innlegg på begge sider.
-function rekkefolge(startvalg, apninger, W) {
+const STEG = 1; // innlegget prøves i hele mm
+
+// Velger innlegget for hver åpning, i den rekkefølgen startvalget sier.
+function velgInnlegg(startvalg, apninger, inn, e) {
   const n = apninger.length;
-  const sist = 2 * n;
-  const venstreVar = (m) => (m > 0 ? m - 1 : null);
-  const hoyreVar = (m) => (m < sist ? m : null);
-  const bare = (...v) => v.filter((x) => x !== null);
+  if (n === 0) return;
+  const kandidater = [];
+  for (let v = inn.innleggMin; v <= inn.innleggMax + SLINGRING; v += STEG) kandidater.push(v);
+  if (kandidater.at(-1) < inn.innleggMax - SLINGRING) kandidater.push(inn.innleggMax);
+  const sett = (j, v) => { e[2 * j] = v; e[2 * j + 1] = v; };
+
+  // Prøv alle innlegg for åpningene i js (én eller to), og behold det som gir lavest
+  // kostnad for leddene i lista. Leddene skal bare avhenge av innlegg som er bestemt.
+  const velg = (js, ledd) => {
+    let beste = null;
+    const prov = (verdier) => {
+      verdier.forEach((v, i) => sett(js[i], v));
+      const kost = ledd.reduce((sum, m) => leggSammen(sum, kostnad(regnLedd(m, e, apninger, inn), inn, m, apninger)), null)
+        ?? nullKost();
+      kost[5] = verdier.reduce((sum, v) => sum + Math.abs(v - inn.innleggStandard), 0);
+      if (!beste || sammenlignKost(kost, beste.kost) < 0) beste = { kost, verdier: [...verdier] };
+    };
+    if (js.length === 1) for (const v of kandidater) prov([v]);
+    else for (const v1 of kandidater) for (const v2 of kandidater) prov([v1, v2]);
+    beste.verdier.forEach((v, i) => sett(js[i], v));
+  };
+  const over = (j) => 2 * j + 1;       // leddet over og under åpning j
+  const side = (j) => 2 * j;           // feltet til venstre for åpning j (j = n: ved høyre hjørne)
+  const mot = { hoyre: (j) => velg([j], [side(j), over(j)]), venstre: (j) => velg([j], [side(j + 1), over(j)]) };
 
   if (startvalg === 'hoyre') {
-    const r = [];
-    for (let m = sist; m >= 0; m--) r.push([m, bare(venstreVar(m))]);
-    return r;
+    for (let j = n - 1; j >= 0; j--) mot.venstre(j);
+    return;
   }
   if (startvalg === 'midten' || String(startvalg).startsWith('apning:')) {
-    const p = startvalg === 'midten'
-      ? leddVed(W / 2, apninger)
+    const m = startvalg === 'midten'
+      ? leddVed(inn.lengde / 2, apninger)
       : 2 * Number(String(startvalg).split(':')[1]) + 1;
-    const r = [[p, bare(venstreVar(p), hoyreVar(p))]];
-    for (let m = p - 1; m >= 0; m--) r.push([m, bare(venstreVar(m))]);
-    for (let m = p + 1; m <= sist; m++) r.push([m, bare(hoyreVar(m))]);
-    return r;
+    let venstreFra; let hoyreFra;
+    if (m % 2 === 1) {
+      // Midt i en åpning: den velges først, ut fra feltet over og under
+      const k = (m - 1) / 2;
+      velg([k], [over(k)]);
+      venstreFra = k - 1; hoyreFra = k + 1;
+    } else {
+      // Midt i et felt mellom to åpninger (eller ved et hjørne): begge sider velges sammen
+      const j = m / 2;
+      const js = [j - 1, j].filter((x) => x >= 0 && x < n);
+      velg(js, [side(j), ...js.map(over)]);
+      venstreFra = j - 2; hoyreFra = j + 1;
+    }
+    for (let j = venstreFra; j >= 0; j--) mot.venstre(j);
+    for (let j = hoyreFra; j < n; j++) mot.hoyre(j);
+    return;
   }
   // venstre (standard)
-  const r = [];
-  for (let m = 0; m <= sist; m++) r.push([m, bare(hoyreVar(m))]);
-  return r;
+  for (let j = 0; j < n; j++) mot.hoyre(j);
+}
+
+// Kostnad for ett ledd, som tall som sammenlignes ett for ett (lavere er bedre):
+// [går ikke opp, spikervarsel, over maks, mm over maks, mm fra ideelt, innlegg fra standard].
+// Leddet over og under en åpning teller dobbelt når det gir to felt.
+function kostnad(svar, inn, m, apninger) {
+  if (svar.tom) return nullKost();
+  let vekt = 1;
+  if (m % 2 === 1) {
+    const a = apninger[(m - 1) / 2];
+    vekt = (a.bunn > SLINGRING ? 1 : 0) + (a.bunn + a.hoyde < inn.hoyde - SLINGRING ? 1 : 0);
+  }
+  if (!svar.ok) return [vekt, 0, 0, 0, 0, 0];
+  const l = svar.valgt;
+  return [0, l.spikring.ok ? 0 : vekt, l.innenforAnbefalt ? 0 : vekt,
+    vekt * Math.max(0, l.omlegg - inn.oMax), vekt * Math.abs(l.omlegg - inn.oIdeal), 0];
+}
+
+const nullKost = () => [0, 0, 0, 0, 0, 0];
+const leggSammen = (a, b) => (a === null ? [...b] : a.map((x, i) => x + b[i]));
+function sammenlignKost(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    if (Math.abs(a[i] - b[i]) > SLINGRING) return a[i] - b[i];
+  }
+  return 0;
 }
 
 // Hvilket ledd ligger ved punktet x?
@@ -185,43 +241,15 @@ function geometri(m, apninger, inn) {
   return { grunn: a.bredde + 2 * b, koeff: -1, start: inn.karmBord, slutt: inn.karmBord };
 }
 
-function losLedd(m, frie, e, apninger, inn) {
+// Regner ut ledd m når innleggene er bestemt. Lengden er da fast.
+function regnLedd(m, e, apninger, inn) {
+  if (m % 2 === 1 && !harOverEllerUnder(apninger[(m - 1) / 2], inn.hoyde)) return { tom: true };
   const geo = geometri(m, apninger, inn);
   const n = apninger.length;
-  const vars = [m > 0 ? m - 1 : null, m < 2 * n ? m : null].filter((v) => v !== null);
-
-  // Fast del av lengden (innlegg som allerede er bestemt)
-  let fast = geo.grunn;
-  for (const v of vars) if (!frie.includes(v)) fast += geo.koeff * e[v];
-
-  // Frie innlegg. To frie er bundet sammen (likt innlegg på begge sider).
-  const faktor = geo.koeff * frie.length;
-  let Lmin = fast; let Lmax = fast; let Lstandard = fast;
-  if (frie.length > 0) {
-    const a = fast + faktor * inn.innleggMin;
-    const b = fast + faktor * inn.innleggMax;
-    Lmin = Math.min(a, b);
-    Lmax = Math.max(a, b);
-    Lstandard = fast + faktor * inn.innleggStandard;
-  }
-
-  // Åpning uten felt over eller under: ingen bord å regne, innlegget settes til standard.
-  if (m % 2 === 1 && !harOverEllerUnder(apninger[(m - 1) / 2], inn.hoyde)) {
-    for (const v of frie) e[v] = inn.innleggStandard;
-    return { tom: true };
-  }
-
-  const svar = losFeltFleksibel({
-    ...inn, Lmin, Lmax, Lstandard, start: geo.start, slutt: geo.slutt,
-  });
-
-  // Regn innlegget tilbake fra lengden som ble valgt
-  const L = svar.ok ? svar.valgt.L : Lstandard;
-  for (const v of frie) {
-    const verdi = frie.length > 0 ? (L - fast) / faktor : inn.innleggStandard;
-    e[v] = Math.min(inn.innleggMax, Math.max(inn.innleggMin, verdi));
-  }
-  return svar;
+  let L = geo.grunn;
+  if (m > 0) L += geo.koeff * e[m - 1];
+  if (m < 2 * n) L += geo.koeff * e[m];
+  return losFeltFleksibel({ ...inn, Lmin: L, Lmax: L, Lstandard: L, start: geo.start, slutt: geo.slutt });
 }
 
 function harOverEllerUnder(a, H) {

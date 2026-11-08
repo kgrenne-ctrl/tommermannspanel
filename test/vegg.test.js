@@ -4,37 +4,33 @@
 // HÅNDREGNING – garasjevegg
 // ===================================================================================
 // Vegg 6000 × 2400 mm. Bord 148/148. Påbord i hjørnene og inn på karmen (standard).
-// Innlegg på karm 10–20 mm, standard 15. Omlegg 20–25 mm, ideelt 25. Startvalg: venstre.
+// Innlegg på karm 10–20 mm, standard 15, SAMME på begge sider av en åpning.
+// Omlegg 20–25 mm, ideelt 25. Startvalg: venstre.
 //   Vindu 1: 600 fra hjørnet, 1000 bredt, 600 høyt, 1200 over bakken
 //   Port:   2000 fra hjørnet, 2400 bred, 2100 høy, på bakken
 //   Vindu 2: 4700 fra hjørnet, 1000 bredt, 600 høyt, 1200 over bakken
 //
-// Med påbord i begge ender (O–O): L = k·148 + k·g + 148. Ideelt (o = 25, g = 98): L = 246·k + 148.
+// Med påbord i begge ender (O–O): L = k·148 + k·g + 148, altså g = (L − 148·k − 148)/k.
 //
-// 1) Venstre hjørne – Vindu 1. Hjørnet er fast, innlegget e0 på vindu 1 er fritt.
-//    L = 600 + e0, altså 610–620.
-//    k = 2: ideelt L = 640. For langt, så innlegget går til maks: e0 = 20, L = 620.
-//           g = (620 − 296 − 148)/2 = 88, o = (148 − 88)/2 = 30  (varsel over 25)
-//    k = 1: g = 620 − 148 − 148 = 324, bredere enn bordet, umulig.
-//    Første underbord: (148 + 88)/2 = 118. Underbord: 118, 354. Påbord: 0, 236, 472.
+// 1) Vindu 1, innlegg e. Avgjør feltet til venstre og feltet over/under (teller to felt).
+//    Venstre felt:  L = 600 + e.            k = 2.
+//    Over/under:    L = 1000 + 2·148 − 2e.  k = 5.
+//    e = 10: venstre L = 610, g = (610 − 296 − 148)/2 = 83,   o = 32,5
+//            over    L = 1276, g = (1276 − 740 − 148)/5 = 77,6, o = 35,2
+//            mm over 25: 7,5 + 2 × 10,2 = 27,9
+//    e = 20: venstre L = 620, g = 88,   o = 30
+//            over    L = 1256, g = 73,6, o = 37,2
+//            mm over 25: 5 + 2 × 12,2 = 29,4
+//    Hver mm mer innlegg gir 0,25 mm mindre omlegg til venstre, men 0,2 mm mer over og under
+//    (som teller dobbelt). e = 10 er best. Feltet over starter på 600 + 10 − 148 = 462.
 //
-// 2) Over og under vindu 1. e0 = 20 er nå fast, e1 er fritt.
-//    Feltet går fra ytterkant av sidebordet til venstre til ytterkant av sidebordet til høyre:
-//    L = 1000 + 2·148 − e0 − e1 = 1276 − e1, altså 1256–1266.
-//    k = 5: ideelt L = 1378. For langt, så e1 = 10 og L = 1266.
-//           g = (1266 − 740 − 148)/5 = 75,6, o = 36,2  (varsel)
-//    k = 4: g = (1266 − 592 − 148)/4 = 131,5, o = 8,25, for lite.
-//    Feltet starter på 600 + 20 − 148 = 472, samme sted som siste påbord i felt 1.
-//    Det er det samme bordet, så rytmen fortsetter.
-//
-// 3) Vindu 1 – Port. e1 = 10 fast, e2 fritt. L = (2000 − 1600) + 10 + e2 = 420–430.
-//    k = 1: g = L − 296 = 124–134, o under 12. For lite.
-//    k = 2: g = (L − 444)/2 er negativ. Får ikke plass.
-//    Feltet går ikke opp. Appen sier fra, og e2 settes til standard 15.
-//
-// 4) Over port. e2 = 15 fast, e3 fritt. L = 2400 + 296 − 15 − e3 = 2661–2671.
-//    k = 10: ideelt L = 2608. For kort, så e3 = 20 og L = 2661.
-//            g = (2661 − 1480 − 148)/10 = 103,3, o = 22,35  (innenfor 20–25)
+// 2) Port, innlegg e. Avgjør feltet mellom vindu 1 og porten, og feltet over porten.
+//    Mellom: L = (2000 − 1600) + 10 + e = 420–430. k = 1 gir g = 124–134 og o under 12.
+//            k = 2 gir negativ g. Feltet går ikke opp, uansett innlegg.
+//    Over porten: L = 2400 + 296 − 2e = 2656–2676. k = 10: ideelt L = 2608.
+//            e = 20: L = 2656, g = (2656 − 1480 − 148)/10 = 102,8, o = 22,6 (nærmest 25)
+//            e = 10: L = 2676, g = 104,8, o = 21,6
+//    e = 20 er best.
 // ===================================================================================
 
 import { test } from 'node:test';
@@ -56,29 +52,28 @@ const GARASJE = {
   ],
 };
 
-test('Garasje: felt 1, innlegget går til maks før omlegget justeres', () => {
+test('Garasje: vindu 1 får innlegg 10 på begge sider (punkt 1 i håndregningen)', () => {
   const r = losVegg(GARASJE);
+  assert.deepEqual(r.apninger[0].innlegg, { venstre: 10, hoyre: 10 });
   const f = felt(r, 'Venstre hjørne – Vindu 1');
-  naer(r.apninger[0].innlegg.venstre, 20);
-  naer(f.losning.L, 620);
-  naer(f.losning.klaring, 88);
-  naer(f.losning.omlegg, 30);
-  assert.deepEqual(starter(f.underliggere), [118, 354]);
-  assert.deepEqual(starter(f.overliggere), [0, 236, 472]);
+  naer(f.losning.L, 610);
+  naer(f.losning.klaring, 83);
+  naer(f.losning.omlegg, 32.5);
+  // Første underbord: (148 + 83)/2 = 115,5, så 115,5 + 231 = 346,5. Påbord: 0, 231, 462.
+  assert.deepEqual(starter(f.underliggere), [116, 347]);
+  assert.deepEqual(starter(f.overliggere), [0, 231, 462]);
 });
 
 test('Garasje: over og under vindu 1 fortsetter rytmen fra sidebordet', () => {
   const r = losVegg(GARASJE);
   const over = felt(r, 'Over vindu 1');
   const under = felt(r, 'Under vindu 1');
-  naer(r.apninger[0].innlegg.hoyre, 10);
-  naer(over.losning.L, 1266);
-  naer(over.losning.omlegg, 36.2);
-  naer(over.x0, 472);
+  naer(over.losning.L, 1276);
+  naer(over.losning.omlegg, 35.2);
+  naer(over.x0, 462); // samme sted som siste påbord i feltet til venstre
   // Sidebordene er tatt ut: 5 underbord og 4 påbord mellom dem
   assert.equal(over.underliggere.length, 5);
   assert.equal(over.overliggere.length, 4);
-  // Over og under har samme deling, bare ulik høyde
   assert.deepEqual(starter(over.underliggere), starter(under.underliggere));
   assert.equal(over.y0, 1800);
   assert.equal(under.y1, 1200);
@@ -91,15 +86,14 @@ test('Garasje: feltet mellom vindu 1 og porten går ikke opp, og appen sier det'
   assert.equal(f.ok, false);
   assert.match(f.melding, /Ingen inndeling/);
   assert.ok(r.varsler.some((v) => v.felt === 'Vindu 1 – Port' && v.alvorlig));
-  naer(r.apninger[1].innlegg.venstre, 15); // standard når feltet ikke går opp
 });
 
-test('Garasje: over porten treffer innenfor 20–25 mm', () => {
+test('Garasje: porten får innlegg 20, og over porten blir 22,6 mm (punkt 2)', () => {
   const r = losVegg(GARASJE);
+  assert.deepEqual(r.apninger[1].innlegg, { venstre: 20, hoyre: 20 });
   const f = felt(r, 'Over port');
-  naer(r.apninger[1].innlegg.hoyre, 20);
-  naer(f.losning.L, 2661);
-  naer(f.losning.omlegg, 22.35);
+  naer(f.losning.L, 2656);
+  naer(f.losning.omlegg, 22.6);
   assert.equal(felt(r, 'Under port'), undefined); // porten står på bakken
 });
 
@@ -135,16 +129,24 @@ test('Vegg uten åpninger regnes som ett felt', () => {
   assert.deepEqual(starter(r.felt[0].underliggere), starter(enkelt.underliggere));
 });
 
-test('Startvalg om midten av et vindu gir likt innlegg på begge sider av det', () => {
-  const r = losVegg({ ...GARASJE, startvalg: 'apning:0' });
-  naer(r.apninger[0].innlegg.venstre, r.apninger[0].innlegg.hoyre);
+test('Innlegget er alltid likt på begge sider av hver åpning', () => {
+  for (const startvalg of ['venstre', 'hoyre', 'midten', 'apning:0', 'apning:2']) {
+    for (const a of losVegg({ ...GARASJE, startvalg }).apninger) {
+      assert.equal(a.innlegg.venstre, a.innlegg.hoyre, `${a.navn} med start ${startvalg}`);
+    }
+  }
 });
 
 test('Startvalg flytter justeringen', () => {
-  // Fra høyre regnes høyre hjørne først, og feltet der får fritt innlegg.
-  const v = losVegg({ ...GARASJE, startvalg: 'venstre' });
-  const h = losVegg({ ...GARASJE, startvalg: 'hoyre' });
-  assert.notDeepEqual(v.apninger.map((a) => a.innlegg), h.apninger.map((a) => a.innlegg));
+  // To vinduer i en 5000 mm vegg. Fra venstre velges vindu 1 først, fra høyre vindu 2 først.
+  const vegg = { lengde: 5000, hoyde: 2400, bu: 148, bo: 148, apninger: [
+    { type: 'vindu', x: 600, bredde: 1000, hoyde: 1000, bunn: 900 },
+    { type: 'vindu', x: 2210, bredde: 1000, hoyde: 1000, bunn: 900 },
+  ] };
+  const v = losVegg({ ...vegg, startvalg: 'venstre' });
+  const h = losVegg({ ...vegg, startvalg: 'hoyre' });
+  assert.deepEqual(v.apninger.map((a) => a.innlegg.venstre), [10, 20]);
+  assert.deepEqual(h.apninger.map((a) => a.innlegg.venstre), [20, 10]);
 });
 
 test('Alle felt henger sammen: sidebordene er felles, og innlegget holder seg innenfor 10–20', () => {

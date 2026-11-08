@@ -4,7 +4,8 @@
 //
 //  1. Antall felt: ett mellom hver åpning og hjørne, pluss ett over og ett under hver åpning
 //     der det er plass.
-//  2. Innlegget på karmen er alltid 10–20 mm, og bordet ved karmen slutter akkurat der.
+//  2. Innlegget på karmen er alltid 10–20 mm og likt på begge sider, og bordet ved karmen
+//     slutter akkurat der.
 //  3. I hver høyde dekker bordene hele veggen fra hjørne til hjørne. Eneste åpning er selve
 //     vinduet eller døra innenfor karmen.
 //  4. To underbord ligger aldri oppå hverandre, og to påbord ligger aldri oppå hverandre.
@@ -75,8 +76,9 @@ test('Tilfeldige vegger: felt, innlegg, dekning og overlapp stemmer', () => {
       sum + (a.bunn + a.hoyde < r.hoyde ? 1 : 0) + (a.bunn > 0 ? 1 : 0), 0);
     assert.equal(r.felt.length, forventet, `${hva}: antall felt`);
 
-    // 2. Innlegg 10–20 mm
+    // 2. Innlegg 10–20 mm, og likt på begge sider av hver åpning
     for (const a of r.apninger) {
+      assert.equal(a.innlegg.venstre, a.innlegg.hoyre, `${hva}: ulikt innlegg i ${a.navn}`);
       for (const e of [a.innlegg.venstre, a.innlegg.hoyre]) {
         assert.ok(e >= 10 - E && e <= 20 + E, `${hva}: innlegg ${e}`);
       }

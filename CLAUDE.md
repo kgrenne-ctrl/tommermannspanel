@@ -49,6 +49,7 @@ Alle skal kunne endres i innstillinger.
 - **Åpninger (avklart med Kenny 2026-11-08, PLAN.md punkt 4):** ingen belistning. Underbordet
   eller påbordet går 10–20 mm inn på karmen (innlegg, standard 15 mm) og dekker fugen.
   Feltlengde = mål fra karmkant + innlegg. Brukeren velger om underbord eller påbord går inn.
+  Innlegget er likt på begge sider av en åpning (Kenny 2026-11-08).
   Rekkefølge for å få delingen til å gå opp: juster innlegget innenfor 10–20 mm først, juster
   omlegget (20–25 mm) bare når innlegget ikke strekker til. Startvalget (venstre, høyre,
   symmetrisk) avgjør hvor justeringen havner. Påbord inn på karm gir kloss i kapplista med
@@ -78,8 +79,12 @@ Alle skal kunne endres i innstillinger.
 - Sidebordet ved en åpning går i full høyde forbi åpningen (avklart 2026-11-08). Feltene over og
   under åpningen ligger mellom de to sidebordene og fortsetter rytmen, så de deler innlegg med
   feltene ved siden av.
-- Hvert ledd i kjeden har ett fritt innlegg. Startvalget bestemmer rekkefølgen og dermed hvor
-  restjusteringen havner (venstre: ved høyre hjørne, høyre: ved venstre, midten/åpning: ved hjørnene).
+- Hver åpning har ett innlegg (likt på begge sider). Det påvirker feltet til venstre, feltet over
+  og under, og feltet til høyre. Innlegget prøves i hele mm fra 10 til 20, og det som gir best
+  omlegg i feltene som avgjøres der, velges. Startvalget bestemmer rekkefølgen åpningene velges i,
+  og dermed hvor restjusteringen havner.
+- «Finn bedre oppsett» (`foreslaVegg`) prøver karm, hjørner, startvalg og standardbredder.
+  Omlegg innenfor 20–25 mm regnes som like bra.
 - Påbord er standard både i hjørnene og inn på karmen (Kenny 2026-11-08).
 - `solver.js` har `losFeltFleksibel` for felt med slingringsmonn i lengden. `losFelt` er det
   samme med fast lengde.

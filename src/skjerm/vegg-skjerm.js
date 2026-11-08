@@ -253,7 +253,7 @@ function visVegg(r) {
     ? `<h3>Klosser</h3><ul class="liste">${r.klosser.map((k) => `<li>${k.antall} stk. ${mm(k.lengde)} mm, ${k.tekst.charAt(0).toLowerCase()}${k.tekst.slice(1)}</li>`).join('')}</ul>`
     : '';
 
-  const innlegg = r.apninger.map((a) => `<tr><td>${a.navn}</td><td>${mm(a.innlegg.venstre, 1)}</td><td>${mm(a.innlegg.hoyre, 1)}</td></tr>`).join('');
+  const innlegg = r.apninger.map((a) => `<tr><td>${a.navn}</td><td>${mm(a.innlegg.venstre, 1)}</td></tr>`).join('');
 
   return `
     <h2>Resultat</h2>
@@ -290,7 +290,8 @@ function visVegg(r) {
     ${klosser}
 
     ${r.apninger.length ? `<h3>Innlegg på karm</h3>
-    <table class="maltabell"><thead><tr><th>Åpning</th><th>Venstre (mm)</th><th>Høyre (mm)</th></tr></thead><tbody>${innlegg}</tbody></table>` : ''}
+    <p class="hjelp">Bordet går like langt inn på karmen på begge sider.</p>
+    <table class="maltabell"><thead><tr><th>Åpning</th><th>Innlegg (mm)</th></tr></thead><tbody>${innlegg}</tbody></table>` : ''}
 
     <h3>Felt for felt</h3>
     <p class="hjelp">Løpende mål fra venstre hjørne. Trykk på et felt for å se utdelingsmålene.</p>
