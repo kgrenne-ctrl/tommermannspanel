@@ -283,8 +283,8 @@ function visVegg(r) {
     <label class="felt"><span>Snitt i høyde</span>
       <select id="v-snitt">${snittValg.map((v) => `<option ${v.etikett === snitt.etikett ? 'selected' : ''}>${v.etikett}</option>`).join('')}</select></label>
     <div class="snitt-boks">${tegnSnitt(r, snitt.hoyde)}</div>
-    <p class="hjelp">Sett ovenfra, utsiden opp. Skyv sidelengs for å se hele veggen.
-      Tallene over karmen er innlegget i mm. Oransje stiplet = kloss eller underlag.
+    <p class="hjelp">Sett ovenfra, veggen øverst og utsiden ned. Skyv sidelengs for å se hele veggen.
+      Tallene under kledningen ved karmen er innlegget i mm. Oransje stiplet = kloss eller underlag.
       Bordtykkelsen er tegnet tykkere enn den er.</p>
 
     ${klosser}

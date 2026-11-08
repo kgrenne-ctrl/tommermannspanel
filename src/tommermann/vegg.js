@@ -5,6 +5,7 @@
 // - Ingen belistning. Bordet ved siden av en åpning går 10–20 mm inn på karmen (innlegget)
 //   og dekker fugen. Det bordet står i full høyde forbi åpningen.
 // - Feltene over og under en åpning ligger mellom de to sidebordene og fortsetter rytmen.
+//   De får samme deling og regnes som ett felt med to høyder («Over og under vindu 1»).
 //
 // - Innlegget er det samme på begge sider av en åpning (Kenny 2026-11-08).
 //
@@ -140,7 +141,7 @@ function velgInnlegg(startvalg, apninger, inn, e) {
     let beste = null;
     const prov = (verdier) => {
       verdier.forEach((v, i) => sett(js[i], v));
-      const kost = ledd.reduce((sum, m) => leggSammen(sum, kostnad(regnLedd(m, e, apninger, inn), inn, m, apninger)), null)
+      const kost = ledd.reduce((sum, m) => leggSammen(sum, kostnad(regnLedd(m, e, apninger, inn), inn)), null)
         ?? nullKost();
       kost[5] = verdier.reduce((sum, v) => sum + Math.abs(v - inn.innleggStandard), 0);
       if (!beste || sammenlignKost(kost, beste.kost) < 0) beste = { kost, verdier: [...verdier] };
@@ -184,18 +185,13 @@ function velgInnlegg(startvalg, apninger, inn, e) {
 
 // Kostnad for ett ledd, som tall som sammenlignes ett for ett (lavere er bedre):
 // [går ikke opp, spikervarsel, over maks, mm over maks, mm fra ideelt, innlegg fra standard].
-// Leddet over og under en åpning teller dobbelt når det gir to felt.
-function kostnad(svar, inn, m, apninger) {
+// Over og under en åpning er ett felt (samme deling), så det teller én gang.
+function kostnad(svar, inn) {
   if (svar.tom) return nullKost();
-  let vekt = 1;
-  if (m % 2 === 1) {
-    const a = apninger[(m - 1) / 2];
-    vekt = (a.bunn > SLINGRING ? 1 : 0) + (a.bunn + a.hoyde < inn.hoyde - SLINGRING ? 1 : 0);
-  }
-  if (!svar.ok) return [vekt, 0, 0, 0, 0, 0];
+  if (!svar.ok) return [1, 0, 0, 0, 0, 0];
   const l = svar.valgt;
-  return [0, l.spikring.ok ? 0 : vekt, l.innenforAnbefalt ? 0 : vekt,
-    vekt * Math.max(0, l.omlegg - inn.oMax), vekt * Math.abs(l.omlegg - inn.oIdeal), 0];
+  return [0, l.spikring.ok ? 0 : 1, l.innenforAnbefalt ? 0 : 1,
+    Math.max(0, l.omlegg - inn.oMax), Math.abs(l.omlegg - inn.oIdeal), 0];
 }
 
 const nullKost = () => [0, 0, 0, 0, 0, 0];
@@ -269,7 +265,7 @@ function lagFelt(m, svar, e, apninger, inn) {
     const x0 = venstre ? venstre.x + venstre.bredde - e[m - 1] : 0;
     const navn = `${venstre ? venstre.navn : 'Venstre hjørne'} – ${hoyre ? hoyre.navn : 'Høyre hjørne'}`;
     return [byggFelt({
-      type: 'side', navn, x0, x1: hoyre ? hoyre.x + e[m] : inn.lengde, y0: 0, y1: inn.hoyde, svar,
+      type: 'side', navn, x0, x1: hoyre ? hoyre.x + e[m] : inn.lengde, deler: [[0, inn.hoyde]], svar,
       innlegg: { venstre: venstre ? e[m - 1] : null, hoyre: hoyre ? e[m] : null },
       fjernDelte: false, karmBord: inn.karmBord,
     })];
@@ -281,21 +277,19 @@ function lagFelt(m, svar, e, apninger, inn) {
   const x0 = a.x + e[m - 1] - b;
   const felles = { x0, x1: a.x + a.bredde - e[m] + b, svar, innlegg: { venstre: e[m - 1], hoyre: e[m] }, fjernDelte: true,
     karmBord: inn.karmBord, apning: a.navn };
-  const ut = [];
-  if (a.bunn + a.hoyde < inn.hoyde - SLINGRING) {
-    ut.push(byggFelt({ ...felles, type: 'over', navn: `Over ${a.navn.toLowerCase()}`,
-      y0: a.bunn + a.hoyde, y1: inn.hoyde }));
-  }
-  if (a.bunn > SLINGRING) {
-    ut.push(byggFelt({ ...felles, type: 'under', navn: `Under ${a.navn.toLowerCase()}`,
-      y0: 0, y1: a.bunn }));
-  }
-  return ut;
+  // Feltet over og feltet under åpningen har nøyaktig samme deling (samme bredde, samme
+  // sidebord). Det er ett felt med to høyder.
+  const deler = [];
+  if (a.bunn > SLINGRING) deler.push([0, a.bunn]);
+  if (a.bunn + a.hoyde < inn.hoyde - SLINGRING) deler.push([a.bunn + a.hoyde, inn.hoyde]);
+  if (deler.length === 0) return [];
+  const sted = deler.length === 2 ? 'Over og under' : (a.bunn > SLINGRING ? 'Under' : 'Over');
+  return [byggFelt({ ...felles, type: 'overunder', navn: `${sted} ${a.navn.toLowerCase()}`, deler })];
 }
 
-function byggFelt({ type, navn, x0, x1, y0, y1, svar, innlegg, fjernDelte, karmBord, apning }) {
+function byggFelt({ type, navn, x0, x1, deler, svar, innlegg, fjernDelte, karmBord, apning }) {
   if (!svar.ok) {
-    return { ok: false, type, navn, x0, x1, y0, y1, innlegg, apning,
+    return { ok: false, type, navn, x0, x1, deler, innlegg, apning,
       melding: svar.melding ?? 'Feltet går ikke opp.' };
   }
   const l = svar.valgt;
@@ -317,11 +311,16 @@ function byggFelt({ type, navn, x0, x1, y0, y1, svar, innlegg, fjernDelte, karmB
   }
 
   return {
-    ok: true, type, navn, apning, x0, x1: x0 + l.L, y0, y1, innlegg,
+    ok: true, type, navn, apning, x0, x1: x0 + l.L, deler, innlegg,
     losning: l,
     underliggere,
     overliggere,
   };
+}
+
+// Ligger feltet i høyden y? (Feltet over og under en åpning har to høydeområder.)
+export function feltIHoyde(f, y) {
+  return f.deler.some(([y0, y1]) => y >= y0 && y <= y1);
 }
 
 // ---------- Navn og kontroll ----------

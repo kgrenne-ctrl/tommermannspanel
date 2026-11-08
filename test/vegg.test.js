@@ -12,15 +12,16 @@
 //
 // Med påbord i begge ender (O–O): L = k·148 + k·g + 148, altså g = (L − 148·k − 148)/k.
 //
-// 1) Vindu 1, innlegg e. Avgjør feltet til venstre og feltet over/under (teller to felt).
+// 1) Vindu 1, innlegg e. Avgjør feltet til venstre og feltet over og under vinduet.
+//    (Over og under har samme deling og er ett felt.)
 //    Venstre felt:  L = 600 + e.            k = 2.
 //    Over/under:    L = 1000 + 2·148 − 2e.  k = 5.
 //    e = 10: venstre L = 610, g = (610 − 296 − 148)/2 = 83,   o = 32,5  (over 30)
 //            over    L = 1276, g = (1276 − 740 − 148)/5 = 77,6, o = 35,2  (over 30)
-//            felt over 30: 1 + 2 = 3
+//            felt over 30: 1 + 1 = 2
 //    e = 20: venstre L = 620, g = 88,   o = 30,0  (akkurat innenfor)
 //            over    L = 1256, g = 73,6, o = 37,2  (over 30)
-//            felt over 30: 0 + 2 = 2
+//            felt over 30: 0 + 1 = 1
 //    Færrest felt over 30 veier tyngst, så e = 20. (Venstre felt er under 30 bare ved e = 20.)
 //    Feltet over starter på 600 + 20 − 148 = 472.
 //
@@ -65,19 +66,19 @@ test('Garasje: vindu 1 får innlegg 20 på begge sider (punkt 1 i håndregningen
   assert.deepEqual(starter(f.overliggere), [0, 236, 472]);
 });
 
-test('Garasje: over og under vindu 1 fortsetter rytmen fra sidebordet', () => {
+test('Garasje: over og under vindu 1 er ett felt som fortsetter rytmen fra sidebordet', () => {
   const r = losVegg(GARASJE);
-  const over = felt(r, 'Over vindu 1');
-  const under = felt(r, 'Under vindu 1');
-  naer(over.losning.L, 1256);
-  naer(over.losning.omlegg, 37.2);
-  naer(over.x0, 472); // samme sted som siste påbord i feltet til venstre
+  const f = felt(r, 'Over og under vindu 1');
+  naer(f.losning.L, 1256);
+  naer(f.losning.omlegg, 37.2);
+  naer(f.x0, 472); // samme sted som siste påbord i feltet til venstre
   // Sidebordene er tatt ut: 5 underbord og 4 påbord mellom dem
-  assert.equal(over.underliggere.length, 5);
-  assert.equal(over.overliggere.length, 4);
-  assert.deepEqual(starter(over.underliggere), starter(under.underliggere));
-  assert.equal(over.y0, 1800);
-  assert.equal(under.y1, 1200);
+  assert.equal(f.underliggere.length, 5);
+  assert.equal(f.overliggere.length, 4);
+  // To høyder: under vinduet (0–1200) og over vinduet (1800–2400)
+  assert.deepEqual(f.deler, [[0, 1200], [1800, 2400]]);
+  assert.equal(felt(r, 'Over vindu 1'), undefined);
+  assert.equal(felt(r, 'Under vindu 1'), undefined);
 });
 
 test('Garasje: feltet mellom vindu 1 og porten går ikke opp, og appen sier det', () => {
@@ -95,7 +96,8 @@ test('Garasje: porten får innlegg 20, og over porten blir 22,6 mm (punkt 2)', (
   const f = felt(r, 'Over port');
   naer(f.losning.L, 2656);
   naer(f.losning.omlegg, 22.6);
-  assert.equal(felt(r, 'Under port'), undefined); // porten står på bakken
+  assert.equal(felt(r, 'Over og under port'), undefined); // porten står på bakken
+  assert.deepEqual(f.deler, [[2100, 2400]]);
 });
 
 test('Garasje: kloss bak påbordet på hver side av hver åpning, lengde = åpningens høyde', () => {
@@ -146,8 +148,8 @@ test('Startvalg flytter justeringen', () => {
   ] };
   const v = losVegg({ ...vegg, startvalg: 'venstre' });
   const h = losVegg({ ...vegg, startvalg: 'hoyre' });
-  assert.deepEqual(v.apninger.map((a) => a.innlegg.venstre), [20, 10]);
-  assert.deepEqual(h.apninger.map((a) => a.innlegg.venstre), [10, 10]);
+  assert.deepEqual(v.apninger.map((a) => a.innlegg.venstre), [20, 20]);
+  assert.deepEqual(h.apninger.map((a) => a.innlegg.venstre), [20, 10]);
 });
 
 test('Alle felt henger sammen: sidebordene er felles, og innlegget holder seg innenfor 10–20', () => {
@@ -164,7 +166,7 @@ test('Alle felt henger sammen: sidebordene er felles, og innlegget holder seg in
         if (venstreFelt.ok) naer(venstreFelt.x1, a.x + a.innlegg.venstre);
         naer(hoyreFelt.x0, a.x + a.bredde - a.innlegg.hoyre);
         // Over-feltet starter og slutter på ytterkanten av sidebordene (bu = bo = 148 her)
-        const over = r.felt.find((f) => f.apning === a.navn && f.type === 'over');
+        const over = r.felt.find((f) => f.apning === a.navn && f.type === 'overunder');
         if (over && over.ok) {
           naer(over.x0, a.x + a.innlegg.venstre - 148);
           naer(over.x1, a.x + a.bredde - a.innlegg.hoyre + 148);

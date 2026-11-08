@@ -88,7 +88,8 @@ Alle skal kunne endres i innstillinger.
 - `src/tommermann/vegg.js` deler veggen i felt og regner dem som en kjede fra hjørne til hjørne.
 - Sidebordet ved en åpning går i full høyde forbi åpningen (avklart 2026-11-08). Feltene over og
   under åpningen ligger mellom de to sidebordene og fortsetter rytmen, så de deler innlegg med
-  feltene ved siden av.
+  feltene ved siden av. Over og under har samme deling og er ETT felt med to høyder
+  (`deler: [[y0, y1], ...]`), kalt «Over og under vindu 1» (Kenny 2026-11-08).
 - Hver åpning har ett innlegg (likt på begge sider). Det påvirker feltet til venstre, feltet over
   og under, og feltet til høyre. Innlegget prøves i hele mm fra 10 til 20, og det som gir best
   omlegg i feltene som avgjøres der, velges. Startvalget bestemmer rekkefølgen åpningene velges i,

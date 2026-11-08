@@ -49,8 +49,9 @@ test('Veggtegningen har åpningene og markerer felt som ikke går opp', async ()
   assert.equal(tell(svg, 'data-feil='), 1); // feltet mellom vinduet og porten
   const feilFelt = r.felt.find((f) => !f.ok);
   assert.ok(feilFelt.x1 - feilFelt.x0 > 400, 'feltet som ikke går opp skal ha bredde i tegningen');
+  // Hvert bord tegnes én gang per høyde feltet har (over og under en åpning = to høyder)
   const antallBord = r.felt.filter((f) => f.ok)
-    .reduce((sum, f) => sum + f.underliggere.length + f.overliggere.length, 0);
+    .reduce((sum, f) => sum + (f.underliggere.length + f.overliggere.length) * f.deler.length, 0);
   assert.equal(tell(svg, 'data-bord='), antallBord);
 });
 
@@ -69,7 +70,7 @@ test('Horisontalsnitt gjennom vinduet viser karm, sidefelt og kloss bak påborde
   const over = tegnSnitt(r, 2200);
   assert.equal(tell(over, 'data-karm='), 0);
   assert.equal(tell(over, 'data-kloss='), 0);
-  const overFelt = r.felt.find((f) => f.type === 'over');
+  const overFelt = r.felt.find((f) => f.type === 'overunder');
   assert.equal(tell(over, 'data-bord='), antallSide + overFelt.underliggere.length + overFelt.overliggere.length);
 });
 

@@ -101,10 +101,13 @@ export function tegnVegg(vegg, snittHoyde = null) {
     deler.push(`<rect x="${a.x + karmbredde}" y="${y(a.bunn + a.hoyde) + karmbredde}" width="${Math.max(a.bredde - 2 * karmbredde, 0)}" height="${Math.max(a.hoyde - 2 * karmbredde, 0)}" fill="var(--glass)" stroke="var(--tekst-gra)" stroke-width="${strek}"/>`);
   }
 
+  // Et felt kan ha flere høyder (feltet over og under en åpning er ett felt med to deler)
   for (const f of felt) {
     if (!f.ok) {
       const til = f.x1 ?? f.x0;
-      deler.push(`<rect data-feil="ja" x="${f.x0}" y="${y(f.y1)}" width="${Math.max(til - f.x0, 0)}" height="${f.y1 - f.y0}" fill="var(--feil-flate)" stroke="var(--feil-tekst)" stroke-width="${strek * 2}" stroke-dasharray="${strek * 6} ${strek * 4}"/>`);
+      for (const [y0, y1] of f.deler) {
+        deler.push(`<rect data-feil="ja" x="${f.x0}" y="${y(y1)}" width="${Math.max(til - f.x0, 0)}" height="${y1 - y0}" fill="var(--feil-flate)" stroke="var(--feil-tekst)" stroke-width="${strek * 2}" stroke-dasharray="${strek * 6} ${strek * 4}"/>`);
+      }
     }
   }
   // Alle underbord først, så alle påbord. Ellers kan et underbord i feltet over et vindu
@@ -112,7 +115,9 @@ export function tegnVegg(vegg, snittHoyde = null) {
   for (const [type, fyll] of [['u', 'var(--underligger)'], ['o', 'var(--overligger)']]) {
     for (const f of felt.filter((x) => x.ok)) {
       for (const b of type === 'u' ? f.underliggere : f.overliggere) {
-        deler.push(`<rect data-bord="${type}" x="${b.fraEksakt}" y="${y(f.y1)}" width="${b.tilEksakt - b.fraEksakt}" height="${f.y1 - f.y0}" fill="${fyll}" stroke="var(--bord-kant)" stroke-width="${strek}"/>`);
+        for (const [y0, y1] of f.deler) {
+          deler.push(`<rect data-bord="${type}" x="${b.fraEksakt}" y="${y(y1)}" width="${b.tilEksakt - b.fraEksakt}" height="${y1 - y0}" fill="${fyll}" stroke="var(--bord-kant)" stroke-width="${strek}"/>`);
+        }
       }
     }
   }
@@ -121,13 +126,14 @@ export function tegnVegg(vegg, snittHoyde = null) {
     deler.push(`<text x="${a.x + a.bredde / 2}" y="${y(a.bunn + a.hoyde / 2) + skrift * 0.35}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)">${a.navn}</text>`);
   }
 
-  // Nummer på hvert felt (samme nummer som i lista under tegningen). Sirkelen krymper i
-  // lave felt, for eksempel over en dør, så den holder seg innenfor feltet.
+  // Nummer på hvert felt (samme nummer som i lista under tegningen), i den største delen
+  // av feltet. Sirkelen krymper i lave felt, for eksempel over en dør, så den får plass.
   felt.forEach((f, i) => {
     const x1 = f.x1 ?? f.x0;
+    const [y0, y1] = f.deler.reduce((a, b) => (b[1] - b[0] > a[1] - a[0] ? b : a));
     const cx = (f.x0 + x1) / 2;
-    const cy = y((f.y0 + f.y1) / 2);
-    const r = Math.min(skrift * 0.75, ((f.y1 - f.y0) / 2) * 0.9, ((x1 - f.x0) / 2) * 0.9);
+    const cy = y((y0 + y1) / 2);
+    const r = Math.min(skrift * 0.75, ((y1 - y0) / 2) * 0.9, ((x1 - f.x0) / 2) * 0.9);
     const ramme = f.ok ? 'var(--bakoy-bla)' : 'var(--feil-tekst)';
     deler.push(`<g data-feltnr="${i + 1}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--hvit)" stroke="${ramme}" stroke-width="${strek * 2}"/>`
       + `<text x="${cx}" y="${cy + r * 0.42}" font-size="${r * 1.2}" font-weight="700" text-anchor="middle" fill="${ramme}">${i + 1}</text></g>`);
@@ -154,7 +160,8 @@ export function tegnVegg(vegg, snittHoyde = null) {
     + '</svg>';
 }
 
-// Horisontalsnitt A–A i høyden snittHoyde, sett ovenfra. Utsiden er opp, veggen nederst.
+// Horisontalsnitt A–A i høyden snittHoyde, sett ovenfra. Veggen og karmen øverst,
+// kledningen nederst (utsiden ned), slik plantegninger vanligvis er.
 // Underbordene ligger inn mot veggen, påbordene utenpå. Bordtykkelsen er overdrevet (40 mm)
 // så den synes, men alle mål langs veggen er i riktig skala.
 // Tegningen er bred (målestokk ca. 1:8 på skjermen) og ligger i en boks man kan skyve sidelengs.
@@ -164,12 +171,13 @@ export function tegnSnitt(vegg, snittHoyde) {
   const skrift = 100;
   const strek = 3;
   const kant = 150;
-  const yO = skrift * 2;         // påbord (ytterst)
-  const yU = yO + t;             // underbord
-  const yVegg = yU + t;          // lekt/vegg
-  const karmTopp = karmBord === 'O' ? yU : yVegg; // bordet som går inn på karmen ligger oppå den
-  const karmBunn = yVegg + 120;
-  const yMal = karmBunn + skrift * 1.5;
+  const karmTopp = skrift * 1.6; // karmen går inn i veggen (opp i tegningen)
+  const yVegg = karmTopp + 120;  // utsiden av lekt/vegg
+  const yU = yVegg;              // underbord rett utenpå veggen
+  const yO = yU + t;             // påbord ytterst (nederst i tegningen)
+  // Bordet som går inn på karmen ligger rett utenpå den
+  const karmBunn = karmBord === 'O' ? yO : yU;
+  const yMal = yO + t + skrift * 2;
   const hoyde = yMal + skrift * 1.6;
   const pxPerMm = 0.12;
 
@@ -181,14 +189,14 @@ export function tegnSnitt(vegg, snittHoyde) {
   for (const a of gjennom) {
     deler.push(`<rect data-karm="${a.navn}" x="${a.x}" y="${karmTopp}" width="${a.bredde}" height="${karmBunn - karmTopp}" fill="var(--karm)" stroke="var(--tekst)" stroke-width="${strek}"/>`);
     deler.push(`<line x1="${a.x + 60}" y1="${(karmTopp + karmBunn) / 2}" x2="${a.x + a.bredde - 60}" y2="${(karmTopp + karmBunn) / 2}" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
-    deler.push(`<text x="${a.x + a.bredde / 2}" y="${karmBunn + skrift * 1.1}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)">${a.navn}</text>`);
+    deler.push(`<text x="${a.x + a.bredde / 2}" y="${karmTopp - skrift * 0.4}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)">${a.navn}</text>`);
   }
 
   // Feltene som finnes i denne høyden
-  const aktive = felt.filter((f) => snittHoyde >= f.y0 && snittHoyde <= f.y1);
+  const aktive = felt.filter((f) => f.deler.some(([y0, y1]) => snittHoyde >= y0 && snittHoyde <= y1));
   for (const f of aktive) {
     if (!f.ok) {
-      deler.push(`<rect data-feil="ja" x="${f.x0}" y="${yO}" width="${Math.max((f.x1 ?? f.x0) - f.x0, 0)}" height="${2 * t}" fill="var(--feil-flate)" stroke="var(--feil-tekst)" stroke-width="${strek}" stroke-dasharray="12 8"/>`);
+      deler.push(`<rect data-feil="ja" x="${f.x0}" y="${yU}" width="${Math.max((f.x1 ?? f.x0) - f.x0, 0)}" height="${2 * t}" fill="var(--feil-flate)" stroke="var(--feil-tekst)" stroke-width="${strek}" stroke-dasharray="12 8"/>`);
       continue;
     }
     for (const b of f.underliggere) {
@@ -218,10 +226,10 @@ export function tegnSnitt(vegg, snittHoyde) {
   if (vegg.hjorneVenstre === 'O' && underbord.length) kloss(0, underbord[0].fraEksakt);
   if (vegg.hjorneHoyre === 'O' && underbord.length) kloss(underbord.at(-1).tilEksakt, W);
 
-  // Innlegg på karm skrevet over karmkantene
+  // Innlegg på karm skrevet under kledningen ved karmkantene
   for (const a of gjennom) {
     for (const [x, e, anker] of [[a.x, a.innlegg.venstre, 'start'], [a.x + a.bredde, a.innlegg.hoyre, 'end']]) {
-      deler.push(`<text x="${x}" y="${yO - skrift * 0.5}" font-size="${skrift * 0.8}" text-anchor="${anker}" fill="var(--tekst)">${mm(e, 1)}</text>`);
+      deler.push(`<text x="${x}" y="${yO + t + skrift * 0.9}" font-size="${skrift * 0.8}" text-anchor="${anker}" fill="var(--tekst)">${mm(e, 1)}</text>`);
     }
   }
 

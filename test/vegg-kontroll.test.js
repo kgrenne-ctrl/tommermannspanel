@@ -2,8 +2,8 @@
 // Testen bruker ikke regnestykkene i vegg.js, den ser bare på bordene som kommer ut,
 // og sjekker det en tømrer ville sett på veggen:
 //
-//  1. Antall felt: ett mellom hver åpning og hjørne, pluss ett over og ett under hver åpning
-//     der det er plass.
+//  1. Antall felt: ett mellom hver åpning og hjørne, pluss ett felt over og under hver åpning
+//     der det er plass (over og under har samme deling og er ett felt).
 //  2. Innlegget på karmen er alltid 10–20 mm og likt på begge sider, og bordet ved karmen
 //     slutter akkurat der.
 //  3. I hver høyde dekker bordene hele veggen fra hjørne til hjørne. Eneste åpning er selve
@@ -72,8 +72,9 @@ test('Tilfeldige vegger: felt, innlegg, dekning og overlapp stemmer', () => {
     assert.ok(!r.feil, `${hva} ga feil: ${r.feil}`);
 
     // 1. Antall felt
-    const forventet = r.apninger.length + 1 + r.apninger.reduce((sum, a) =>
-      sum + (a.bunn + a.hoyde < r.hoyde ? 1 : 0) + (a.bunn > 0 ? 1 : 0), 0);
+    // Over og under en åpning er ett felt (samme deling), så ett per åpning som har plass
+    const forventet = r.apninger.length + 1 + r.apninger.filter((a) =>
+      a.bunn + a.hoyde < r.hoyde || a.bunn > 0).length;
     assert.equal(r.felt.length, forventet, `${hva}: antall felt`);
 
     // 2. Innlegg 10–20 mm, og likt på begge sider av hver åpning
@@ -101,7 +102,7 @@ test('Tilfeldige vegger: felt, innlegg, dekning og overlapp stemmer', () => {
     for (const y of hoyder) {
       sjekketSnitt++;
       const hvor = `${hva}, høyde ${y}`;
-      const aktive = r.felt.filter((f) => y > f.y0 && y < f.y1);
+      const aktive = r.felt.filter((f) => f.deler.some(([y0, y1]) => y > y0 && y < y1));
       const U = aktive.flatMap((f) => f.underliggere.map((b) => ({ ...b, felt: f })))
         .sort((a, b) => a.fraEksakt - b.fraEksakt);
       const O = aktive.flatMap((f) => f.overliggere.map((b) => ({ ...b, felt: f })))
