@@ -47,10 +47,14 @@ Prinsipp fra lommeregner.no og NDLA: kledningen kløyves ikke for å få det til
 ## 4. Funksjoner som skal gjøre appen best
 
 **Hel vegg, ikke bare felt**
-- Tegn veggen med mål, legg inn vinduer og dører med posisjon, bredde og belistning (omramming).
+- Tegn veggen med mål, legg inn vinduer og dører med posisjon og bredde (utvendig karmmål).
+- **Ingen belistning (avklart 2026-11-08).** Kledningsbordet selv, enten underbordet (underligger) eller påbordet (overligger), går inn på vinduskarmen eller dørkarmen og dekker fugen.
 - Appen deler veggen i felt selv: mellom hjørne og åpning, mellom åpninger, over og under åpninger.
-- **Felles rytme:** velg én senteravstand for hele veggen, så bordene over og under vinduet står i linje med bordene ved siden av. Appen justerer omlegget litt i hvert felt så delingen treffer kantene på belistningen. Viser hvor mye hvert felt avviker fra rytmen.
-- Valg: start fra venstre, fra høyre, eller symmetrisk om midten av veggen eller midten av et vindu.
+- **Innlegg på karm:** feltet slutter inne på karmen, ikke ved karmkanten. Feltlengden = mål fra karmkant + innlegget. Innlegget er en innstilling med spenn 10–20 mm, standard 15 mm. Brukeren velger om underbordet eller påbordet går inn på karmen.
+- **Slik går delingen opp:** spennet på 10–20 mm i hver karmende brukes først. Omlegget (20–25 mm, varsel over 25 mm) justeres bare når innlegget ikke strekker til. Da blir omlegget så likt som mulig over hele veggen.
+- **Felles rytme:** bordene over og under vinduet skal stå i linje med bordene ved siden av. Viser hvor mye hvert felt avviker fra rytmen.
+- Valg: start fra venstre, fra høyre, eller symmetrisk om midten av veggen eller midten av et vindu. Startvalget avgjør hvor justeringen av innlegget havner.
+- **Påbord inn på karmen:** trenger underlag bak. Appen legger inn kloss i kapplista, med lengde lik høyden på åpningen.
 
 **Hjørner og tykkelser**
 - Utvendig hjørne: legg til kledningstykkelsen fra naboveggen i feltlengden, eller velg hjørnekasse med egen bredde.

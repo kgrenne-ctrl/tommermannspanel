@@ -46,6 +46,13 @@ Alle skal kunne endres i innstillinger.
 - **Standard bordbredder:** 73, 98, 123, 148, 173, 198 og 223 mm. Målt faktisk bredde kan alltid
   legges inn.
 - Kledningen kløyves ikke for å få det til å gå opp. Omlegget justeres i stedet.
+- **Åpninger (avklart med Kenny 2026-11-08, PLAN.md punkt 4):** ingen belistning. Underbordet
+  eller påbordet går 10–20 mm inn på karmen (innlegg, standard 15 mm) og dekker fugen.
+  Feltlengde = mål fra karmkant + innlegg. Brukeren velger om underbord eller påbord går inn.
+  Rekkefølge for å få delingen til å gå opp: juster innlegget innenfor 10–20 mm først, juster
+  omlegget (20–25 mm) bare når innlegget ikke strekker til. Startvalget (venstre, høyre,
+  symmetrisk) avgjør hvor justeringen havner. Påbord inn på karm gir kloss i kapplista med
+  lengde lik åpningens høyde.
 - **Synlig underligger (lagt til i fase 1, 2026-11-08):** `bu − 2·o` kan ikke være negativ.
   Ellers ligger to overliggere oppå hverandre. Ikke i planen, men fysisk umulig å bygge.
 
