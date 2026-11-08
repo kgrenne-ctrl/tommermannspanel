@@ -6,7 +6,7 @@ import { losFelt } from '../tommermann/solver.js';
 import { STANDARD_INNSTILLINGER } from '../tommermann/fagverdier.js';
 import { tegnFelt } from './tegning.js';
 import { lesTall, mm } from './format.js';
-import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell } from './biter.js';
+import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import './vegg-skjerm.js';
 
 const INNSTILLING_FELT = ['oMin', 'oIdeal', 'oMax', 'toSpikreFraBredde', 'spikeravstand'];
@@ -23,6 +23,7 @@ let sisteSvar = null;
 
 sjekkVersjon();
 
+kobleZoom(resultat);
 fyllBreddevalg('bu');
 fyllBreddevalg('bo');
 
@@ -128,7 +129,7 @@ function visLosning(l, alle, indeks) {
     ${varsler}
     ${andre}
     <h3>Tegning</h3>
-    ${tegnFelt(l)}
+    ${zoomBoks('felt', tegnFelt(l))}
     <p class="hjelp">Øverst sett forfra. Under: snitt sett ovenfra med veggen nederst.
       Oransje stiplet = trenger underlag.</p>
     <h3>Utdelingsmål</h3>

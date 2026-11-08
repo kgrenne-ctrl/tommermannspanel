@@ -399,13 +399,50 @@ input[type="text"]:focus, select:focus {
 .merke-varsel { background: var(--varsel-flate); color: var(--varsel-tekst); }
 .merke-feil { background: var(--feil-flate); color: var(--feil-tekst); }
 
-.snitt-boks {
-  overflow-x: auto;
+/* Zoom på tegninger */
+.zoom { margin: 8px 0; }
+
+.zoom-knapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.zoom-knapp {
+  min-width: 48px;
+  min-height: 44px;
+  padding: 4px 12px;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.zoom-knapp:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.zoom-knapp[data-zoom="hele"] { font-size: 16px; margin-left: auto; }
+
+.zoom-tall {
+  min-width: 56px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--tekst-gra);
+  font-size: 15px;
+}
+
+.zoom-flate {
+  overflow: auto;
+  max-height: 70vh;
   border: 1px solid var(--linje);
   border-radius: 8px;
   background: var(--hvit);
   -webkit-overflow-scrolling: touch;
 }
+
+.zoom-flate svg { display: block; max-width: none; }
+
 
 .snitt { display: block; }
 

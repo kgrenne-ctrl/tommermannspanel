@@ -5,7 +5,7 @@ import { losVegg, foreslaVegg, vurderVegg } from '../tommermann/vegg.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from '../tommermann/fagverdier.js';
 import { tegnVegg, tegnSnitt } from './tegning.js';
 import { lesTall, mm } from './format.js';
-import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell } from './biter.js';
+import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 
 const finn = (id) => document.getElementById(id);
 const skjema = finn('vegg-skjema');
@@ -24,6 +24,7 @@ let sisteForslag = null;
 
 // ---------- Oppstart ----------
 
+kobleZoom(resultat);
 fyllBreddevalg('vbu');
 fyllBreddevalg('vbo');
 for (const navn of INNSTILLINGER) finn(`v-${navn}`).value = String(STANDARD[navn]);
@@ -282,15 +283,15 @@ function visVegg(r) {
     <p class="hjelp">Trykk på en rad for å se utdelingsmålene. Nummeret står også i tegningen.</p>
 
     <h3>Tegning</h3>
-    ${tegnVegg(r, snitt.hoyde)}
+    ${zoomBoks('vegg', tegnVegg(r, snitt.hoyde))}
     <p class="hjelp">Sett forfra. Lyse bord er underbord, blå er påbord, grått er karm.
       Rød stiplet = feltet går ikke opp. Oransje linje = der snittet under er tatt.</p>
 
     <h3>Horisontalsnitt A–A</h3>
     <label class="felt"><span>Snitt i høyde</span>
       <select id="v-snitt">${snittValg.map((v) => `<option ${v.etikett === snitt.etikett ? 'selected' : ''}>${v.etikett}</option>`).join('')}</select></label>
-    <div class="snitt-boks">${tegnSnitt(r, snitt.hoyde)}</div>
-    <p class="hjelp">Sett ovenfra, veggen øverst og utsiden ned. Skyv sidelengs for å se hele veggen.
+    ${zoomBoks('snitt', tegnSnitt(r, snitt.hoyde))}
+    <p class="hjelp">Sett ovenfra, veggen øverst og utsiden ned. Zoom med + og −, og skyv for å se resten.
       Tallene under kledningen ved karmen er innlegget i mm. Oransje stiplet = underlag bak påbord i hjørnet.
       Bordtykkelsen er tegnet tykkere enn den er.</p>
 
