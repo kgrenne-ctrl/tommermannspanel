@@ -13,26 +13,27 @@
   <meta name="apple-mobile-web-app-title" content="Tømmermann">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd) -->
-  <script>window.APP_VERSJON = '20261109-115912';</script>
+  <script>window.APP_VERSJON = '20261109-120626';</script>
   <script type="importmap">
   {
     "imports": {
-      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261109-115912",
-      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261109-115912",
-      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261109-115912",
-      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261109-115912",
-      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261109-115912",
-      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261109-115912",
-      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261109-115912",
-      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261109-115912",
-      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261109-115912",
-      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261109-115912",
-      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261109-115912",
-      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261109-115912"
+      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261109-120626",
+      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261109-120626",
+      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261109-120626",
+      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261109-120626",
+      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261109-120626",
+      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261109-120626",
+      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261109-120626",
+      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261109-120626",
+      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261109-120626",
+      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261109-120626",
+      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261109-120626",
+      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261109-120626",
+      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261109-120626"
     }
   }
   </script>
-  <link rel="stylesheet" href="css/stil.css?v=20261109-115912">
+  <link rel="stylesheet" href="css/stil.css?v=20261109-120626">
   <!-- versjon:slutt -->
 </head>
 <body>
@@ -129,6 +130,18 @@
           <div id="m-priser" class="to-kol"></div>
           <p class="hjelp">Pris per løpemeter er valgfri. Hvert bord regnes som høyden det dekker
             pluss kapptillegget.</p>
+        </details>
+
+        <details class="innstillinger" id="v-data-del">
+          <summary>Data for eksempler</summary>
+          <p class="hjelp">Kopier dataene for hele huset for å sende et eksempel, eller lim inn data
+            du har fått for å åpne nøyaktig det samme. Det som er lagt inn nå, blir erstattet.</p>
+          <div class="knapperad to">
+            <button type="button" class="knapp" id="v-kopier-data">Kopier data</button>
+            <button type="button" class="knapp" id="v-last-data">Last inn data</button>
+          </div>
+          <textarea id="v-data" class="del-tekst" rows="4" placeholder="Lim inn data her"></textarea>
+          <p class="hjelp" id="v-data-melding"></p>
         </details>
 
         <h2>Veggen</h2>
@@ -253,6 +266,9 @@
       <p>Åpne appen én gang med nett etter hver oppdatering. Da lagres den nye versjonen.</p>
     </details>
   </footer>
+
+  <!-- Utskrift: fylles og vises bare når man skriver ut (se src/skjerm/utskrift.js) -->
+  <div id="utskrift" hidden></div>
 
   <!-- Lastes via importkartet over, så riktig versjon hentes -->
   <script type="module">import './src/skjerm/app.js';</script>

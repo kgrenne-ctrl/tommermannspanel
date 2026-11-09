@@ -571,3 +571,35 @@ footer p { margin: 4px 0; }
 .kloyv.valgt { background: var(--ok-flate); }
 .kloyv p { margin: 0 0 6px; font-size: 15px; }
 .liten-knapp { min-height: 44px; font-size: 15px; padding: 6px 12px; width: auto; }
+
+/* ---------- Utskrift og PDF ---------- */
+
+#utskrift { font-family: var(--font); color: var(--tekst); }
+.u-topp { display: flex; align-items: center; gap: 16px; background: var(--bakoy-bla); color: var(--hvit);
+  padding: 12px 16px; border-bottom: 4px solid var(--bakoy-oransje); }
+.u-topp img { height: 32px; width: auto; }
+.u-vegg h2 { color: var(--bakoy-bla); border-bottom: 2px solid var(--linje); padding-bottom: 4px; }
+.u-tabell { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 11pt; }
+.u-tabell th, .u-tabell td { border-bottom: 1px solid var(--linje); padding: 3px 6px; text-align: left; vertical-align: top; }
+.u-tabell tbody th { width: 40%; font-weight: 600; }
+.u-tabell small { color: var(--tekst-gra); }
+.u-feil { color: var(--feil-tekst); }
+.u-varsel { background: var(--varsel-flate); }
+.u-varsler { margin: 4px 0 10px; padding-left: 18px; font-size: 11pt; }
+.u-tegning svg, .u-hus svg { width: 100%; height: auto; }
+.u-hus svg { max-width: 420px; }
+.u-hjorner { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.u-hjorner svg { width: 100%; height: auto; }
+.u-data pre { white-space: pre-wrap; word-break: break-all; font-size: 8pt; background: var(--stripe); padding: 8px; }
+.u-bunn { margin-top: 16px; text-align: center; color: var(--tekst-gra); font-size: 10pt; }
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body.skriver-ut > *:not(#utskrift) { display: none !important; }
+  body.skriver-ut #utskrift { display: block !important; }
+  #utskrift * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .u-vegg { break-before: page; }
+  .u-vegg:first-of-type { break-before: auto; }
+  .u-tabell tr, .u-tegning, .u-hjorner, .u-hus, .u-blokk { break-inside: avoid; }
+  #utskrift h2, #utskrift h3, #utskrift h4 { break-after: avoid; }
+}

@@ -9,6 +9,7 @@ import { tegnVegg, tegnSnitt, tegnHjorne, tegnHus } from './tegning.js';
 import { lesTall, mm } from './format.js';
 import { fyllBreddevalg, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
+import { lagUtskrift, lesEksempeldata } from './utskrift.js';
 
 const finn = (id) => document.getElementById(id);
 const skjema = finn('vegg-skjema');
@@ -129,6 +130,11 @@ skjema.addEventListener('click', (hendelse) => {
     tomVeggen();
   } else if (knapp.dataset.vegg !== undefined) {
     byttVegg(Number(knapp.dataset.vegg));
+  } else if (knapp.id === 'v-kopier-data') {
+    kopierData();
+    return;
+  } else if (knapp.id === 'v-last-data') {
+    if (!lastInnData()) return;
   } else if (knapp.id === 'v-ny-vegg') {
     nyVegg();
   } else if (knapp.id === 'v-slett-vegg') {
@@ -176,6 +182,8 @@ resultat.addEventListener('click', (hendelse) => {
   } else if (knapp.dataset.angreKloyv) {
     delete gjeldendeKloyv[knapp.dataset.angreKloyv];
     oppdater();
+  } else if (knapp.id === 'v-skriv-ut') {
+    skrivUt();
   } else if (knapp.id === 'v-del-liste') {
     delListe(knapp);
   } else if (knapp.id === 'v-utgangspunkt') {
@@ -584,7 +592,10 @@ function visVegg(r) {
 
   return `
     <h2>Resultat</h2>
-    <a class="knapp lenkeknapp hopp" href="#v-oppsett">Gå til oppsettet</a>
+    <div class="knapperad to">
+      <a class="knapp lenkeknapp hopp" href="#v-oppsett">Gå til oppsettet</a>
+      <button type="button" class="knapp lenkeknapp" id="v-skriv-ut">Skriv ut / PDF</button>
+    </div>
     <div class="nokkeltall">
       ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} av ${r.felt.length} innenfor anbefalt omlegg`)}
       ${kort('Omlegg', okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.omlegg)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.omlegg)), 1)}` : '–', 'Minst og størst på veggen (mm)')}
@@ -916,4 +927,72 @@ async function delListe(knapp) {
     knapp.textContent = 'Fikk ikke kopiert. Merk teksten under.';
     knapp.insertAdjacentHTML('afterend', `<textarea class="del-tekst" readonly rows="12">${tekst.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</textarea>`);
   }
+}
+
+// ---------- Utskrift og data for eksempler ----------
+
+// Hele huset med inndata og resultater, vegg for vegg. Nettleserens utskrift kan lagre som PDF.
+function skrivUt() {
+  const omrade = finn('utskrift');
+  omrade.innerHTML = lagUtskrift({ hus, alle: sisteAlle, husSvar: sisteHus, liste: sisteListe,
+    versjon: window.APP_VERSJON ?? '' });
+  omrade.hidden = false;
+  document.body.classList.add('skriver-ut');
+  // Navnet på PDF-fila hentes fra sidetittelen
+  const tittel = document.title;
+  const d = new Date();
+  document.title = `Tømmermannspanel ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const ferdig = () => {
+    document.body.classList.remove('skriver-ut');
+    omrade.hidden = true;
+    omrade.innerHTML = '';
+    document.title = tittel;
+    window.removeEventListener('afterprint', ferdig);
+  };
+  window.addEventListener('afterprint', ferdig);
+  setTimeout(() => window.print(), 150); // la tegningene og logoen komme på plass først
+}
+
+function eksempeldata() {
+  hus.vegger[hus.aktiv] = lesTilstand();
+  return JSON.stringify({ app: 'tommermannspanel', versjon: window.APP_VERSJON ?? '', hus });
+}
+
+async function kopierData() {
+  const tekst = eksempeldata();
+  const felt = finn('v-data');
+  try {
+    await navigator.clipboard.writeText(tekst);
+    finn('v-data-melding').textContent = 'Kopiert. Lim inn i en e-post eller melding.';
+  } catch {
+    felt.value = tekst;
+    felt.select();
+    finn('v-data-melding').textContent = 'Fikk ikke kopiert automatisk. Teksten er merket i feltet, kopier den selv.';
+  }
+}
+
+function lastInnData() {
+  const melding = finn('v-data-melding');
+  let nytt;
+  try {
+    nytt = lesEksempeldata(finn('v-data').value);
+  } catch (feil) {
+    melding.textContent = feil.message;
+    return false;
+  }
+  if (!window.confirm(`Erstatte huset som er lagt inn nå med ${nytt.vegger.length} vegg(er) fra dataene?`)) return false;
+  hus = { aktiv: 0, lukket: true, materialer: {}, ...nytt };
+  hus.aktiv = Math.min(Math.max(0, hus.aktiv), hus.vegger.length - 1);
+  hus.materialer = { kapptillegg: String(STANDARD_MATERIALER.kapptillegg), svinn: String(STANDARD_MATERIALER.svinn),
+    priser: {}, ...hus.materialer };
+  finn('v-lukket').checked = hus.lukket;
+  finn('m-kapptillegg').value = hus.materialer.kapptillegg;
+  finn('m-svinn').value = hus.materialer.svinn;
+  prisDimensjoner = '';
+  settTilstand(hus.vegger[hus.aktiv]);
+  sisteForslag = null;
+  valgtSnitt = null;
+  finn('v-data').value = '';
+  melding.textContent = 'Lastet inn.';
+  return true;
 }

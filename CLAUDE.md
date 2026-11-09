@@ -77,6 +77,15 @@ Alle skal kunne endres i innstillinger.
 - Nettleseren inne i Claude-appen godtar ikke service worker. Test uten nett i Chrome (localhost),
   og fjern registreringen etterpå.
 
+## Utskrift og data for eksempler (2026-11-09)
+- «Skriv ut / PDF» øverst i resultatet bygger `src/skjerm/utskrift.js` (`lagUtskrift`): hele huset,
+  vegg for vegg med inndata, varsler, oppsett, tegning og hjørner, så huset, materialer og til slutt
+  dataene som gjenskaper eksempelet. Nettleserens utskrift lagrer som PDF (filnavn fra sidetittelen).
+- «Data for eksempler» under Huset: kopier dataene, eller lim inn og last inn (`lesEksempeldata`).
+  Dataformat: `{ app: 'tommermannspanel', versjon, hus }`, der hus er det som lagres på telefonen.
+- Når Kenny sender et eksempel: be om dataene (teksten), last dem inn med `lesEksempeldata` og
+  `losHus` i node, så regnes nøyaktig det samme.
+
 ## Se appen lokalt
 - `npm start` og åpne http://localhost:8000. Dobbeltklikk på `index.html` virker ikke, fordi
   nettleseren ikke laster JavaScript-moduler fra en fil på disken.
