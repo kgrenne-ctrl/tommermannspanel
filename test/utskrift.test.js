@@ -24,7 +24,7 @@ test('Utskriften har all inndata, resultater for hver vegg, huset og data som gj
     assert.ok(html.includes(tekst), `mangler «${tekst}»`);
   }
   assert.equal((html.match(/class="u-vegg"/g) ?? []).length, 4 + 2); // 4 vegger + hus + materialer
-  assert.doesNotMatch(html, /—/); // ingen lang tankestrek
+  assert.doesNotMatch(html, /\u2014/); // ingen lang tankestrek
   // Dataene nederst gir tilbake nøyaktig det samme huset
   const data = html.match(/<pre>([\s\S]*?)<\/pre>/)[1].replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
   assert.deepEqual(lesEksempeldata(data), hus);
