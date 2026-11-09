@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { lesTall, mm } from '../src/skjerm/format.js';
-import { tegnFelt, tegnVegg, tegnSnitt, tegnHjorne } from '../src/skjerm/tegning.js';
+import { tegnFelt, tegnVegg, tegnSnitt, tegnHjorne, tegnHus } from '../src/skjerm/tegning.js';
 import { losFelt } from '../src/tommermann/solver.js';
 import { losHus } from '../src/tommermann/hus.js';
 
@@ -131,4 +131,21 @@ test('Hjørnet sett ovenfra: påbord mot påbord med kloss, i riktig mål', () =
   assert.match(svgB, />A</);
   // Uten nabovegg: bare hjørnebordet, merket som antatt
   assert.match(tegnHjorne(b, 'hoyre', null, 'Naboveggen'), /Naboveggen \(antatt\)/);
+});
+
+test('Husskissen: fire vegger går i ring, og veggen som går forbi vises i hjørnet', async () => {
+  const { lagHjorneoversikt } = await import('../src/tommermann/hus.js');
+  const vegger = [3000, 5000, 3000, 5000].map((lengde, i) => ({ lengde, hoyde: 2400, bu: 148, bo: 148,
+    navn: `Vegg ${i + 1}`, hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'forbi' } } }));
+  const o = lagHjorneoversikt({ vegger, resultater: losHus({ vegger, lukket: true }).vegger, lukket: true });
+  const svg = tegnHus({ vegger, hjorner: o.hjorner, lukket: true, aktiv: 0 });
+  // Vegg 1 mot høyre, Vegg 2 opp, Vegg 3 mot venstre, Vegg 4 ned til start
+  assert.match(svg, /data-husvegg="0" x1="0" y1="0" x2="3000" y2="0"/);
+  assert.match(svg, /data-husvegg="1" x1="3000" y1="0" x2="3000" y2="-5000"/);
+  assert.match(svg, /data-husvegg="3" x1="0" y1="-5000" x2="0" y2="0"/);
+  assert.equal((svg.match(/data-forbi=/g) ?? []).length, 4);
+  assert.doesNotMatch(svg, /data-glipe/);
+  // Feil lengde: huset går ikke i ring
+  const skjev = tegnHus({ vegger: vegger.map((v, i) => (i === 2 ? { ...v, lengde: 3500 } : v)), hjorner: o.hjorner, lukket: true });
+  assert.match(skjev, /data-glipe="ja"/);
 });

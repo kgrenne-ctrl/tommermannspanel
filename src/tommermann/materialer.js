@@ -89,7 +89,7 @@ function delNavn(f, y0) {
 }
 
 // Lista som ren tekst, til å kopiere eller dele (SMS, e-post) med trelast.
-export function materialTekst(liste, { tittel = 'Tømmermannskledning' } = {}) {
+export function materialTekst(liste, { tittel = 'Tømmermannskledning', hjorner = [] } = {}) {
   const tall = (x, d = 0) => x.toLocaleString('nb-NO', { minimumFractionDigits: d, maximumFractionDigits: d });
   const ut = [`${tittel} – Bakøy Entreprenør AS`, ''];
   ut.push('Bestilling (løpemeter):');
@@ -106,6 +106,10 @@ export function materialTekst(liste, { tittel = 'Tømmermannskledning' } = {}) {
     + `pluss ${tall(liste.svinn)} % svinn. Kapptillegg ${tall(liste.kapptillegg)} mm per bord.`);
   if (liste.mangler.length) {
     ut.push('', 'OBS: Disse feltene går ikke opp og er ikke med:', ...liste.mangler.map((m) => `- ${m}`));
+  }
+  if (hjorner.length) {
+    ut.push('', 'Hjørner:');
+    for (const h of hjorner) ut.push(h.tittel, ...h.linjer.map((l) => `  ${l}`));
   }
   ut.push('', 'Kappliste:');
   for (const v of liste.kappliste) {

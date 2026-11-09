@@ -383,3 +383,81 @@ export function tegnHjorne(vegg, side, nabo = null, naboNavn = 'Naboveggen') {
   return `<svg class="tegning hjorne" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${venstre ? 'Venstre' : 'Høyre'} hjørne sett ovenfra">`
     + `<g transform="scale(${sx},1)">${deler.join('')}</g>${tekster.join('')}</svg>`;
 }
+
+// ---------- Huset sett ovenfra (skisse) ----------
+// Veggene i rekkefølgen de er lagt inn, med rette hjørner. Man går rundt huset mot høyre sett
+// utenfra, altså med huset på venstre hånd, og svinger 90° til venstre i hvert hjørne.
+// I hvert hjørne vises hvilken vegg som går forbi (streken går litt forbi hjørnet), hjørnekasse
+// (firkant) eller feil (rød ring). Brukes for å se at rekkefølgen stemmer med huset.
+//
+// vegger: [{ navn, lengde (eller null) }], hjorner: fra lagHjorneoversikt, aktiv: vegg som vises.
+export function tegnHus({ vegger, hjorner, lukket, aktiv = 0 }) {
+  const kjente = vegger.map((v) => v.lengde).filter((l) => Number.isFinite(l) && l > 0);
+  const standard = kjente.length ? kjente.reduce((a, b) => a + b, 0) / kjente.length : 3000;
+
+  // Gå rundt: start i 0,0 mot høyre. Sving til venstre: (dx, dy) -> (dy, -dx) (y nedover).
+  let x = 0; let y = 0; let dx = 1; let dy = 0;
+  const linjer = vegger.map((v, k) => {
+    const kjent = Number.isFinite(v.lengde) && v.lengde > 0;
+    const L = kjent ? v.lengde : standard;
+    const linje = { k, navn: v.navn, kjent, x0: x, y0: y, x1: x + dx * L, y1: y + dy * L, dx, dy };
+    x = linje.x1; y = linje.y1;
+    [dx, dy] = [dy, -dx];
+    return linje;
+  });
+  const xs = linjer.flatMap((l) => [l.x0, l.x1]);
+  const ys = linjer.flatMap((l) => [l.y0, l.y1]);
+  const D = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1000);
+  const kant = D * 0.35;
+  const strek = D * 0.022;
+  const skrift = D * 0.055;
+  const forbi = D * 0.05;
+
+  const deler = [];
+  for (const l of linjer) {
+    const farge = l.k === aktiv ? 'var(--bakoy-bla)' : 'var(--tekst-gra)';
+    deler.push(`<line data-husvegg="${l.k}" x1="${l.x0}" y1="${l.y0}" x2="${l.x1}" y2="${l.y1}" stroke="${farge}" stroke-width="${strek}" ${l.kjent ? '' : `stroke-dasharray="${strek * 2} ${strek * 1.5}"`}/>`);
+    // Navn utenfor veggen (til høyre for gangretningen) og pil for gangretningen
+    const mx = (l.x0 + l.x1) / 2; const my = (l.y0 + l.y1) / 2;
+    const ux = -l.dy; const uy = l.dx; // utover
+    // Loddrette vegger: teksten starter (eller slutter) et stykke ut fra streken
+    const anker = Math.abs(ux) > 0.5 ? (ux > 0 ? 'start' : 'end') : 'middle';
+    const avstand = Math.abs(ux) > 0.5 ? skrift * 1.4 : skrift * 1.6;
+    deler.push(`<text x="${mx + ux * avstand}" y="${my + uy * avstand + skrift * 0.35}" font-size="${skrift}" text-anchor="${anker}" fill="${farge}" font-weight="${l.k === aktiv ? 700 : 400}">${l.k + 1}. ${l.navn}</text>`);
+    const p = skrift * 0.5;
+    const ax = mx + ux * strek * 1.8; const ay = my + uy * strek * 1.8;
+    deler.push(`<path d="M ${ax + l.dx * p} ${ay + l.dy * p} L ${ax - l.dx * p + ux * p * 0.6} ${ay - l.dy * p + uy * p * 0.6} L ${ax - l.dx * p - ux * p * 0.6} ${ay - l.dy * p - uy * p * 0.6} Z" fill="${farge}"/>`);
+  }
+
+  // Hjørnene
+  for (const h of hjorner) {
+    const A = linjer[h.a.vegg]; const B = linjer[h.b.vegg];
+    const cx = A.x1; const cy = A.y1;
+    const ux = -A.dy + B.dy; const uy = A.dx - B.dx; // diagonalt utover fra hjørnet
+    if (h.forbi === 'A') {
+      deler.push(`<line data-forbi="${h.a.vegg}" x1="${cx}" y1="${cy}" x2="${cx + A.dx * forbi}" y2="${cy + A.dy * forbi}" stroke="var(--bakoy-oransje)" stroke-width="${strek}"/>`);
+    } else if (h.forbi === 'B') {
+      deler.push(`<line data-forbi="${h.b.vegg}" x1="${cx}" y1="${cy}" x2="${cx - B.dx * forbi}" y2="${cy - B.dy * forbi}" stroke="var(--bakoy-oransje)" stroke-width="${strek}"/>`);
+    } else if (h.forbi === 'kasse') {
+      deler.push(`<rect data-kasse="${h.nr}" x="${cx - strek * 1.5}" y="${cy - strek * 1.5}" width="${strek * 3}" height="${strek * 3}" fill="var(--karm)" stroke="var(--tekst)" stroke-width="${strek * 0.3}"/>`);
+    } else {
+      deler.push(`<circle data-hjornefeil="${h.nr}" cx="${cx}" cy="${cy}" r="${strek * 2.2}" fill="none" stroke="var(--feil-tekst)" stroke-width="${strek * 0.6}"/>`);
+    }
+    deler.push(`<text x="${cx + ux * skrift * 1.3}" y="${cy + uy * skrift * 1.3 + skrift * 0.35}" font-size="${skrift * 0.8}" text-anchor="middle" fill="var(--tekst)" font-weight="700">H${h.nr}</text>`);
+  }
+
+  // Går ikke huset i ring? Vis glipen.
+  const siste = linjer.at(-1);
+  if (lukket && vegger.length >= 3) {
+    const glipe = Math.hypot(siste.x1 - linjer[0].x0, siste.y1 - linjer[0].y0);
+    if (glipe > 50) {
+      deler.push(`<line data-glipe="ja" x1="${siste.x1}" y1="${siste.y1}" x2="${linjer[0].x0}" y2="${linjer[0].y0}" stroke="var(--feil-tekst)" stroke-width="${strek * 0.5}" stroke-dasharray="${strek} ${strek}"/>`);
+    }
+  }
+
+  const minX = Math.min(...xs) - kant; const minY = Math.min(...ys) - kant;
+  const bredde = Math.max(...xs) - Math.min(...xs) + 2 * kant;
+  const hoyde = Math.max(...ys) - Math.min(...ys) + 2 * kant;
+  return `<svg class="tegning husskisse" viewBox="${minX} ${minY} ${bredde} ${hoyde}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Huset sett ovenfra med ${vegger.length} vegger">`
+    + deler.join('') + '</svg>';
+}

@@ -128,6 +128,10 @@ Alle skal kunne endres i innstillinger.
 - `src/tommermann/hus.js`: et hus er veggene i rekkefølge rundt huset. Høyre hjørne på vegg k er
   venstre hjørne på vegg k+1, og siste møter første når huset er lukket. `losHus` regner ut
   forlengelsene og sier fra når et hjørne ikke henger sammen (begge går forbi, eller ingen).
+- «Hele huset sett ovenfra» (`tegnHus`) og «Hjørnene i huset» (`lagHjorneoversikt`, `hjorneLinjer`):
+  skisse med rette hjørner som viser rekkefølgen og hvem som går forbi, og én linje per hjørne med
+  tillegg og kløyving. `kontrollerFirkant` sjekker at motstående vegger i et hus med fire vegger er
+  like lange. Hjørnene er også med i teksten som deles. Bare utvendige hjørner støttes.
 - Bordtykkelse per vegg, standard 19 mm for både underbord og påbord (antakelse, kan endres).
 - Skjermen viser én vegg om gangen med veggene som knapper øverst (status per vegg). Huset lagres
   under nøkkelen `hus` ({ vegger, aktiv, lukket }). Gammel nøkkel `vegg` blir første vegg.

@@ -187,3 +187,43 @@ test('Kløyving med underbord mot underbord: 19 mm av underbordet', () => {
   assert.ok(Math.abs(b.felt[0].underliggere[0].bredde - 129) < E);
   assert.ok(Math.abs(b.felt[0].underliggere[0].fraEksakt) < E); // starter i hjørnet
 });
+
+test('Hjørneoversikt: lukket hus med fire vegger gir fire hjørner med hvem som går forbi', async () => {
+  const { lagHjorneoversikt, hjorneLinjer } = await import('../src/tommermann/hus.js');
+  const vegger = [3000, 5000, 3000, 5000].map((lengde, i) => ({ ...VEGG, lengde, navn: `Vegg ${i + 1}`,
+    hjorner: hj('mot', 'forbi') }));
+  const resultater = losHus({ vegger, lukket: true }).vegger;
+  const o = lagHjorneoversikt({ vegger, resultater, lukket: true });
+  assert.equal(o.hjorner.length, 4);
+  assert.equal(o.frie.length, 0);
+  // H4: Vegg 4 høyre møter Vegg 1 venstre
+  assert.deepEqual([o.hjorner[3].a.navn, o.hjorner[3].b.navn], ['Vegg 4', 'Vegg 1']);
+  // H1: Vegg 1 går forbi med 38, Vegg 2 slutter mot med 19 og kløyves til 148 − 19 = 129
+  const h1 = o.hjorner[0];
+  assert.equal(h1.forbi, 'A');
+  assert.deepEqual([h1.a.tillegg, h1.b.tillegg, h1.b.klyv, h1.b.kloyvesTil], [38, 19, 19, 129]);
+  const tekst = hjorneLinjer(o)[0];
+  assert.equal(tekst.tittel, 'H1: Vegg 1 (høyre) møter Vegg 2 (venstre)');
+  assert.deepEqual(tekst.linjer, ['Går forbi: Vegg 1 (38 mm forbi hjørnet).',
+    'Slutter mot: Vegg 2 (19 mm forbi hjørnet). Hjørnebordet kløyves til 129 mm.', 'Påbord mot påbord.']);
+});
+
+test('Hjørneoversikt: åpen rekke har frie ender, og feil hjørne sies fra', async () => {
+  const { lagHjorneoversikt, hjorneLinjer } = await import('../src/tommermann/hus.js');
+  const vegger = [{ ...VEGG, navn: 'Nord', hjorner: hj('mot', 'forbi') }, { ...VEGG, navn: 'Øst', hjorner: hj('forbi', 'mot') }];
+  const o = lagHjorneoversikt({ vegger, resultater: losHus({ vegger, lukket: false }).vegger, lukket: false });
+  assert.equal(o.hjorner.length, 1);
+  assert.match(o.hjorner[0].feil, /Både Nord og Øst går forbi/);
+  assert.deepEqual(o.frie.map((e) => [e.navn, e.side]), [['Nord', 'venstre'], ['Øst', 'hoyre']]);
+  assert.equal(hjorneLinjer(o).length, 3);
+});
+
+test('Målkontroll: motstående vegger i et firkantet hus skal være like lange', async () => {
+  const { kontrollerFirkant } = await import('../src/tommermann/hus.js');
+  const v = (l) => l.map((lengde, i) => ({ lengde, navn: `Vegg ${i + 1}` }));
+  assert.deepEqual(kontrollerFirkant(v([3000, 5000, 3020, 5000])), []);
+  const feil = kontrollerFirkant(v([3000, 5000, 3100, 5000]));
+  assert.equal(feil.length, 1);
+  assert.match(feil[0], /Vegg 1 \(3000 mm\) og Vegg 3 \(3100 mm\).*100 mm forskjell/);
+  assert.deepEqual(kontrollerFirkant(v([3000, 5000, 3000])), []); // bare for fire vegger
+});

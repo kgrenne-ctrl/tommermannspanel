@@ -557,3 +557,8 @@ footer {
 .detaljer { border-top: 2px solid var(--linje); margin-top: 24px; padding-top: 12px; }
 .detaljer > summary { font-weight: 600; font-size: 18px; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
 .viktig { font-weight: 600; color: var(--bakoy-bla); margin: 6px 0 0; }
+
+.hjorne-punkt { border-left: 4px solid var(--bakoy-bla); padding: 6px 10px; margin-bottom: 10px; background: var(--stripe); border-radius: 4px; }
+.hjorne-punkt p { margin: 2px 0 0; font-size: 15px; }
+.hjorne-punkt.sjekk { border-left-color: var(--varsel-tekst); background: var(--varsel-flate); }
+.hjorne-punkt.feil { border-left-color: var(--feil-tekst); background: var(--feil-flate); color: var(--feil-tekst); }

@@ -2,10 +2,10 @@
 // Regner aldri selv. All matematikk ligger i src/tommermann/.
 
 import { foreslaVegg, vurderVegg, lagMerkeliste, lagOppsettliste } from '../tommermann/vegg.js';
-import { losHus, naboer, speilHjorne } from '../tommermann/hus.js';
+import { losHus, naboer, speilHjorne, lagHjorneoversikt, hjorneLinjer, kontrollerFirkant } from '../tommermann/hus.js';
 import { lagMaterialliste, materialTekst, STANDARD_MATERIALER } from '../tommermann/materialer.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG, STANDARD_HJORNE } from '../tommermann/fagverdier.js';
-import { tegnVegg, tegnSnitt, tegnHjorne } from './tegning.js';
+import { tegnVegg, tegnSnitt, tegnHjorne, tegnHus } from './tegning.js';
 import { lesTall, mm } from './format.js';
 import { fyllBreddevalg, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
@@ -30,6 +30,9 @@ let sisteForslag = null;
 let sisteResultat = null;
 // Hele huset regnet ut (trengs for å tegne naboveggen i hjørnene)
 let sisteHus = null;
+// Hjørneoversikten for hele huset (til skjermen og teksten som deles)
+let sisteHjorner = null;
+let sisteAlle = [];
 
 // Om «Detaljer for den som planlegger» er åpnet (huskes når appen regner på nytt).
 let detaljerApen = false;
@@ -479,6 +482,8 @@ function oppdater() {
   const alle = hus.vegger.map(tilInndata);
   const husSvar = losHus({ vegger: alle.map((v) => (mangler(v) ? null : v)), lukket: hus.lukket });
   sisteHus = husSvar;
+  sisteAlle = alle;
+  sisteHjorner = lagHjorneoversikt({ vegger: alle, resultater: husSvar.vegger, lukket: hus.lukket });
   visFaner(husSvar);
   visNaboer(husSvar.vegger[hus.aktiv]);
   sisteListe = lagMaterialliste(husSvar.vegger.map((r, k) => (r ? { ...r, navn: veggNavn(hus.vegger[k], k) } : null)), {
@@ -584,6 +589,8 @@ function visVegg(r) {
 
     ${visHjorner(r)}
 
+    ${visHus()}
+
     ${visMaterialer(sisteListe)}
 
     <details class="detaljer" id="v-detaljer" ${detaljerApen ? 'open' : ''}>
@@ -628,6 +635,25 @@ function visHjorner(r) {
     <p class="hjelp">I riktig målestokk. Utsiden er ned. Grått er veggen med lekter. Lyse bord er
       underbord, blå er påbord, lys oransje er kloss bak påbordet der det ikke er underbord.
       Er naboveggen ikke lagt inn, vises bare hjørnebordet på den, antatt likt som på denne veggen.</p>`;
+}
+
+// Hele huset: skisse sett ovenfra og alle hjørnene, så man ser at veggene henger riktig sammen
+function visHus() {
+  if (hus.vegger.length < 2 || !sisteHjorner) return '';
+  const firkant = kontrollerFirkant(sisteAlle);
+  const punkter = hjorneLinjer(sisteHjorner).map((h) => `
+    <div class="hjorne-punkt ${h.feil ? 'feil' : h.sjekk ? 'sjekk' : ''}">
+      <strong>${h.tittel}</strong>${h.linjer.map((l) => `<p>${l}</p>`).join('')}</div>`).join('');
+  return `<h3>Hele huset sett ovenfra</h3>
+    ${zoomBoks('hus', tegnHus({ vegger: sisteAlle.map((v) => ({ navn: v.navn, lengde: v.lengde })),
+      hjorner: sisteHjorner.hjorner, lukket: hus.lukket, aktiv: hus.aktiv }))}
+    <p class="hjelp">Skisse med rette hjørner, ikke i skala på tykkelser. Pilene viser rekkefølgen
+      (rundt huset mot høyre sett utenfra). Sjekk at den stemmer med huset. Oransje strek = veggen
+      som går forbi i hjørnet. Firkant = hjørnekasse. Rød ring = hjørnet henger ikke sammen.
+      Stiplet vegg = ikke ferdig utfylt.</p>
+    ${firkant.length ? boks('varsel', firkant.map((t) => `<p>${t}</p>`).join('')) : ''}
+    <h3>Hjørnene i huset</h3>
+    ${punkter}`;
 }
 
 // Mål fra karmen: «17 mm før venstre karm vindu 1» (til venstre for karmkanten) eller
@@ -844,7 +870,7 @@ function visMaterialer(liste) {
 // Del med telefonens Del-meny (SMS, e-post) når den finnes, ellers kopier til utklippstavla
 async function delListe(knapp) {
   if (!sisteListe) return;
-  const tekst = materialTekst(sisteListe);
+  const tekst = materialTekst(sisteListe, { hjorner: sisteHjorner ? hjorneLinjer(sisteHjorner) : [] });
   try {
     if (navigator.share) {
       await navigator.share({ title: 'Materialliste kledning', text: tekst });
