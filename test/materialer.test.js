@@ -68,7 +68,7 @@ test('Felt som ikke går opp, er ikke med, og lista sier fra', () => {
   assert.ok(l.mangler.some((m) => m.startsWith('Garasje: ')));
   const tekst = materialTekst(l);
   assert.match(tekst, /OBS: Disse feltene går ikke opp/);
-  assert.doesNotMatch(tekst, /—/);
+  assert.doesNotMatch(tekst, /\u2014/); // ingen lang tankestrek
 });
 
 test('Teksten til trelast har bestilling og kappliste', () => {
