@@ -104,6 +104,10 @@ Alle skal kunne endres i innstillinger.
   og under, og feltet til høyre. Innlegget prøves i hele mm fra 10 til 20, og det som gir best
   omlegg i feltene som avgjøres der, velges. Startvalget bestemmer rekkefølgen åpningene velges i,
   og dermed hvor restjusteringen havner.
+- Startvalg «Jevnest over hele veggen» (`jevnt`, `velgJevnt`): alle innlegg velges samtidig med
+  dynamisk programmering (kjede åpning for åpning), minst sum av (omlegg − 25)². Sjekket mot
+  gjennomprøving av alle kombinasjoner. Målt på 300 tilfeldige vegger: bedre på 78, men liten
+  gevinst (verste avvik i snitt 12,47 → 12,39 mm), fordi innlegget bare kan variere 10 mm.
 - «Finn bedre oppsett» (`foreslaVegg`) prøver karm, hjørner, startvalg og standardbredder.
   Omlegg innenfor 20–30 mm regnes som like bra.
 - Påbord er standard både i hjørnene og inn på karmen (Kenny 2026-11-08).

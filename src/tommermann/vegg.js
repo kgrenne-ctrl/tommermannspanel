@@ -26,6 +26,7 @@
 // - hoyre:     fra høyre mot venstre, resten havner ved venstre hjørne
 // - midten:    det som ligger midt på veggen velges først, så utover mot hjørnene
 // - apning:N:  åpning N velges først, så utover mot hjørnene
+// - jevnt:     alle innlegg velges samtidig, jevnest omlegg over hele veggen (velgJevnt)
 
 import { losFeltFleksibel } from './solver.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from './fagverdier.js';
@@ -145,6 +146,11 @@ function velgInnlegg(startvalg, apninger, inn, e) {
   for (let v = inn.innleggMin; v <= inn.innleggMax + SLINGRING; v += STEG) kandidater.push(v);
   if (kandidater.at(-1) < inn.innleggMax - SLINGRING) kandidater.push(inn.innleggMax);
   const sett = (j, v) => { e[2 * j] = v; e[2 * j + 1] = v; };
+  // Faste innlegg (brukes av testene for å prøve alle kombinasjoner)
+  if (Array.isArray(inn.fasteInnlegg)) {
+    inn.fasteInnlegg.forEach((v, j) => sett(j, v));
+    return;
+  }
 
   // Prøv alle innlegg for åpningene i js (én eller to), og behold det som gir lavest
   // kostnad for leddene i lista. Leddene skal bare avhenge av innlegg som er bestemt.
@@ -190,8 +196,62 @@ function velgInnlegg(startvalg, apninger, inn, e) {
     for (let j = hoyreFra; j < n; j++) mot.hoyre(j);
     return;
   }
-  // venstre (standard)
+  if (startvalg === 'jevnt') {
+    velgJevnt(apninger, inn, e, kandidater);
+    return;
+  }
+  // venstre
   for (let j = 0; j < n; j++) mot.hoyre(j);
+}
+
+// Jevnest over hele veggen (Kenny 2026-11-09): velger alle innleggene samtidig, slik at
+// summen over alle felt blir best: først ingen felt som ikke går opp, så færrest spikervarsler
+// og felt over anbefalt, så minst omlegg over maks, og så minst (omlegg − ideelt)². Kvadratet
+// gjør at to felt som avviker litt er bedre enn ett som avviker mye, så feltene blir like.
+//
+// Hvert felt avhenger bare av åpningene rett ved siden av: feltet mellom åpning j−1 og j av
+// innleggene der, feltet over og under åpning j bare av innlegget i j. Da kan det løses som en
+// kjede, åpning for åpning (dynamisk programmering), og alle kombinasjoner er likevel vurdert.
+function velgJevnt(apninger, inn, e, kandidater) {
+  const n = apninger.length;
+  const sett = (j, v) => { e[2 * j] = v; e[2 * j + 1] = v; };
+  const kost = (m) => kostnadJevn(regnLedd(m, e, apninger, inn), inn);
+  const innlegg = (v) => { const k = nullKost(); k[5] = Math.abs(v - inn.innleggStandard); return k; };
+
+  // beste[i] = { kost, forrige } for innlegg kandidater[i] i åpningen vi står i
+  let beste = kandidater.map((v) => {
+    sett(0, v);
+    return { kost: leggSammen(leggSammen(leggSammen(null, kost(0)), kost(1)), innlegg(v)), spor: [v] };
+  });
+  for (let j = 1; j < n; j++) {
+    beste = kandidater.map((v) => {
+      sett(j, v);
+      const over = leggSammen(kost(2 * j + 1), innlegg(v));
+      let best = null;
+      kandidater.forEach((u, i) => {
+        sett(j - 1, u);
+        const k = leggSammen(leggSammen(beste[i].kost, kost(2 * j)), over);
+        if (!best || sammenlignKost(k, best.kost) < 0) best = { kost: k, spor: [...beste[i].spor, v] };
+      });
+      return best;
+    });
+  }
+  let vinner = null;
+  kandidater.forEach((v, i) => {
+    sett(n - 1, v);
+    const k = leggSammen(beste[i].kost, kost(2 * n));
+    if (!vinner || sammenlignKost(k, vinner.kost) < 0) vinner = { kost: k, spor: beste[i].spor };
+  });
+  vinner.spor.forEach((v, j) => sett(j, v));
+}
+
+// Som kostnad(), men med kvadratisk avvik fra ideelt omlegg, så store avvik straffes mest.
+function kostnadJevn(svar, inn) {
+  if (svar.tom) return nullKost();
+  if (!svar.ok) return [1, 0, 0, 0, 0, 0];
+  const l = svar.valgt;
+  return [0, l.spikring.ok ? 0 : 1, l.innenforAnbefalt ? 0 : 1,
+    Math.max(0, l.omlegg - inn.oMax), (l.omlegg - inn.oIdeal) ** 2, 0];
 }
 
 // Kostnad for ett ledd, som tall som sammenlignes ett for ett (lavere er bedre):
@@ -385,7 +445,7 @@ function kontroller(inn, apninger) {
   if (!(inn.innleggMin <= inn.innleggStandard && inn.innleggStandard <= inn.innleggMax)) {
     feil.push('Innlegg må ha minimum ≤ standard ≤ maks.');
   }
-  const gyldigeStart = ['venstre', 'hoyre', 'midten'];
+  const gyldigeStart = ['venstre', 'hoyre', 'midten', 'jevnt'];
   const sv = String(inn.startvalg);
   if (!gyldigeStart.includes(sv)) {
     const nr = Number(sv.split(':')[1]);
@@ -460,7 +520,7 @@ export function foreslaVegg(inndata, { bredder = [73, 98, 123, 148, 173, 198, 22
   };
 
   const hjorner = [['O', 'O'], ['U', 'U'], ['O', 'U'], ['U', 'O']];
-  const startvalg = ['venstre', 'hoyre', 'midten'];
+  const startvalg = ['venstre', 'hoyre', 'midten', 'jevnt'];
   const alleValg = (bu, bo) => {
     for (const karmBord of ['O', 'U']) {
       for (const [hjorneVenstre, hjorneHoyre] of hjorner) {
@@ -503,7 +563,8 @@ function plukk(o) {
 }
 
 const BORDNAVN = { O: 'påbord', U: 'underbord' };
-const STARTNAVN = { venstre: 'fra venstre hjørne', hoyre: 'fra høyre hjørne', midten: 'fra midten av veggen' };
+const STARTNAVN = { venstre: 'fra venstre hjørne', hoyre: 'fra høyre hjørne', midten: 'fra midten av veggen',
+  jevnt: 'jevnest over hele veggen' };
 
 function hvaErEndret(fra, til) {
   const e = [];
@@ -514,7 +575,9 @@ function hvaErEndret(fra, til) {
       ? `${BORDNAVN[til.hjorneVenstre]} i hjørnene`
       : `${BORDNAVN[til.hjorneVenstre]} i venstre og ${BORDNAVN[til.hjorneHoyre]} i høyre hjørne`);
   }
-  if (fra.startvalg !== til.startvalg) e.push(`start ${STARTNAVN[til.startvalg] ?? til.startvalg}`);
+  if (fra.startvalg !== til.startvalg) {
+    e.push(til.startvalg === 'jevnt' ? STARTNAVN.jevnt : `start ${STARTNAVN[til.startvalg] ?? til.startvalg}`);
+  }
   return e;
 }
 

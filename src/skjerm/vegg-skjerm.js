@@ -252,6 +252,7 @@ function oppdaterStartvalg() {
   valg.innerHTML = '<option value="venstre">Fra venstre hjørne</option>'
     + '<option value="hoyre">Fra høyre hjørne</option>'
     + '<option value="midten">Midten av veggen</option>'
+    + '<option value="jevnt">Jevnest over hele veggen</option>'
     + ekstra.join('');
   valg.value = [...valg.options].some((o) => o.value === forrige) ? forrige : 'venstre';
 }
@@ -573,7 +574,8 @@ function visVegg(r) {
     <a class="knapp lenkeknapp hopp" href="#v-oppsett">Gå til oppsettet</a>
     <div class="nokkeltall">
       ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} av ${r.felt.length} innenfor anbefalt omlegg`)}
-      ${kort('Underbord', okFelt.reduce((s, f) => s + f.underliggere.length, 0), 'å merke opp på veggen')}
+      ${kort('Omlegg', okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.omlegg)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.omlegg)), 1)}` : '–', 'Minst og størst på veggen (mm)')}
+      ${kort('Klosser', new Set(okFelt.map((f) => Math.round(f.losning.klaring))).size, 'Ulike distanseklosser (hele mm)')}
     </div>
     ${visVarsler(r)}
 

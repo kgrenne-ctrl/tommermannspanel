@@ -298,3 +298,44 @@ test('Slik setter du opp: første underbord, kloss, antall og kontrollmål per f
   assert.equal(liste[2].ok, false);
   assert.match(liste[2].melding, /går ikke opp/);
 });
+
+test('Jevnest over hele veggen: finner den beste kombinasjonen av innlegg (sjekket mot alle)', () => {
+  // Summen som skal være minst: [går ikke opp, spikervarsel, over maks, mm over maks,
+  // (omlegg − 25)², innlegg fra 15], sammenlignet tall for tall.
+  const kost = (r) => {
+    const k = [0, 0, 0, 0, 0, 0];
+    for (const f of r.felt) {
+      if (!f.ok) { k[0]++; continue; }
+      const l = f.losning;
+      k[1] += l.spikring.ok ? 0 : 1; k[2] += l.innenforAnbefalt ? 0 : 1;
+      k[3] += Math.max(0, l.omlegg - 30); k[4] += (l.omlegg - 25) ** 2;
+    }
+    for (const a of r.apninger) k[5] += Math.abs(a.innlegg.venstre - 15);
+    return k;
+  };
+  const sammenlign = (a, b) => { for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 1e-6) return a[i] - b[i]; return 0; };
+  const vegger = [
+    { lengde: 6000, hoyde: 2400, bu: 148, bo: 148, apninger: [
+      { type: 'vindu', x: 600, bredde: 1000, hoyde: 600, bunn: 1200 },
+      { type: 'port', x: 2000, bredde: 2400, hoyde: 2100, bunn: 0 },
+      { type: 'vindu', x: 4700, bredde: 1000, hoyde: 600, bunn: 1200 }] },
+    { lengde: 5000, hoyde: 2500, bu: 98, bo: 98, apninger: [
+      { type: 'vindu', x: 700, bredde: 900, hoyde: 1100, bunn: 900 },
+      { type: 'dor', x: 2300, bredde: 900, hoyde: 2100, bunn: 0 }] },
+  ];
+  for (const v of vegger) {
+    const jevnt = losVegg({ ...v, startvalg: 'jevnt' });
+    const n = v.apninger.length;
+    let best = null;
+    const prov = (valgt) => {
+      if (valgt.length === n) {
+        const k = kost(losVegg({ ...v, fasteInnlegg: valgt }));
+        if (!best || sammenlign(k, best) < 0) best = k;
+        return;
+      }
+      for (let e = 10; e <= 20; e++) prov([...valgt, e]);
+    };
+    prov([]);
+    assert.equal(sammenlign(kost(jevnt), best), 0, `jevnt ${kost(jevnt)} mot beste ${best}`);
+  }
+});
