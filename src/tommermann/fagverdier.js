@@ -29,6 +29,10 @@ export const STANDARD_VEGG = Object.freeze({
   // hjørne: pluss når kledningen går forbi hjørnet, minus ved hjørnekasse. Regnes ut av hus.js.
   forlengVenstre: 0,
   forlengHoyre: 0,
+  // Hjørnebordet på veggen som slutter mot naboveggen kløyves med tykkelsen på hjørnebordet
+  // på naboveggen, så hjørnet ser like bredt ut fra begge sider (Kenny 2026-11-09).
+  klyvVenstre: 0,
+  klyvHoyre: 0,
   // Bordtykkelse. 19 mm er en antakelse om vanlig kledning, kan endres per vegg.
   tykkelseUnder: 19,
   tykkelseOver: 19,

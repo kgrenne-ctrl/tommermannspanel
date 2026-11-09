@@ -36,6 +36,12 @@ const TYPENAVN = { vindu: 'Vindu', dor: 'Dør', port: 'Port' };
 
 export function losVegg(inndata) {
   const inn = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG, ...inndata };
+  // Kløyvd hjørnebord: delingen regnes som om bordet var helt, med feltet lengre ut med
+  // kløyvingen. Etterpå kappes den ytterste kanten av hjørnebordet bort (se kloyvHjornebord).
+  const kV = inn.klyvVenstre;
+  const kH = inn.klyvHoyre;
+  inn.forlengVenstre += kV;
+  inn.forlengHoyre += kH;
   const { lengde: W, hoyde: H, bu, bo } = inn;
   // Kledningen går fra fV til W + fH. Nullpunktet er hjørnet på veggen (Kenny 2026-11-09).
   const fV = inn.forlengVenstre;
@@ -62,6 +68,9 @@ export function losVegg(inndata) {
   for (let m = 0; m < antallLedd; m++) {
     felt.push(...lagFelt(m, ledd[m], e, apninger, inn));
   }
+
+  if (kV > 0) kloyvHjornebord(felt[0], 'start', kV);
+  if (kH > 0) kloyvHjornebord(felt.at(-1), 'slutt', kH);
 
   const varsler = [];
   for (const a of apninger) {
@@ -109,8 +118,9 @@ export function losVegg(inndata) {
     karmBord: inn.karmBord,
     hjorneVenstre: inn.hjorneVenstre,
     hjorneHoyre: inn.hjorneHoyre,
-    forleng: { venstre: fV, hoyre: fH },
-    kledning: { fra: -fV, til: W + fH },
+    forleng: { venstre: fV - kV, hoyre: fH - kH },
+    kledning: { fra: -fV + kV, til: W + fH - kH },
+    klyv: { venstre: kV, hoyre: kH },
     tykkelse: { under: inn.tykkelseUnder, over: inn.tykkelseOver },
     hjorner: inn.hjorner ?? null,
     apninger: apninger.map((a, j) => ({
@@ -317,6 +327,21 @@ function byggFelt({ type, navn, x0, x1, deler, svar, innlegg, fjernDelte, karmBo
     underliggere,
     overliggere,
   };
+}
+
+// Kapper den ytterste kanten av hjørnebordet bort. Bordet er det første (eller siste) i
+// feltet, og det er bordtypen veggen har ytterst i hjørnet.
+function kloyvHjornebord(f, ende, k) {
+  if (!f || !f.ok) return;
+  const forste = (liste) => (liste.length ? liste[ende === 'start' ? 0 : liste.length - 1] : null);
+  const kandidater = [forste(f.underliggere), forste(f.overliggere)].filter(Boolean);
+  const b = ende === 'start'
+    ? kandidater.reduce((a, c) => (c.fraEksakt < a.fraEksakt ? c : a))
+    : kandidater.reduce((a, c) => (c.tilEksakt > a.tilEksakt ? c : a));
+  if (ende === 'start') { b.fraEksakt += k; b.fra = Math.round(b.fraEksakt); } else { b.tilEksakt -= k; b.til = Math.round(b.tilEksakt); }
+  b.klyvd = k;
+  b.bredde = b.tilEksakt - b.fraEksakt;
+  f.hjornebord = { ...(f.hjornebord ?? {}), [ende]: { type: b.type, klyvd: k, bredde: b.bredde } };
 }
 
 // Ligger feltet i høyden y? (Feltet over og under en åpning har to høydeområder.)
@@ -535,6 +560,7 @@ export function lagOppsettliste(r) {
       referanse: ref.navn,
       til: siste.til,
       kloss: f.losning.klaring,
+      hjornebord: Object.values(f.hjornebord ?? {}),
       omlegg: f.losning.omlegg,
       innenforAnbefalt: f.losning.innenforAnbefalt,
     };

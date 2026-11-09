@@ -77,3 +77,12 @@ test('Teksten til trelast har bestilling og kappliste', () => {
   assert.match(tekst, /19 × 148 mm: 19 lm/);
   assert.match(tekst, /Nord\n  1\. Venstre hjørne – Høyre hjørne\n    7 stk 2\s450 mm \(19 × 148, full høyde\)/);
 });
+
+test('Kapplista sier fra om hjørnebord som skal kløyves', async () => {
+  const { losHus } = await import('../src/tommermann/hus.js');
+  const { vegger } = losHus({ lukket: false, vegger: [{ lengde: 1350, hoyde: 2400, bu: 148, bo: 148,
+    hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'forbi' } } }] });
+  const tekst = materialTekst(lagMaterialliste(vegger));
+  // Fri ende, påbord ytterst: kløyves med påbordets tykkelse, 148 − 19 = 129
+  assert.match(tekst, /Hjørnebord 19 × 148 kløyves til 129 mm bredde/);
+});

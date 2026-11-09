@@ -528,7 +528,10 @@ function visNaboer(r) {
     const f = r && !r.feil ? r.forleng[side] : null;
     if (f !== null && f !== undefined) {
       const type = finn(`v-hjorne${Side}Type`).value;
-      if (f > 0 && type === 'mot') tillegg = ` Påbordet går ${mm(f, 1)} mm forbi hjørnet, inn til påbordet på naboveggen.`;
+      const k = r.klyv?.[side] ?? 0;
+      const klyv = k > 0 ? ` Hjørnebordet kløyves ${mm(k, 1)} mm, så hjørnet blir like bredt fra begge sider.` : '';
+      if (f > 0 && type === 'mot') tillegg = ` Påbordet går ${mm(f, 1)} mm forbi hjørnet, inn til påbordet på naboveggen.${klyv}`;
+      else if (type === 'mot') tillegg = ` Kledningen slutter i hjørnet.${klyv}`;
       else if (f > 0) tillegg = ` Kledningen går ${mm(f, 1)} mm forbi hjørnet.`;
       else if (f < 0) tillegg = ` Kledningen starter ${mm(-f, 1)} mm fra hjørnet.`;
       else tillegg = ' Kledningen slutter i hjørnet.';
@@ -697,6 +700,7 @@ function visOppsett(r) {
         <div><span class="liten">Siste slutter</span><strong>${mm(o.til)}</strong>
           <span class="liten">kontrollmål</span></div>
       </div>
+      ${o.hjornebord.map((h) => `<p class="viktig">Hjørnebordet (${h.type === 'O' ? 'påbord' : 'underbord'}) kløyves til ${mm(h.bredde, 1)} mm.</p>`).join('')}
       ${o.type === 'side' ? '' : `<p class="liten">Bare over og under åpningen. Sidebordene står i feltene ved siden av.</p>`}
     </div>`;
   }).join('');
@@ -819,7 +823,8 @@ function visMaterialer(liste) {
       <table class="maltabell kappliste"><thead><tr><th>Antall</th><th>Lengde (mm)</th><th>Bord</th></tr></thead><tbody>
       ${v.felt.map((f) => `<tr class="felt-rad"><td colspan="3">${f.nr}. ${f.navn}</td></tr>`
         + f.biter.map((b) => `<tr><td>${b.antall} stk</td><td><strong>${mm(b.lengde)}</strong></td>
-        <td><span class="ingen-brudd">${b.dim.navn}</span><span class="liten">${b.del}</span></td></tr>`).join('')).join('')}
+        <td><span class="ingen-brudd">${b.dim.navn}</span><span class="liten">${b.del}</span></td></tr>`).join('')
+        + (f.kloyves ?? []).map((k) => `<tr><td colspan="3" class="viktig">Hjørnebord ${k.dim.navn} kløyves til ${mm(k.bredde, 1)} mm bredde</td></tr>`).join('')).join('')}
       </tbody></table></details>`).join('');
   return `<h3 id="v-materialer">Materialliste for hele huset</h3>
     <p class="hjelp">Løpemeter per dimensjon (tykkelse × bredde i mm), med ${mm(liste.svinn)} % svinn,

@@ -117,6 +117,11 @@ Alle skal kunne endres i innstillinger.
   underbordtykkelse (klossen bak hjørnet), så påbordene møtes (Kenny 2026-11-09, ut fra hans
   skisse «Overligger i hjørnet»). Med underbord ytterst på naboveggen er tillegget 0.
 - Vanlig er samme bord ytterst på begge veggene i et hjørne. Ulikt gir varsel (`hjorne-bord`).
+- Hjørnebordet på veggen som slutter mot (`mot`) kløyves med tykkelsen på hjørnebordet på
+  naboveggen (det som synes som endeved), så hjørnet er like bredt sett fra begge sider
+  (Kenny 2026-11-09). `losVegg` får `klyvVenstre/klyvHoyre`: delingen regnes med helt bord og
+  feltet så mye lengre, og etterpå kappes ytterkanten av hjørnebordet (`kloyvHjornebord`).
+  `forleng` og `kledning` i resultatet er det som faktisk dekkes.
 - Nullpunktet er alltid hjørnet på veggen. Bord som går forbi hjørnet får minusmål.
 - «Hjørnene sett ovenfra» (`tegnHjorne` i tegning.js): hvert hjørne i riktig målestokk med
   begge veggene, bord og kloss. Snittet A–A har overdrevet bordtykkelse og viser hjørnet bare forenklet.

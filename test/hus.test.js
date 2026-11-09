@@ -64,9 +64,14 @@ test('lukket hus med fire vegger: tillegget kommer fra naboveggen i hvert hjørn
     { ...VEGG, navn: 'Vegg 4', lengde: 4000, hjorner: hj('mot', 'forbi') },
   ];
   const { vegger: r } = losHus({ vegger, lukket: true });
-  assert.ok(Math.abs(sum(r[0].felt[0]) - 3038) < E);
-  assert.ok(Math.abs(sum(r[1].felt[0]) - 4057) < E);
-  assert.ok(Math.abs(sum(r[3].felt[0]) - 4057) < E, 'siste vegg møter første');
+  const dekker = (x) => x.kledning.til - x.kledning.fra;
+  assert.ok(Math.abs(dekker(r[0]) - 3038) < E);
+  assert.ok(Math.abs(dekker(r[1]) - 4057) < E);
+  assert.ok(Math.abs(dekker(r[3]) - 4057) < E, 'siste vegg møter første');
+  // Hjørnebordet der veggen slutter mot naboen kløyves med tykkelsen på naboens hjørnebord
+  // (påbord 19 mm). Delingen regnes da over 19 mm mer, så feltet blir 3038 + 19 = 3057.
+  assert.deepEqual(r[0].klyv, { venstre: 19, hoyre: 0 });
+  assert.ok(Math.abs(sum(r[0].felt[0]) - 3057) < E);
   for (const v of r) assert.equal(v.varsler.filter((x) => x.alvorlig).length, 0);
   // Vegg 1 har påbord og vegg 2 underbord ytterst i hjørnet de deler: varsel på begge
   assert.ok(r[0].varsler.some((x) => x.type === 'hjorne-bord' && x.felt === 'Høyre hjørne'));
@@ -130,8 +135,9 @@ test('vegg som ikke er fylt ut, er fortsatt nabo, men regnes ikke', () => {
   const { vegger: r } = losHus({ vegger: [{ ...VEGG, hjorner: hj('mot', 'forbi') }, null] });
   assert.equal(r[1], null);
   // Uten utfylt nabo regnes naboen som lik veggen selv (påbord ytterst): venstre slutter mot
-  // naboen og går 19 mm forbi, høyre går forbi med 38 mm. 3000 + 19 + 38 = 3057
-  assert.ok(Math.abs(sum(r[0].felt[0]) - 3057) < E);
+  // naboen og går 19 mm forbi, høyre går forbi med 38 mm. Dekker 3000 + 19 + 38 = 3057
+  assert.ok(Math.abs(r[0].kledning.til - r[0].kledning.fra - 3057) < E);
+  assert.equal(r[0].klyv.venstre, 19);
 });
 
 test('åpning inne i hjørnekassa er en feil', () => {
@@ -147,4 +153,37 @@ test('merkelista får minusmål når bordet går forbi hjørnet', () => {
   const liste = lagMerkeliste(r);
   assert.equal(liste[0].fra, -19);
   assert.equal(liste[0].referanse, 'hjørnet');
+});
+
+test('Kløyving: hjørnebordet på veggen som slutter mot blir smalere med naboens hjørnebord', () => {
+  // Påbord mot påbord, 148 mm bord, 19 mm tykke. B slutter mot A.
+  // Sett fra B: endeveden på påbordet til A (19) + påbordet på B. Kløyves det 19 mm, blir
+  // hjørnet 19 + 129 = 148 mm, like bredt som fra A.
+  const vegger = [
+    { ...VEGG, navn: 'A', hjorner: hj('mot', 'forbi') },
+    { ...VEGG, navn: 'B', hjorner: hj('mot', 'mot') },
+  ];
+  const { vegger: [a, b] } = losHus({ vegger, lukket: false });
+  assert.equal(a.klyv.hoyre, 0); // går forbi, kløyves ikke
+  assert.equal(b.klyv.venstre, 19);
+  const bord = b.felt[0].overliggere[0];
+  assert.ok(Math.abs(bord.fraEksakt + 19) < E); // starter fortsatt 19 mm før hjørnet
+  assert.ok(Math.abs(bord.bredde - 129) < E);
+  assert.equal(bord.klyvd, 19);
+  assert.deepEqual(b.felt[0].hjornebord.start, { type: 'O', klyvd: 19, bredde: bord.bredde });
+  // Resten av delingen: neste påbord står like langt fra hjørnebordets innerkant som vanlig
+  const neste = b.felt[0].overliggere[1];
+  assert.ok(Math.abs(neste.fraEksakt - bord.tilEksakt - b.felt[0].losning.senteravstand + 148) < 1e-6);
+});
+
+test('Kløyving med underbord mot underbord: 19 mm av underbordet', () => {
+  const vegger = [
+    { ...VEGG, hjorneHoyre: 'U', hjorner: hj('mot', 'forbi') },
+    { ...VEGG, hjorneVenstre: 'U', tykkelseUnder: 22, hjorner: hj('mot', 'mot') },
+  ];
+  const { vegger: [, b] } = losHus({ vegger, lukket: false });
+  // Naboens hjørnebord er et underbord på 19 mm (A har 19 mm underbord)
+  assert.equal(b.klyv.venstre, 19);
+  assert.ok(Math.abs(b.felt[0].underliggere[0].bredde - 129) < E);
+  assert.ok(Math.abs(b.felt[0].underliggere[0].fraEksakt) < E); // starter i hjørnet
 });

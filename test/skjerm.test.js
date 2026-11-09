@@ -122,7 +122,8 @@ test('Hjørnet sett ovenfra: påbord mot påbord med kloss, i riktig mål', () =
     { ...v, navn: 'B', hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'mot' } } }] });
   const svgB = tegnHjorne(b, 'venstre', a, 'A');
   // Påbordet på B starter 19 mm før hjørnet, utenpå underbordsjiktet (y = 19, 19 mm tykt)
-  assert.match(svgB, /x="-19" y="19" width="148" height="19"[^>]*data-bord="o"/);
+  // og er kløyvd 19 mm, til 129 mm
+  assert.match(svgB, /x="-19" y="19" width="129" height="19"[^>]*data-bord="o"/);
   // Påbordet på A står på tvers, fra x = −38 til −19, og går ned til y = 38
   assert.match(svgB, /x="-38" y="-110" width="19" height="148"[^>]*data-bord="o" data-nabo="ja"/);
   // Kloss bak påbordene på begge veggene

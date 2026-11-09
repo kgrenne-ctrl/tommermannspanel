@@ -62,6 +62,7 @@ Prinsipp fra lommeregner.no og NDLA: kledningen kløyves ikke for å få det til
 - **Avklart med Kenny 2026-11-09:** hvert hjørne velges for seg: kledningen **går forbi** hjørnet, **slutter mot** naboveggen (som går forbi), eller slutter mot en **hjørnekasse**.
   - Vegglengden måles utenpå lektene. Går kledningen forbi, blir feltet lengre med tykkelsen på kledningen på naboveggen i hjørnet: underbordets tykkelse, pluss påbordets tykkelse når naboveggen har påbord i hjørnet.
   - To vanlige løsninger (Kenny 2026-11-09): underbord mot underbord i hjørnet, eller påbord mot påbord med kloss bak. Med påbord går også veggen som slutter mot naboen forbi hjørnet med klossens tykkelse, så påbordene møtes.
+  - Hjørnebordet på veggen som slutter mot naboveggen kløyves med tykkelsen på hjørnebordet på naboveggen, så hjørnet blir like bredt sett fra begge sider (Kenny 2026-11-09).
   - Hjørnekasse: feltet blir kortere med kassebredden, målt på veggen fra hjørnet til der kledningen starter.
   - Målene i merkelista regnes fra hjørnet på veggen, der tommestokken kan holdes. Bord som går forbi hjørnet får minusmål.
 - **Flere vegger = ett hus, vegger rundt** (Kenny 2026-11-09): veggene legges inn i rekkefølge rundt huset. Høyre hjørne på én vegg er venstre hjørne på neste, så appen vet hvilken vegg som går forbi. Siste vegg møter den første når huset er lukket.

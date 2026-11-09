@@ -39,6 +39,13 @@ export function innsideIHjornet(vegg, side) {
   return bord === 'O' ? v.tykkelseUnder : 0;
 }
 
+// Tykkelsen på det ytterste bordet i hjørnet (påbord eller underbord)
+export function hjornebordTykkelse(vegg, side) {
+  const v = { ...STANDARD_VEGG, ...vegg };
+  const bord = side === 'venstre' ? v.hjorneVenstre : v.hjorneHoyre;
+  return bord === 'O' ? v.tykkelseOver : v.tykkelseUnder;
+}
+
 // Hvor mye lengre (pluss) eller kortere (minus) feltet blir enn vegglengden i ett hjørne.
 // `nabo` = { tykkelse, innside }: kledningstykkelsen i hjørnet på naboveggen, og hvor langt
 // inn innsiden av det ytterste bordet der ligger. (Et tall alene regnes som tykkelsen.)
@@ -75,17 +82,23 @@ export function losHus({ vegger, lukket = true }) {
     // Naboveggens kledningstykkelse i det hjørnet de deler (dens høyre er vårt venstre)
     const naboVenstre = nb.venstre !== null && vegger[nb.venstre] ? vegger[nb.venstre] : null;
     const naboHoyre = nb.hoyre !== null && vegger[nb.hoyre] ? vegger[nb.hoyre] : null;
-    const naboMal = (nabo, naboSide, minSide) => (nabo
-      ? { tykkelse: tykkelseIHjornet(nabo, naboSide), innside: innsideIHjornet(nabo, naboSide) }
-      : { tykkelse: tykkelseIHjornet(v, minSide), innside: innsideIHjornet(v, minSide) });
+    const naboMal = (nabo, naboSide, minSide) => {
+      const kilde = nabo ? [nabo, naboSide] : [v, minSide];
+      return { tykkelse: tykkelseIHjornet(...kilde), innside: innsideIHjornet(...kilde),
+        hjornebord: hjornebordTykkelse(...kilde) };
+    };
     const nV = naboMal(naboVenstre, 'hoyre', 'venstre');
     const nH = naboMal(naboHoyre, 'venstre', 'hoyre');
     const forlengVenstre = forlengelse(hj.venstre, nV);
     const forlengHoyre = forlengelse(hj.hoyre, nH);
     hj.venstre.nabo = nV;
     hj.hoyre.nabo = nH;
+    // Slutter kledningen mot naboveggen, kløyves hjørnebordet med tykkelsen på hjørnebordet
+    // på naboveggen (det som synes som endeved), så hjørnet ser like bredt ut fra begge sider.
+    const klyvVenstre = hj.venstre.type === 'mot' ? nV.hjornebord : 0;
+    const klyvHoyre = hj.hoyre.type === 'mot' ? nH.hjornebord : 0;
 
-    const r = losVegg({ ...v, hjorner: hj, forlengVenstre, forlengHoyre });
+    const r = losVegg({ ...v, hjorner: hj, forlengVenstre, forlengHoyre, klyvVenstre, klyvHoyre });
     if (r.feil) return { navn: v.navn, feil: r.feil, forleng: { venstre: forlengVenstre, hoyre: forlengHoyre } };
 
     // Henger hjørnet sammen med naboveggen?

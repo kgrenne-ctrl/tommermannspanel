@@ -60,6 +60,9 @@ function lagVegg(tilfeldig) {
     // Hjørner (fase 4): går forbi (+19/+38), slutter mot naboen (0) eller hjørnekasse (minus)
     forlengVenstre: velg([0, 19, 38, -73, -98]),
     forlengHoyre: velg([0, 19, 38, -73, -98]),
+    // Kløyvd hjørnebord (veggen slutter mot naboen)
+    klyvVenstre: velg([0, 0, 19, 22]),
+    klyvHoyre: velg([0, 0, 19, 22]),
   };
 }
 
