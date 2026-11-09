@@ -3,6 +3,7 @@
 
 import { foreslaVegg, vurderVegg, lagMerkeliste } from '../tommermann/vegg.js';
 import { losHus, naboer, speilHjorne } from '../tommermann/hus.js';
+import { lagMaterialliste, materialTekst, STANDARD_MATERIALER } from '../tommermann/materialer.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG, STANDARD_HJORNE } from '../tommermann/fagverdier.js';
 import { tegnVegg, tegnSnitt } from './tegning.js';
 import { lesTall, mm } from './format.js';
@@ -30,7 +31,12 @@ let sisteResultat = null;
 
 // Huset: alle veggene som tekst slik de står i skjemaet, og hvilken som vises.
 // Skjemaet viser én vegg om gangen. Når man bytter, lagres den gamle i hus.vegger.
-let hus = { vegger: [], aktiv: 0, lukket: true };
+let hus = { vegger: [], aktiv: 0, lukket: true, materialer: {} };
+
+// Siste materialliste for hele huset (til del-knappen), og hvilke dimensjoner prisfeltene
+// er tegnet for (de tegnes bare på nytt når dimensjonene endres, så man ikke mister fokus).
+let sisteListe = null;
+let prisDimensjoner = '';
 
 // ---------- Oppstart ----------
 
@@ -62,6 +68,10 @@ if (lagretHus && Array.isArray(lagretHus.vegger) && lagretHus.vegger.length) {
   hus.vegger = [lesTilstand()];
 }
 finn('v-lukket').checked = hus.lukket;
+hus.materialer = { kapptillegg: String(STANDARD_MATERIALER.kapptillegg), svinn: String(STANDARD_MATERIALER.svinn),
+  priser: {}, ...hus.materialer };
+finn('m-kapptillegg').value = hus.materialer.kapptillegg;
+finn('m-svinn').value = hus.materialer.svinn;
 
 // Bytte mellom «Ett felt» og «Hel vegg». Valget huskes også.
 function visModus(modus) {
@@ -86,6 +96,9 @@ skjema.addEventListener('input', (hendelse) => {
     hendelse.target.closest('.apning').querySelector('.a-bunn').value = '0';
   }
   if (hendelse.target.id === 'v-lukket') hus.lukket = hendelse.target.checked;
+  if (hendelse.target.id === 'm-kapptillegg') hus.materialer.kapptillegg = hendelse.target.value;
+  if (hendelse.target.id === 'm-svinn') hus.materialer.svinn = hendelse.target.value;
+  if (hendelse.target.dataset.pris) hus.materialer.priser[hendelse.target.dataset.pris] = hendelse.target.value;
   sisteForslag = null;
   oppdaterStartvalg();
   oppdater();
@@ -143,6 +156,8 @@ resultat.addEventListener('click', (hendelse) => {
     const [gruppe, nr] = knapp.dataset.forslag.split(':');
     sisteForslag.valgt = knapp.dataset.forslag;
     brukForslag(sisteForslag[gruppe][Number(nr)].oppsett);
+  } else if (knapp.id === 'v-del-liste') {
+    delListe(knapp);
   } else if (knapp.id === 'v-utgangspunkt') {
     sisteForslag.valgt = null;
     brukForslag(sisteForslag.utgangspunkt);
@@ -444,6 +459,13 @@ function oppdater() {
   const husSvar = losHus({ vegger: alle.map((v) => (mangler(v) ? null : v)), lukket: hus.lukket });
   visFaner(husSvar);
   visNaboer(husSvar.vegger[hus.aktiv]);
+  sisteListe = lagMaterialliste(husSvar.vegger.map((r, k) => (r ? { ...r, navn: veggNavn(hus.vegger[k], k) } : null)), {
+    kapptillegg: lesTall(hus.materialer.kapptillegg) ?? STANDARD_MATERIALER.kapptillegg,
+    svinn: lesTall(hus.materialer.svinn) ?? STANDARD_MATERIALER.svinn,
+    priser: Object.fromEntries(Object.entries(hus.materialer.priser)
+      .map(([n, v]) => [n, lesTall(v)]).filter(([, v]) => v !== null)),
+  });
+  visPrisfelt(sisteListe);
 
   const melding = mangler(alle[hus.aktiv]);
   sisteResultat = null;
@@ -559,6 +581,8 @@ function visVegg(r) {
 
     ${visMerkeliste(r)}
 
+    ${visMaterialer(sisteListe)}
+
     ${r.apninger.length ? `<h3>Innlegg på karm</h3>
     <p class="hjelp">Bordet går like langt inn på karmen på begge sider.</p>
     <table class="maltabell"><thead><tr><th>Åpning</th><th>Innlegg (mm)</th></tr></thead><tbody>${innlegg}</tbody></table>` : ''}
@@ -653,4 +677,63 @@ function visFelt(f, nr, maks) {
     ${tabell('Underbord', f.underliggere)}
     ${tabell('Påbord', f.overliggere)}
   </details>`;
+}
+
+// ---------- Materialliste ----------
+
+// Ett prisfelt per dimensjon som finnes i huset
+function visPrisfelt(liste) {
+  const dims = liste.linjer.map((l) => l.dim);
+  const nokkel = dims.map((d) => d.nokkel).join(',');
+  if (nokkel === prisDimensjoner) return;
+  prisDimensjoner = nokkel;
+  finn('m-priser').innerHTML = dims.map((d) => `
+    <label class="felt"><span>Pris ${d.navn} (kr/lm)</span>
+      <input data-pris="${d.nokkel}" type="text" inputmode="decimal" value="${hus.materialer.priser[d.nokkel] ?? ''}"></label>`).join('');
+}
+
+function visMaterialer(liste) {
+  if (!liste || !liste.linjer.length) return '';
+  const harPris = liste.linjer.some((l) => l.belop !== null);
+  const rader = liste.linjer.map((l) => `<tr>
+    <td class="ingen-brudd">${l.dim.navn}</td><td>${mm(l.netto, 1)}</td><td><strong>${mm(l.bestill)}</strong></td>
+    ${harPris ? `<td>${l.belop === null ? '–' : `${mm(l.belop)} kr`}</td>` : ''}</tr>`).join('');
+  const kapp = liste.kappliste.map((v) => `
+    <details class="feltkort"><summary><span>${v.navn}</span></summary>
+      <table class="maltabell kappliste"><thead><tr><th>Antall</th><th>Lengde (mm)</th><th>Bord</th></tr></thead><tbody>
+      ${v.felt.map((f) => `<tr class="felt-rad"><td colspan="3">${f.nr}. ${f.navn}</td></tr>`
+        + f.biter.map((b) => `<tr><td>${b.antall} stk</td><td><strong>${mm(b.lengde)}</strong></td>
+        <td><span class="ingen-brudd">${b.dim.navn}</span><span class="liten">${b.del}</span></td></tr>`).join('')).join('')}
+      </tbody></table></details>`).join('');
+  return `<h3 id="v-materialer">Materialliste for hele huset</h3>
+    <p class="hjelp">Løpemeter per dimensjon (tykkelse × bredde i mm), med ${mm(liste.svinn)} % svinn,
+      rundet opp til hel meter. Hvert bord er regnet med ${mm(liste.kapptillegg)} mm kapptillegg.
+      Endres under «Materialer for huset».</p>
+    ${liste.mangler.length ? boks('feil', `<p>Ikke med fordi feltet ikke går opp: ${liste.mangler.join(', ')}.</p>`) : ''}
+    <table class="maltabell"><thead><tr><th>Dimensjon</th><th>Netto (lm)</th><th>Bestill (lm)</th>${harPris ? '<th>Pris</th>' : ''}</tr></thead>
+      <tbody>${rader}</tbody>
+      ${liste.belop !== null ? `<tfoot><tr><td colspan="3">Sum${liste.linjer.every((l) => l.belop !== null) ? '' : ' (linjene med pris)'}</td><td><strong>${mm(liste.belop)} kr</strong></td></tr></tfoot>` : ''}
+    </table>
+    <button type="button" class="knapp" id="v-del-liste">Kopier eller del lista</button>
+    <h3>Kappliste</h3>
+    <p class="hjelp">Antall bord per lengde, vegg for vegg. Lengden er med kapptillegg.</p>
+    ${kapp}`;
+}
+
+// Del med telefonens Del-meny (SMS, e-post) når den finnes, ellers kopier til utklippstavla
+async function delListe(knapp) {
+  if (!sisteListe) return;
+  const tekst = materialTekst(sisteListe);
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Materialliste kledning', text: tekst });
+      return;
+    }
+    await navigator.clipboard.writeText(tekst);
+    knapp.textContent = 'Kopiert';
+  } catch (feil) {
+    if (feil?.name === 'AbortError') return; // brukeren lukket Del-menyen
+    knapp.textContent = 'Fikk ikke kopiert. Merk teksten under.';
+    knapp.insertAdjacentHTML('afterend', `<textarea class="del-tekst" readonly rows="12">${tekst.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</textarea>`);
+  }
 }

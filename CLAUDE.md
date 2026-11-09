@@ -122,6 +122,14 @@ Alle skal kunne endres i innstillinger.
   under nøkkelen `hus` ({ vegger, aktiv, lukket }). Gammel nøkkel `vegg` blir første vegg.
   Hjørnet på veggen som vises, bestemmer hjørnet på naboveggen (`synkHjorner`).
 
+## Materialer (fase 5, avklart med Kenny 2026-11-09)
+- `src/tommermann/materialer.js`: `lagMaterialliste(vegger, { kapptillegg, svinn, priser })`.
+  Bestilling i løpemeter per dimensjon (tykkelse × bredde). Bordlengde = høyden på delen bordet
+  dekker + kapptillegg (standard 50 mm). Svinn standard 10 %, bestilt mengde rundes opp til hel meter.
+- Kappliste per vegg og felt: antall stykker per lengde og dimensjon.
+- Felt som ikke går opp, er ikke med, og lista sier fra om det.
+- Lista kan kopieres eller deles som tekst (`materialTekst`).
+
 ## Tester
 - `npm test` (eller `node --test`) kjører alle tester i `test/`.
 - Alle tester skal være grønne før en fase er ferdig og før commit.

@@ -459,7 +459,7 @@ input[type="text"]:focus, select:focus {
 .merkeliste td, .merkeliste th { text-align: left; vertical-align: top; }
 .merkeliste td:last-child, .merkeliste th:last-child { text-align: right; white-space: nowrap; }
 .merkeliste td:nth-child(3) { font-size: 15px; }
-.merkeliste .liten {
+.merkeliste .liten, .kappliste .liten {
   display: block;
   font-size: 13px;
   font-weight: 400;
@@ -526,3 +526,9 @@ footer {
 
 /* hidden skal alltid skjule, også elementer med display: flex */
 [hidden] { display: none !important; }
+
+.del-tekst { width: 100%; font: inherit; font-size: 14px; padding: 8px; border: 1px solid var(--linje); border-radius: 8px; margin-top: 8px; }
+.maltabell tfoot td { font-weight: 600; border-top: 2px solid var(--linje); }
+.ingen-brudd { white-space: nowrap; }
+.kappliste tr.felt-rad td { font-weight: 600; background: var(--flate); }
+.kappliste td:first-child { white-space: nowrap; }

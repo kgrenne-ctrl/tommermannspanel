@@ -77,6 +77,7 @@ Prinsipp fra lommeregner.no og NDLA: kledningen kløyves ikke for å få det til
 - Antall bord per bredde og lengde, løpemeter, valgfritt svinnpåslag.
 - Kappliste per felt (korte bord over og under vinduer). Kobles senere mot kappeplan-appen for minst mulig svinn.
 - Valgfri pris per løpemeter.
+- **Avklart med Kenny 2026-11-09:** det bestilles i løpemeter per dimensjon (tykkelse × bredde), trelast leverer lengdene. Hvert bord regnes som vegghøyden (eller høyden på feltet over/under åpningen) pluss et kapptillegg per bord (innstilling, standard 50 mm). Svinn standard 10 %. Lista kopieres eller deles som tekst fra telefonen (PDF i fase 6).
 
 **Dokumentasjon**
 - Tegning i skala (SVG) av hele veggen med alle bord.
