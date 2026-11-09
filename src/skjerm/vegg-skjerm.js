@@ -1,7 +1,7 @@
 // Skjermdelen for hel vegg: leser skjemaet, spør veggmodellen og viser svaret.
 // Regner aldri selv. All matematikk ligger i src/tommermann/.
 
-import { foreslaVegg, vurderVegg, lagMerkeliste } from '../tommermann/vegg.js';
+import { foreslaVegg, vurderVegg, lagMerkeliste, lagOppsettliste } from '../tommermann/vegg.js';
 import { losHus, naboer, speilHjorne } from '../tommermann/hus.js';
 import { lagMaterialliste, materialTekst, STANDARD_MATERIALER } from '../tommermann/materialer.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG, STANDARD_HJORNE } from '../tommermann/fagverdier.js';
@@ -28,6 +28,9 @@ let sisteForslag = null;
 
 // Siste resultat for veggen som vises (trengs når forslagene regnes ut).
 let sisteResultat = null;
+
+// Om «Detaljer for den som planlegger» er åpnet (huskes når appen regner på nytt).
+let detaljerApen = false;
 
 // Huset: alle veggene som tekst slik de står i skjemaet, og hvilken som vises.
 // Skjemaet viser én vegg om gangen. Når man bytter, lagres den gamle i hus.vegger.
@@ -130,9 +133,11 @@ skjema.addEventListener('click', (hendelse) => {
 
 // Trykk på en rad i oversikten: åpne feltkortet og bla dit
 resultat.addEventListener('click', (hendelse) => {
-  const rad = hendelse.target.closest('tr[data-ga-til]');
+  const rad = hendelse.target.closest('[data-ga-til]');
   if (!rad) return;
   const kortet = finn(`felt-${rad.dataset.gaTil}`);
+  finn('v-detaljer').open = true;
+  detaljerApen = true;
   kortet.open = true;
   kortet.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
@@ -176,6 +181,11 @@ function brukForslag(o) {
   oppdater();
   finn('v-forslag')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+// Husk om detaljene er åpne
+resultat.addEventListener('toggle', (hendelse) => {
+  if (hendelse.target.id === 'v-detaljer') detaljerApen = hendelse.target.open;
+}, true);
 
 // Bytte høyde for horisontalsnittet
 resultat.addEventListener('input', (hendelse) => {
@@ -390,13 +400,22 @@ function tomVeggen() {
   sisteForslag = null;
 }
 
+// Eksempel som går opp med omlegg innenfor anbefalt (samme vegg som i test/vegg.test.js)
 function fyllEksempel() {
   finn('v-lengde').value = '6000';
   finn('v-hoyde').value = '2400';
+  settBredde('vbu', 98);
+  settBredde('vbo', 98);
+  skjema.elements.karmBord.value = 'O';
+  for (const [, Side] of SIDER) {
+    finn(`v-hjorne${Side}`).value = 'O';
+    finn(`v-hjorne${Side}Type`).value = 'mot';
+  }
+  finn('v-startvalg').value = 'venstre';
   liste.innerHTML = '';
-  leggTilApning({ type: 'vindu', x: 600, bredde: 1000, hoyde: 600, bunn: 1200 });
-  leggTilApning({ type: 'port', x: 2000, bredde: 2400, hoyde: 2100, bunn: 0 });
-  leggTilApning({ type: 'vindu', x: 4700, bredde: 1000, hoyde: 600, bunn: 1200 });
+  leggTilApning({ type: 'vindu', x: 500, bredde: 1000, hoyde: 1200, bunn: 900 });
+  leggTilApning({ type: 'dor', x: 2400, bredde: 900, hoyde: 2100, bunn: 0 });
+  leggTilApning({ type: 'vindu', x: 4300, bredde: 1000, hoyde: 1200, bunn: 900 });
 }
 
 // ---------- Lese skjema og vise resultat ----------
@@ -533,63 +552,135 @@ function visVegg(r) {
   const snittValg = lagSnittValg(r);
   const snitt = snittValg.find((v) => v.etikett === valgtSnitt) ?? snittValg[0];
   const okFelt = r.felt.filter((f) => f.ok);
-  const ikkeOpp = r.felt.filter((f) => !f.ok);
   const overMaks = okFelt.filter((f) => !f.losning.innenforAnbefalt);
-
-  const alvorlige = r.varsler.filter((v) => v.alvorlig);
-  const andre = r.varsler.filter((v) => !v.alvorlig);
-  const varselListe = (vs) => vs.map((v) => `<p><strong>${v.felt}:</strong> ${v.tekst}</p>`).join('');
-
-
   const innlegg = r.apninger.map((a) => `<tr><td>${a.navn}</td><td>${mm(a.innlegg.venstre, 1)}</td></tr>`).join('');
 
   return `
     <h2>Resultat</h2>
-    <a class="knapp lenkeknapp hopp" href="#v-merkeliste">Gå til merkelista</a>
+    <a class="knapp lenkeknapp hopp" href="#v-oppsett">Gå til oppsettet</a>
     <div class="nokkeltall">
       ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} av ${r.felt.length} innenfor anbefalt omlegg`)}
-      ${kort('Rytme', `${mm(r.rytme.senteravstand, 1)} mm`, `Senteravstand ved ${mm(r.rytme.omlegg)} mm omlegg`)}
+      ${kort('Underbord', okFelt.reduce((s, f) => s + f.underliggere.length, 0), 'å merke opp på veggen')}
     </div>
-    ${alvorlige.length ? boks('feil', `${ikkeOpp.length ? `<p><strong>${ikkeOpp.length} felt går ikke opp.</strong> Flytt en åpning, bytt bordbredde eller bytt mellom påbord og underbord inn på karmen.</p>` : ''}${varselListe(alvorlige)}`) : ''}
-    ${andre.length ? boks('varsel', varselListe(andre)) : ''}
-    ${!alvorlige.length && !andre.length ? boks('ok', '<p>Alle felt går opp med omlegg innenfor anbefalt.</p>') : ''}
+    ${visVarsler(r)}
 
     ${visForslag(r)}
 
-    <h3>Oversikt</h3>
-    <table class="maltabell oversikt"><thead><tr><th>Nr</th><th>Felt</th><th>Omlegg</th><th></th></tr></thead><tbody>
-      ${r.felt.map((f, i) => `<tr data-ga-til="${i + 1}"><td>${i + 1}</td><td>${f.navn}</td>
-        <td>${f.ok ? `${mm(f.losning.omlegg, 1)} mm` : '–'}</td><td>${merkeFor(f, r.rytme.maks)}</td></tr>`).join('')}
-    </tbody></table>
-    <p class="hjelp">Trykk på en rad for å se utdelingsmålene. Nummeret står også i tegningen.</p>
+    ${visOppsett(r)}
 
     <h3>Tegning</h3>
     ${zoomBoks('vegg', tegnVegg(r, snitt.hoyde))}
     <p class="hjelp">Sett forfra. Lyse bord er underbord, blå er påbord, grått er karm.
-      Rød stiplet = feltet går ikke opp. Oransje linje = der snittet under er tatt.
+      Tallene i ringene er feltnumrene. Rød stiplet = feltet går ikke opp.
       Grått i hjørnet = hjørnekasse.</p>
-
-    <h3>Horisontalsnitt A–A</h3>
-    <label class="felt"><span>Snitt i høyde</span>
-      <select id="v-snitt">${snittValg.map((v) => `<option ${v.etikett === snitt.etikett ? 'selected' : ''}>${v.etikett}</option>`).join('')}</select></label>
-    ${zoomBoks('snitt', tegnSnitt(r, snitt.hoyde))}
-    <p class="hjelp">Sett ovenfra, veggen øverst og utsiden ned. Zoom med + og −, og skyv for å se resten.
-      Tallene under kledningen ved karmen er innlegget i mm. Oransje stiplet = underlag bak påbord i hjørnet.
-      Grått ved hjørnet = kledningen på naboveggen. Hjørnekasse er tegnet som karm.
-      Bordtykkelsen er tegnet tykkere enn den er.</p>
-
-
-    ${visMerkeliste(r)}
 
     ${visMaterialer(sisteListe)}
 
-    ${r.apninger.length ? `<h3>Innlegg på karm</h3>
-    <p class="hjelp">Bordet går like langt inn på karmen på begge sider.</p>
-    <table class="maltabell"><thead><tr><th>Åpning</th><th>Innlegg (mm)</th></tr></thead><tbody>${innlegg}</tbody></table>` : ''}
+    <details class="detaljer" id="v-detaljer" ${detaljerApen ? 'open' : ''}>
+      <summary>Detaljer for den som planlegger</summary>
+      <p class="hjelp">Rytme: senteravstand ${mm(r.rytme.senteravstand, 1)} mm mellom underbordene
+        når omlegget er ${mm(r.rytme.omlegg)} mm. Feltene avviker litt fra dette for å gå opp.</p>
 
-    <h3>Felt for felt</h3>
-    <p class="hjelp">Løpende mål fra venstre hjørne. Trykk på et felt for å se utdelingsmålene.</p>
-    ${r.felt.map((f, i) => visFelt(f, i + 1, r.rytme.maks)).join('')}`;
+      <h3>Horisontalsnitt A–A</h3>
+      <label class="felt"><span>Snitt i høyde</span>
+        <select id="v-snitt">${snittValg.map((v) => `<option ${v.etikett === snitt.etikett ? 'selected' : ''}>${v.etikett}</option>`).join('')}</select></label>
+      ${zoomBoks('snitt', tegnSnitt(r, snitt.hoyde))}
+      <p class="hjelp">Sett ovenfra, veggen øverst og utsiden ned. Oransje linje på tegningen over
+        viser hvor snittet er tatt. Zoom med + og −, og skyv for å se resten. Tallene under kledningen
+        ved karmen er hvor langt bordet går inn på karmen (mm). Oransje stiplet = underlag bak påbord i hjørnet.
+        Grått ved hjørnet = kledningen på naboveggen. Bordtykkelsen er tegnet tykkere enn den er.</p>
+
+      ${visMerkeliste(r)}
+
+      ${r.apninger.length ? `<h3>Innlegg på karm</h3>
+      <p class="hjelp">Hvor langt bordet går inn på karmen. Likt på begge sider.</p>
+      <table class="maltabell"><thead><tr><th>Åpning</th><th>Innlegg (mm)</th></tr></thead><tbody>${innlegg}</tbody></table>` : ''}
+
+      <h3>Felt for felt</h3>
+      <p class="hjelp">Alle bord i hvert felt, løpende mål fra venstre hjørne.</p>
+      ${r.felt.map((f, i) => visFelt(f, i + 1, r.rytme.maks)).join('')}
+    </details>`;
+}
+
+// Mål fra karmen: «17 mm før venstre karm vindu 1» (til venstre for karmkanten) eller
+// «204 mm etter venstre karm vindu 1» (til høyre). Tomt når målet er fra hjørnet.
+function karmTekst(avstand, referanse) {
+  if (referanse === 'hjørnet') return '';
+  return avstand < 0 ? `${mm(-avstand)} mm før ${referanse}` : `${mm(avstand)} mm etter ${referanse}`;
+}
+
+// Varslene sortert: det som må fikses først, så det som bør sjekkes, så det som er greit
+// å vite. Like varsler slås sammen, og hvert punkt sier hva man gjør med det.
+function visVarsler(r) {
+  const nr = (navn) => r.felt.findIndex((f) => f.navn === navn) + 1;
+  const feltNavn = (navn) => (nr(navn) ? `Felt ${nr(navn)} (${navn.toLowerCase()})` : navn);
+  const liste = (nrListe) => (nrListe.length === 1 ? `${nrListe[0]}`
+    : `${nrListe.slice(0, -1).join(', ')} og ${nrListe.at(-1)}`);
+
+  const ma = r.varsler.filter((v) => v.alvorlig);
+  const spikring = r.varsler.filter((v) => v.type === 'spikring');
+  const omlegg = r.varsler.filter((v) => v.type === 'omlegg-over-maks');
+  const hjorner = r.varsler.filter((v) => v.type === 'underlag-hjorne');
+  const ikkeOpp = r.felt.filter((f) => !f.ok).length;
+
+  const deler = [];
+  if (ma.length) {
+    deler.push(boks('feil', `<p><strong>Må fikses før du begynner</strong></p>
+      ${ma.map((v) => `<p>${feltNavn(v.felt)}: ${v.tekst}</p>`).join('')}
+      ${ikkeOpp ? '<p>Prøv «Finn bedre oppsett» under, flytt en åpning, bytt bordbredde eller bytt mellom påbord og underbord inn på karmen.</p>' : ''}`));
+  }
+  if (spikring.length) {
+    deler.push(boks('varsel', `<p><strong>Bør sjekkes</strong></p>
+      ${spikring.map((v) => `<p>${feltNavn(v.felt)}: ${v.tekst}</p>`).join('')}`));
+  }
+  const vite = [];
+  if (omlegg.length) {
+    const tall = omlegg.map((v) => nr(v.felt)).filter(Boolean);
+    const storst = Math.max(...r.felt.filter((f) => f.ok).map((f) => f.losning.omlegg));
+    vite.push(`<p>Felt ${liste(tall)} får omlegg over ${mm(r.rytme.maks)} mm (størst ${mm(storst, 1)} mm).
+      Det går an, men er mer enn anbefalt. «Finn bedre oppsett» kan finne noe bedre.</p>`);
+  }
+  if (hjorner.length) {
+    const sider = hjorner.map((v) => (v.felt === 'Venstre hjørne' ? 'venstre' : 'høyre'));
+    vite.push(`<p>Påbord ytterst i ${sider.length === 2 ? 'begge hjørner' : `${sider[0]} hjørne`}:
+      sett underlag bak der det ikke er underbord.</p>`);
+  }
+  if (vite.length) deler.push(boks('info', `<p><strong>Greit å vite</strong></p>${vite.join('')}`));
+  if (!ma.length && !spikring.length && !omlegg.length) {
+    deler.unshift(boks('ok', '<p>Alle felt går opp med omlegg innenfor anbefalt.</p>'));
+  }
+  return deler.join('');
+}
+
+// «Slik setter du opp»: én blokk per felt med det tømreren trenger
+function visOppsett(r) {
+  const felt = lagOppsettliste(r).map((o) => {
+    if (!o.ok) {
+      return `<div class="oppsett-felt feil" data-ga-til="${o.nr}">
+        <div class="oppsett-tittel"><span>${o.nr}. ${o.navn}</span><span class="merke merke-feil">Går ikke opp</span></div>
+        <p>${o.melding}</p></div>`;
+    }
+    const merke = o.innenforAnbefalt ? '' : `<span class="merke merke-varsel">Omlegg ${mm(o.omlegg, 1)}</span>`;
+    const bord = o.bordtype === 'U' ? 'underbord' : 'påbord';
+    return `<div class="oppsett-felt" data-ga-til="${o.nr}">
+      <div class="oppsett-tittel"><span>${o.nr}. ${o.navn}</span>${merke}</div>
+      <div class="oppsett-tall">
+        <div><span class="liten">Første ${bord}</span><strong>${mm(o.fra)}</strong>
+          <span class="liten">${karmTekst(o.fraReferanse, o.referanse) || 'fra hjørnet'}</span></div>
+        <div><span class="liten">Kloss</span><strong>${mm(o.kloss, 1)}</strong>
+          <span class="liten">${o.antall} ${bord}</span></div>
+        <div><span class="liten">Siste slutter</span><strong>${mm(o.til)}</strong>
+          <span class="liten">kontrollmål</span></div>
+      </div>
+      ${o.type === 'side' ? '' : `<p class="liten">Bare over og under åpningen. Sidebordene står i feltene ved siden av.</p>`}
+    </div>`;
+  }).join('');
+  return `<h3 id="v-oppsett">Slik setter du opp</h3>
+    <p class="hjelp">Sett første underbord på målet, og bruk klossen mellom underbordene ut feltet.
+      Sjekk at det siste slutter på kontrollmålet. Påbordene settes midt over mellomrommet.
+      Alle mål er fra venstre hjørne. Mål fra karmen er tryggere ved vinduer og dører.</p>
+    ${felt}
+    <p class="hjelp">Trykk på et felt for å se alle målene i det.</p>`;
 }
 
 function visForslag(r) {
@@ -634,7 +725,7 @@ function visMerkeliste(r) {
   const linjer = rader.map((m) => {
     const nyKloss = forrigeKloss === null || Math.abs(m.klaring - forrigeKloss) > 0.05;
     forrigeKloss = m.klaring;
-    const ref = m.referanse === 'hjørnet' ? '' : `<span class="liten">${m.fraReferanse >= 0 ? '' : '−'}${mm(Math.abs(m.fraReferanse))} fra ${m.referanse}</span>`;
+    const ref = m.referanse === 'hjørnet' ? '' : `<span class="liten">${karmTekst(m.fraReferanse, m.referanse)}</span>`;
     return `<tr class="${nyKloss ? 'ny-kloss' : ''}">
       <td>${m.nr}</td>
       <td><strong>${mm(m.fra)}</strong>${ref}</td>
@@ -642,12 +733,12 @@ function visMerkeliste(r) {
       <td>${nyKloss ? `<strong>${mm(m.klaring, 1)}</strong>` : mm(m.klaring, 1)}</td>
     </tr>`;
   }).join('');
-  return `<h3 id="v-merkeliste">Merkeliste</h3>
-    <p class="hjelp">Alle underbord fra venstre mot høyre. Merk venstre kant av hvert underbord,
-      målt fra hjørnet (store tall) eller fra karmkanten (små tall, tryggere ved vinduer og dører).
+  return `<h3 id="v-merkeliste">Alle mål, bord for bord</h3>
+    <p class="hjelp">Hvert underbord fra venstre mot høyre, for den som vil merke alle i stedet for
+      å bruke kloss. Mål til venstre kant av bordet, fra hjørnet (store tall) eller fra karmen
+      (små tall). «Før» karmen betyr til venstre for karmkanten, «etter» til høyre.
       Minus betyr at bordet starter utenfor hjørnet (kledningen går forbi).
-      Kloss = distanseklosse mellom underbordene. Fet skrift betyr at klossen er ny fra den raden.
-      Påbordene settes midt over klaringen.</p>
+      Fet skrift betyr at klossen er ny fra den raden.</p>
     ${mangler.length ? boks('feil', `<p>Mangler i lista fordi feltet ikke går opp: ${mangler.map(({ f, nr }) => `${nr}. ${f.navn}`).join(', ')}.</p>`) : ''}
     <table class="maltabell merkeliste">
       <thead><tr><th>Nr</th><th>Venstre kant (mm)</th><th>Høyde</th><th>Kloss</th></tr></thead>

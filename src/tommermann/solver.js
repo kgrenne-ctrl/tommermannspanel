@@ -82,24 +82,24 @@ function byggLosning(L, bu, bo, start, slutt, k, g, inn) {
   if (o > inn.oMax + SLINGRING) {
     varsler.push({
       type: 'omlegg-over-maks',
-      tekst: `Omlegget er ${en(o)} mm, mer enn anbefalt maks ${inn.oMax} mm.`,
+      tekst: `Omlegget blir ${en(o)} mm, over anbefalt ${inn.oMax} mm.`,
     });
   }
 
   // Overligger i kanten har ingen underligger bak seg ytterst, så den trenger underlag.
   const trengerUnderlag = { start: start === 'O', slutt: slutt === 'O' };
   if (trengerUnderlag.start) {
-    varsler.push({ type: 'underlag-start', tekst: 'Overligger i startkanten trenger underlag.' });
+    varsler.push({ type: 'underlag-start', tekst: 'Påbordet ytterst til venstre har ikke underbord bak seg. Sett underlag der.' });
   }
   if (trengerUnderlag.slutt) {
-    varsler.push({ type: 'underlag-slutt', tekst: 'Overligger i sluttkanten trenger underlag.' });
+    varsler.push({ type: 'underlag-slutt', tekst: 'Påbordet ytterst til høyre har ikke underbord bak seg. Sett underlag der.' });
   }
 
   const spikring = sjekkSpikring(bo, g, inn);
   if (!spikring.ok) {
     varsler.push({
       type: 'spikring',
-      tekst: `Klaringen er ${en(g)} mm. ${spikring.antallSpikre} spikre i overliggeren trenger minst ${spikring.kreverKlaring} mm, ellers spikres det gjennom to bord.`,
+      tekst: `Klossen blir bare ${en(g)} mm. Påbordet skal ha ${spikring.antallSpikre} spikre, og de trenger minst ${spikring.kreverKlaring} mm. Ellers går spikeren gjennom underbordet også.`,
     });
   }
 
@@ -208,9 +208,9 @@ export function losFelt(inndata) {
 
   return {
     ok: false,
-    melding: `Ingen inndeling gir omlegg på minst ${inn.oMin} mm for et felt på ${L} mm `
-      + `med ${start}–${slutt}, underligger ${bu} mm og overligger ${bo} mm. `
-      + 'Prøv annen start/slutt eller annen bordbredde.',
+    melding: `Feltet på ${en(L)} mm går ikke opp med omlegg på minst ${inn.oMin} mm når det `
+      + `${startSlutt(start, slutt)}, med underbord ${bu} mm og påbord ${bo} mm. `
+      + 'Prøv annen start og slutt eller annen bordbredde.',
     forslag: finnForslag(L, bu, bo, start, slutt, inn),
   };
 }
@@ -231,9 +231,17 @@ export function losFeltFleksibel(inndata) {
   if (alle.length > 0) return { ok: true, valgt: alle[0], alle };
   return {
     ok: false,
-    melding: `Ingen inndeling gir omlegg på minst ${inn.oMin} mm for et felt på `
-      + `${en(Lmin)}–${en(Lmax)} mm med ${start}–${slutt}.`,
+    melding: `Feltet på ${Math.abs(Lmax - Lmin) < SLINGRING ? en(Lmin) : `${en(Lmin)}–${en(Lmax)}`} mm `
+      + `går ikke opp med omlegg på minst ${inn.oMin} mm når det ${startSlutt(start, slutt)}.`,
   };
+}
+
+// «starter og slutter med påbord», «starter med underbord og slutter med påbord» osv.
+function startSlutt(start, slutt) {
+  const navn = { U: 'underbord', O: 'påbord' };
+  return start === slutt
+    ? `starter og slutter med ${navn[start]}`
+    : `starter med ${navn[start]} og slutter med ${navn[slutt]}`;
 }
 
 // Når feltet ikke går opp: prøv andre start/slutt-valg og andre standardbredder.

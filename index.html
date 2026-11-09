@@ -5,26 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tømmermannspanel</title>
   <!-- versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd) -->
-  <script>window.APP_VERSJON = '20261109-105321';</script>
+  <script>window.APP_VERSJON = '20261109-110440';</script>
   <script type="importmap">
   {
     "imports": {
-      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261109-105321",
-      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261109-105321",
-      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261109-105321",
-      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261109-105321",
-      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261109-105321",
-      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261109-105321",
-      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261109-105321",
-      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261109-105321",
-      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261109-105321",
-      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261109-105321",
-      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261109-105321",
-      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261109-105321"
+      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261109-110440",
+      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261109-110440",
+      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261109-110440",
+      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261109-110440",
+      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261109-110440",
+      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261109-110440",
+      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261109-110440",
+      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261109-110440",
+      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261109-110440",
+      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261109-110440",
+      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261109-110440",
+      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261109-110440"
     }
   }
   </script>
-  <link rel="stylesheet" href="css/stil.css?v=20261109-105321">
+  <link rel="stylesheet" href="css/stil.css?v=20261109-110440">
   <!-- versjon:slutt -->
 </head>
 <body>
@@ -54,12 +54,12 @@
 
         <div class="to-kol">
           <div class="felt">
-            <label for="bu-valg">Underligger (mm)</label>
+            <label for="bu-valg">Underbord (mm)</label>
             <select id="bu-valg"></select>
             <input id="bu-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
           </div>
           <div class="felt">
-            <label for="bo-valg">Overligger (mm)</label>
+            <label for="bo-valg">Påbord (mm)</label>
             <select id="bo-valg"></select>
             <input id="bo-egen" type="text" inputmode="decimal" placeholder="Målt bredde" hidden>
           </div>
@@ -68,16 +68,16 @@
         <fieldset class="felt">
           <legend>Starter med</legend>
           <div class="valgknapper">
-            <label><input type="radio" name="start" value="U" checked><span>Underligger</span></label>
-            <label><input type="radio" name="start" value="O"><span>Overligger</span></label>
+            <label><input type="radio" name="start" value="U" checked><span>Underbord</span></label>
+            <label><input type="radio" name="start" value="O"><span>Påbord</span></label>
           </div>
         </fieldset>
 
         <fieldset class="felt">
           <legend>Slutter med</legend>
           <div class="valgknapper">
-            <label><input type="radio" name="slutt" value="U" checked><span>Underligger</span></label>
-            <label><input type="radio" name="slutt" value="O"><span>Overligger</span></label>
+            <label><input type="radio" name="slutt" value="U" checked><span>Underbord</span></label>
+            <label><input type="radio" name="slutt" value="O"><span>Påbord</span></label>
           </div>
         </fieldset>
 
@@ -87,7 +87,7 @@
             <label class="felt"><span>Minste omlegg</span><input id="oMin" type="text" inputmode="decimal"></label>
             <label class="felt"><span>Ideelt omlegg</span><input id="oIdeal" type="text" inputmode="decimal"></label>
             <label class="felt"><span>Største omlegg (varsel)</span><input id="oMax" type="text" inputmode="decimal"></label>
-            <label class="felt"><span>To spikre fra bredde</span><input id="toSpikreFraBredde" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>To spikre i påbord fra bredde</span><input id="toSpikreFraBredde" type="text" inputmode="decimal"></label>
             <label class="felt"><span>Avstand mellom spikre</span><input id="spikeravstand" type="text" inputmode="decimal"></label>
           </div>
           <p class="hjelp">Alle mål i mm. Verdiene bygger på Treteknisk, G3 Gausdal og Talgø.</p>

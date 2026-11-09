@@ -130,6 +130,17 @@ Alle skal kunne endres i innstillinger.
 - Felt som ikke går opp, er ikke med, og lista sier fra om det.
 - Lista kan kopieres eller deles som tekst (`materialTekst`).
 
+## Språk og resultatside (gjennomgang 2026-11-09, godkjent av Kenny)
+- Samme ord overalt på skjermen: **underbord, påbord, kloss** (ikke underligger/overligger/klaring
+  i tekst brukeren ser). Koden kan fortsatt hete `underliggere` osv.
+- Varsler skrives som tømrerspråk og sorteres i «Må fikses før du begynner», «Bør sjekkes» og
+  «Greit å vite». Like varsler slås sammen.
+- Resultatet for en vegg: status, varsler, forslag, **«Slik setter du opp»** (`lagOppsettliste`:
+  første underbord, kloss, antall, kontrollmål per felt), tegning, materialer. Alt for den som
+  planlegger (snitt, alle mål bord for bord, innlegg, felt for felt) ligger under «Detaljer».
+- Mål fra karm skrives «X mm før / etter … karm», ikke med minus.
+- «Fyll inn eksempel» skal alltid gi en vegg som går opp (sjekkes av test i `vegg.test.js`).
+
 ## Tester
 - `npm test` (eller `node --test`) kjører alle tester i `test/`.
 - Alle tester skal være grønne før en fase er ferdig og før commit.

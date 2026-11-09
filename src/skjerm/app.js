@@ -147,20 +147,23 @@ function visLosning(l, alle, indeks) {
     ? boks('varsel', l.varsler.map((v) => `<p>${v.tekst}</p>`).join(''))
     : boks('ok', '<p>Omlegget er innenfor anbefalt.</p>');
 
-  const andre = alle.length > 1
-    ? `<h3>Andre inndelinger</h3><div class="alternativer">${alle.slice(0, 5).map((a, i) => `
+  // Vis bare inndelinger som er brukbare: innenfor anbefalt omlegg, ellers de to beste.
+  const brukbare = alle.map((a, i) => ({ a, i })).slice(0, 5)
+    .filter(({ a, i }) => a.innenforAnbefalt || i < 2 || i === indeks);
+  const andre = brukbare.length > 1
+    ? `<h3>Andre måter å dele feltet på</h3><div class="alternativer">${brukbare.map(({ a, i }) => `
         <button type="button" data-losning="${i}" class="${i === indeks ? 'aktiv' : ''}">
-          ${a.antallUnderliggere} underliggere, omlegg ${mm(a.omlegg, 1)} mm
+          ${a.antallUnderliggere} underbord, omlegg ${mm(a.omlegg, 1)} mm${a.innenforAnbefalt ? '' : ' (over anbefalt)'}
         </button>`).join('')}</div>`
     : '';
 
   return `
     <h2>Resultat</h2>
     <div class="nokkeltall">
-      ${kort('Distanseklosser', `${mm(l.klaring, 1)} mm`, 'Klaring mellom underliggere')}
-      ${kort('Omlegg', `${mm(l.omlegg, 1)} mm`, 'På hver side')}
-      ${kort('Underliggere', l.antallUnderliggere, `Senteravstand ${mm(l.senteravstand, 1)} mm`)}
-      ${kort('Overliggere', l.antallOverliggere, `${l.spikring.antallSpikre} ${l.spikring.antallSpikre === 1 ? 'spiker' : 'spikre'} i bredden`)}
+      ${kort('Kloss', `${mm(l.klaring, 1)} mm`, 'Avstand mellom underbordene')}
+      ${kort('Omlegg', `${mm(l.omlegg, 1)} mm`, 'Påbordet over underbordet, hver side')}
+      ${kort('Underbord', l.antallUnderliggere, `Senteravstand ${mm(l.senteravstand, 1)} mm`)}
+      ${kort('Påbord', l.antallOverliggere, `${l.spikring.antallSpikre} ${l.spikring.antallSpikre === 1 ? 'spiker' : 'spikre'} i bredden`)}
     </div>
     ${varsler}
     ${andre}
@@ -169,19 +172,19 @@ function visLosning(l, alle, indeks) {
     <p class="hjelp">Øverst sett forfra. Under: snitt sett ovenfra med veggen nederst.
       Oransje stiplet = trenger underlag.</p>
     <h3>Utdelingsmål</h3>
-    <p class="hjelp">Løpende mål fra startkanten. Underliggerne settes opp først.</p>
-    ${tabell('Underliggere', l.underliggere)}
-    ${tabell('Overliggere', l.overliggere)}
-    <p class="hjelp">Ikke spikre gjennom to bord. Én spiker i underliggeren, spikrene i
-      overliggeren går i klaringen.</p>`;
+    <p class="hjelp">Løpende mål fra startkanten. Underbordene settes opp først, med klossen mellom.</p>
+    ${tabell('Underbord', l.underliggere)}
+    ${tabell('Påbord', l.overliggere)}
+    <p class="hjelp">Ikke spikre gjennom to bord. Én spiker i underbordet, spikrene i
+      påbordet går i mellomrommet mellom underbordene.</p>`;
 }
 
 function visIngenLosning(svar) {
-  const navn = { U: 'underligger', O: 'overligger' };
+  const navn = { U: 'underbord', O: 'påbord' };
   const forslag = svar.forslag.slice(0, 6).map((f, i) => {
     let tekst;
     if (f.endring === 'start/slutt') tekst = `Start med ${navn[f.start]}, slutt med ${navn[f.slutt]}`;
-    else if (f.endring === 'overligger') tekst = `Overligger ${mm(f.bo)} mm`;
+    else if (f.endring === 'overligger') tekst = `Påbord ${mm(f.bo)} mm`;
     else tekst = `Begge bord ${mm(f.bu)} mm`;
     const merknad = f.innenforAnbefalt ? '' : ' (over anbefalt)';
     return `<button type="button" data-forslag="${i}">${tekst}: omlegg ${mm(f.omlegg, 1)} mm${merknad}</button>`;

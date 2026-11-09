@@ -86,7 +86,7 @@ test('Garasje: feltet mellom vindu 1 og porten går ikke opp, og appen sier det'
   assert.equal(r.ok, false);
   const f = felt(r, 'Vindu 1 – Port');
   assert.equal(f.ok, false);
-  assert.match(f.melding, /Ingen inndeling/);
+  assert.match(f.melding, /går ikke opp/);
   assert.ok(r.varsler.some((v) => v.felt === 'Vindu 1 – Port' && v.alvorlig));
 });
 
@@ -103,7 +103,7 @@ test('Garasje: porten får innlegg 20, og over porten blir 22,6 mm (punkt 2)', (
 test('Påbord inn på karmen trenger ikke kloss, men påbord i hjørnet trenger underlag', () => {
   const r = losVegg(GARASJE); // påbord både på karm og i hjørnene
   assert.equal(r.klosser, undefined);
-  assert.ok(!r.varsler.some((v) => /kloss/i.test(v.tekst)));
+  assert.ok(!r.varsler.some((v) => /kloss bak|trenger kloss/i.test(v.tekst)));
   const underlag = r.varsler.filter((v) => /underlag/.test(v.tekst)).map((v) => v.felt);
   assert.deepEqual(underlag, ['Venstre hjørne', 'Høyre hjørne']);
   const medUnderbordIHjornene = losVegg({ ...GARASJE, hjorneVenstre: 'U', hjorneHoyre: 'U' });
@@ -265,4 +265,32 @@ test('Merkeliste: felt som ikke går opp, er ikke med', () => {
   const r = losVegg(GARASJE);
   const liste = lagMerkeliste(r);
   assert.ok(!liste.some((m) => m.feltNavn === 'Vindu 1 – Port'));
+});
+
+test('Eksempelveggen i appen går opp med omlegg innenfor anbefalt', () => {
+  // Samme vegg som «Fyll inn eksempel» (src/skjerm/vegg-skjerm.js)
+  const r = losVegg({ lengde: 6000, hoyde: 2400, bu: 98, bo: 98, karmBord: 'O', apninger: [
+    { type: 'vindu', x: 500, bredde: 1000, hoyde: 1200, bunn: 900 },
+    { type: 'dor', x: 2400, bredde: 900, hoyde: 2100, bunn: 0 },
+    { type: 'vindu', x: 4300, bredde: 1000, hoyde: 1200, bunn: 900 }] });
+  assert.equal(r.ok, true);
+  assert.ok(r.felt.every((f) => f.losning.innenforAnbefalt));
+  assert.ok(!r.varsler.some((v) => v.type === 'spikring' || v.alvorlig));
+});
+
+test('Slik setter du opp: første underbord, kloss, antall og kontrollmål per felt', async () => {
+  const { lagOppsettliste } = await import('../src/tommermann/vegg.js');
+  const liste = lagOppsettliste(losVegg(GARASJE));
+  // Felt 2 (over og under vindu 1), som i merkelista: første underbord 583, 17 mm før
+  // venstre karm (600), kloss 73,6, 5 underbord, siste slutter 1469 + 148 = 1617.
+  const f2 = liste[1];
+  assert.equal(f2.navn, 'Over og under vindu 1');
+  assert.deepEqual([f2.fra, f2.fraReferanse, f2.referanse, f2.antall, f2.til],
+    [583, -17, 'venstre karm vindu 1', 5, 1617]);
+  assert.ok(Math.abs(f2.kloss - 73.6) < 1e-9);
+  // Kontroll: første + (antall − 1) · (bredde + kloss) + bredde = siste slutt
+  assert.ok(Math.abs(583 + 4 * (148 + 73.6) + 148 - 1617) < 1);
+  // Feltet som ikke går opp, er med og sier fra
+  assert.equal(liste[2].ok, false);
+  assert.match(liste[2].melding, /går ikke opp/);
 });

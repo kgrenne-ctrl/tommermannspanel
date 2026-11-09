@@ -160,7 +160,7 @@ test('Langt felt: L 12000, U–U, 148/148 går opp og har omlegg innenfor', () =
 test('For kort felt gir tydelig melding og forslag som faktisk virker', () => {
   const r = losFelt({ L: 200, bu: 148, bo: 148, start: 'U', slutt: 'U' });
   assert.equal(r.ok, false);
-  assert.match(r.melding, /Ingen inndeling/);
+  assert.match(r.melding, /går ikke opp/);
   assert.ok(r.forslag.length > 0, 'skal foreslå noe');
   for (const f of r.forslag) {
     const prøv = losFelt({ L: 200, bu: f.bu, bo: f.bo, start: f.start, slutt: f.slutt });

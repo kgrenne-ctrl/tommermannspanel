@@ -532,3 +532,26 @@ footer {
 .ingen-brudd { white-space: nowrap; }
 .kappliste tr.felt-rad td { font-weight: 600; background: var(--flate); }
 .kappliste td:first-child { white-space: nowrap; }
+
+/* ---------- Slik setter du opp ---------- */
+
+.boks-info { background: var(--flate); color: var(--tekst); }
+
+.oppsett-felt {
+  border: 1px solid var(--linje);
+  border-left: 4px solid var(--bakoy-bla);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  background: var(--hvit);
+}
+.oppsett-felt.feil { border-left-color: var(--feil-tekst); background: var(--feil-flate); color: var(--feil-tekst); }
+.oppsett-felt p { margin: 6px 0 0; }
+.oppsett-tittel { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; }
+.oppsett-tall { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+.oppsett-tall strong { display: block; font-size: 22px; line-height: 1.2; }
+.oppsett-felt .liten { display: block; font-size: 13px; color: var(--tekst-gra); }
+
+.detaljer { border-top: 2px solid var(--linje); margin-top: 24px; padding-top: 12px; }
+.detaljer > summary { font-weight: 600; font-size: 18px; cursor: pointer; min-height: 44px; display: flex; align-items: center; }

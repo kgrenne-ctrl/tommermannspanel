@@ -78,10 +78,10 @@ export function losVegg(inndata) {
     }
   }
   if (inn.hjorneVenstre === 'O') {
-    varsler.push({ felt: 'Venstre hjørne', tekst: 'Påbord i hjørnet trenger underlag.' });
+    varsler.push({ felt: 'Venstre hjørne', type: 'underlag-hjorne', tekst: 'Påbordet ytterst i hjørnet har ikke underbord bak seg. Sett underlag der.' });
   }
   if (inn.hjorneHoyre === 'O') {
-    varsler.push({ felt: 'Høyre hjørne', tekst: 'Påbord i hjørnet trenger underlag.' });
+    varsler.push({ felt: 'Høyre hjørne', type: 'underlag-hjorne', tekst: 'Påbordet ytterst i hjørnet har ikke underbord bak seg. Sett underlag der.' });
   }
   // Påbord som går inn på karmen ligger an på karmen, slik det ellers ligger an på et
   // underbord. Det trenger ikke kloss bak (Kenny 2026-11-08).
@@ -499,19 +499,53 @@ function hvaErEndret(fra, til) {
 // For hvert bord: løpende mål fra venstre hjørne, mål fra nærmeste karmkant til venstre
 // (tryggere enn å måle hele veien fra hjørnet), om bordet går i full høyde eller bare over
 // og under en åpning, og distanseklossen (klaringen) i feltet.
+// Referanse for mål i et felt: karmkanten til venstre for feltet, ellers venstre hjørne.
+function referanseFor(r, f) {
+  if (f.type === 'overunder') {
+    const a = r.apninger.find((x) => x.navn === f.apning);
+    return { navn: `venstre karm ${a.navn.toLowerCase()}`, x: a.x };
+  }
+  const venstre = r.apninger.filter((a) => a.x + a.bredde <= f.x0 + 50).at(-1);
+  if (venstre) return { navn: `høyre karm ${venstre.navn.toLowerCase()}`, x: venstre.x + venstre.bredde };
+  return { navn: 'hjørnet', x: 0 };
+}
+
+// «Slik setter du opp»: én linje per felt med det tømreren trenger når han bruker
+// distanseklosser. Hvor første underbord står (fra hjørnet og fra karmen), klossen, hvor
+// mange underbord, og hvor det siste slutter (kontrollmål). Feltene i rekkefølge fra venstre.
+export function lagOppsettliste(r) {
+  return r.felt.map((f, i) => {
+    if (!f.ok) return { nr: i + 1, navn: f.navn, ok: false, melding: f.melding };
+    const ref = referanseFor(r, f);
+    // Over og under en åpning kan underbordene være tatt ut (sidebordene er underbord når
+    // underbordet går inn på karmen). Da kan feltet ha bare påbord.
+    const bord = f.underliggere.length ? f.underliggere : f.overliggere;
+    const forste = bord[0];
+    const siste = bord.at(-1);
+    return {
+      nr: i + 1,
+      navn: f.navn,
+      ok: true,
+      type: f.type,
+      hoyde: f.type === 'side' ? 'Full høyde' : f.navn,
+      bordtype: f.underliggere.length ? 'U' : 'O',
+      antall: bord.length,
+      fra: forste.fra,
+      fraReferanse: Math.round(forste.fraEksakt - ref.x),
+      referanse: ref.navn,
+      til: siste.til,
+      kloss: f.losning.klaring,
+      omlegg: f.losning.omlegg,
+      innenforAnbefalt: f.losning.innenforAnbefalt,
+    };
+  });
+}
+
 export function lagMerkeliste(r) {
   const rader = [];
   r.felt.forEach((f, i) => {
     if (!f.ok) return;
-    // Referanse: karmkanten til venstre for feltet, ellers venstre hjørne
-    let ref = { navn: 'hjørnet', x: 0 };
-    if (f.type === 'overunder') {
-      const a = r.apninger.find((x) => x.navn === f.apning);
-      ref = { navn: `venstre karm ${a.navn.toLowerCase()}`, x: a.x };
-    } else {
-      const venstre = r.apninger.filter((a) => a.x + a.bredde <= f.x0 + 50).at(-1);
-      if (venstre) ref = { navn: `høyre karm ${venstre.navn.toLowerCase()}`, x: venstre.x + venstre.bredde };
-    }
+    const ref = referanseFor(r, f);
     const hoyde = f.type === 'side' ? 'Full høyde' : f.navn;
     for (const b of f.underliggere) {
       rader.push({
