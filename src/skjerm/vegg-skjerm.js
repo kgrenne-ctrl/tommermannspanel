@@ -17,8 +17,9 @@ const resultat = finn('vegg-resultat');
 const liste = finn('apninger');
 
 const TYPENAVN = { vindu: 'Vindu', dor: 'Dør', port: 'Port' };
-const INNSTILLINGER = ['innleggMin', 'innleggStandard', 'innleggMax', 'oMin', 'oIdeal', 'oMax'];
-const STANDARD = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG };
+const INNSTILLINGER = ['innleggMin', 'innleggStandard', 'innleggMax', 'oMin', 'oIdeal', 'oMax', 'avvikPabord', 'maksKloyvPabord'];
+// Skjermen starter nye vegger med lik avstand mellom påbordene (Kenny 2026-11-09)
+const STANDARD = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG, startvalg: 'lik' };
 const SIDER = [['venstre', 'Venstre'], ['hoyre', 'Hoyre']];
 
 // Hvilket horisontalsnitt som vises (etiketten i nedtrekkslista). Huskes mellom omregninger.
@@ -267,12 +268,13 @@ function oppdaterStartvalg() {
     const navn = totalt[a.type] > 1 ? `${TYPENAVN[a.type].toLowerCase()} ${telt[a.type]}` : TYPENAVN[a.type].toLowerCase();
     return `<option value="apning:${j}">Midten av ${navn}</option>`;
   });
-  valg.innerHTML = '<option value="venstre">Fra venstre hjørne</option>'
+  valg.innerHTML = '<option value="lik">Lik avstand mellom påbordene (anbefalt)</option>'
+    + '<option value="venstre">Fra venstre hjørne</option>'
     + '<option value="hoyre">Fra høyre hjørne</option>'
     + '<option value="midten">Midten av veggen</option>'
     + '<option value="jevnt">Jevnest over hele veggen</option>'
     + ekstra.join('');
-  valg.value = [...valg.options].some((o) => o.value === forrige) ? forrige : 'venstre';
+  valg.value = [...valg.options].some((o) => o.value === forrige) ? forrige : STANDARD.startvalg;
 }
 
 // ---------- Lagring av det som er skrevet inn ----------
@@ -437,11 +439,12 @@ function fyllEksempel() {
     finn(`v-hjorne${Side}`).value = 'O';
     finn(`v-hjorne${Side}Type`).value = 'mot';
   }
-  finn('v-startvalg').value = 'venstre';
   liste.innerHTML = '';
   leggTilApning({ type: 'vindu', x: 800, bredde: 1000, hoyde: 1200, bunn: 900 });
   leggTilApning({ type: 'dor', x: 2600, bredde: 900, hoyde: 2100, bunn: 0 });
   leggTilApning({ type: 'vindu', x: 4200, bredde: 1000, hoyde: 1200, bunn: 900 });
+  oppdaterStartvalg();
+  finn('v-startvalg').value = STANDARD.startvalg;
 }
 
 // ---------- Lese skjema og vise resultat ----------
@@ -598,7 +601,7 @@ function visVegg(r) {
     </div>
     <div class="nokkeltall">
       ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} av ${r.felt.length} innenfor anbefalt omlegg`)}
-      ${kort('Omlegg', okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.omlegg)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.omlegg)), 1)}` : '–', 'Minst og størst på veggen (mm)')}
+      ${kort('Mellom påbord', okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.avstandPabord)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.avstandPabord)), 1)}` : '–', `Avstand mellom påbordene (mm). Omlegg ${okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.omlegg)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.omlegg)), 1)}` : '–'}`)}
       ${kort('Klosser', new Set(okFelt.map((f) => Math.round(f.losning.klaring))).size, 'Ulike distanseklosser (hele mm)')}
     </div>
     ${visVarsler(r)}
@@ -769,6 +772,8 @@ function visOppsett(r) {
         <div><span class="liten">Siste slutter</span><strong>${mm(o.til)}</strong>
           <span class="liten">kontrollmål</span></div>
       </div>
+      <p class="liten">Avstand mellom påbordene ${mm(o.avstandPabord, 1)} mm, omlegg ${mm(o.omlegg, 1)} mm.</p>
+      ${o.kloyvdPabord ? `<p class="viktig">Påbordene inni feltet (${o.kloyvdPabord.antall} stk) kløyves til ${mm(o.kloyvdPabord.bredde)} mm.</p>` : ''}
       ${visKloyv(o)}
       ${o.hjornebord.map((h) => `<p class="viktig">Hjørnebordet (${h.type === 'O' ? 'påbord' : 'underbord'}) kløyves til ${mm(h.bredde, 1)} mm.</p>`).join('')}
       ${o.type === 'side' ? '' : `<p class="liten">Bare over og under åpningen. Sidebordene står i feltene ved siden av.</p>`}

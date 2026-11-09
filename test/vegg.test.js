@@ -272,7 +272,7 @@ test('Eksempelveggen i appen går opp med omlegg innenfor anbefalt', async () =>
   // (gjennom huset, med påbord ytterst og «mot naboveggen» i begge hjørner)
   const { losHus } = await import('../src/tommermann/hus.js');
   const r = losHus({ vegger: [{ lengde: 6000, hoyde: 2400, bu: 98, bo: 98, karmBord: 'O',
-    hjorneVenstre: 'O', hjorneHoyre: 'O', startvalg: 'venstre',
+    hjorneVenstre: 'O', hjorneHoyre: 'O', startvalg: 'lik',
     hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'mot' } }, apninger: [
       { type: 'vindu', x: 800, bredde: 1000, hoyde: 1200, bunn: 900 },
       { type: 'dor', x: 2600, bredde: 900, hoyde: 2100, bunn: 0 },
@@ -372,4 +372,33 @@ test('Kløyvde underbord: forslag og ny utlegging for felt over 30 mm (håndregn
   // Ugyldig kløyving (bredere enn fullt bord) brukes ikke, og appen sier fra
   const r3 = losVegg({ ...GARASJE, kloyvUnderbord: { 'Over og under vindu 1': 160 } });
   assert.ok(r3.varsler.some((v) => v.type === 'kloyv-ugyldig' && v.felt === 'Over og under vindu 1'));
+});
+
+
+test('Lik avstand mellom påbordene: Kennys vegg (6650 mm, 98 mm bord) går fra 16,3 til 9,2 mm spenn', async () => {
+  const { losHus } = await import('../src/tommermann/hus.js');
+  const v = { navn: 'Vegg 1', lengde: 6650, hoyde: 2400, bu: 98, bo: 98, karmBord: 'O', hjorneVenstre: 'O', hjorneHoyre: 'O',
+    hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'mot' } }, apninger: [
+      { type: 'vindu', x: 800, bredde: 1000, hoyde: 1200, bunn: 900 },
+      { type: 'dor', x: 2600, bredde: 900, hoyde: 2100, bunn: 0 },
+      { type: 'vindu', x: 4200, bredde: 1000, hoyde: 1200, bunn: 900 }] };
+  const spenn = (r) => { const a = r.felt.map((f) => f.losning.avstandPabord); return Math.max(...a) - Math.min(...a); };
+  const gammel = losHus({ vegger: [{ ...v, startvalg: 'venstre' }] }).vegger[0];
+  const ny = losHus({ vegger: [{ ...v, startvalg: 'lik' }] }).vegger[0];
+  assert.ok(Math.abs(spenn(gammel) - 16.3) < 0.05);
+  assert.ok(spenn(ny) <= 10, `spenn ${spenn(ny)}`);
+  // Felt 7 får 9 bord i stedet for 10 (avstand 57,6 mm, nær felt 6)
+  const f7 = ny.felt.find((f) => f.navn === 'Vindu 2 – Høyre hjørne');
+  assert.equal(f7.losning.antallUnderliggere, 9);
+  // Over døra: avstanden er 41,7 mm med fulle bord. Påbordene inni kløyves 7 mm, til 91 mm.
+  const over = ny.felt.find((f) => f.navn === 'Over dør');
+  assert.deepEqual(over.losning.kloyvdPabord, { bredde: 91, antall: 6 });
+  assert.ok(ny.felt.every((f) => f.losning.omlegg >= 20 - 1e-9));
+  // Kløyvde påbord står midt over mellomrommet: likt omlegg på begge sider
+  for (const o of over.overliggere.filter((b) => b.klyvd)) {
+    assert.ok(Math.abs(o.tilEksakt - o.fraEksakt - 91) < 1e-9);
+    const v1 = over.underliggere.find((u) => u.fraEksakt < o.fraEksakt && u.tilEksakt > o.fraEksakt);
+    const h1 = over.underliggere.find((u) => u.tilEksakt > o.tilEksakt && u.fraEksakt < o.tilEksakt);
+    assert.ok(Math.abs((v1.tilEksakt - o.fraEksakt) - (o.tilEksakt - h1.fraEksakt)) < 1e-9);
+  }
 });

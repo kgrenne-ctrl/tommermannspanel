@@ -56,7 +56,7 @@ function lagVegg(tilfeldig) {
     karmBord: velg(['U', 'O']),
     hjorneVenstre: velg(['U', 'O']),
     hjorneHoyre: velg(['U', 'O']),
-    startvalg: velg(['venstre', 'hoyre', 'midten', ...apninger.map((_, j) => `apning:${j}`)]),
+    startvalg: velg(['venstre', 'hoyre', 'midten', 'jevnt', 'lik', 'lik', ...apninger.map((_, j) => `apning:${j}`)]),
     // Hjørner (fase 4): går forbi (+19/+38), slutter mot naboen (0) eller hjørnekasse (minus)
     forlengVenstre: velg([0, 19, 38, -73, -98]),
     forlengHoyre: velg([0, 19, 38, -73, -98]),

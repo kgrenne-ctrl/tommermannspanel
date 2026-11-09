@@ -12,7 +12,7 @@ const HJORNETYPE = { mot: 'Mot naboveggen', forbi: 'Går forbi', kasse: 'Hjørne
 const BORD = { O: 'Påbord', U: 'Underbord' };
 const TYPENAVN = { vindu: 'Vindu', dor: 'Dør', port: 'Port' };
 const STARTNAVN = { venstre: 'Fra venstre hjørne', hoyre: 'Fra høyre hjørne', midten: 'Midten av veggen',
-  jevnt: 'Jevnest over hele veggen' };
+  jevnt: 'Jevnest over hele veggen', lik: 'Lik avstand mellom påbordene' };
 
 const vask = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const tall = (x, d = 0) => (Number.isFinite(x) ? mm(x, d) : '–');
@@ -49,6 +49,7 @@ function inndataTabell(v) {
     ['Start inndelingen', startNavn(v.startvalg)],
     ['Innlegg på karm (min / standard / maks)', `${tall(v.innleggMin)} / ${tall(v.innleggStandard)} / ${tall(v.innleggMax)} mm`],
     ['Omlegg (min / ideelt / varsel over)', `${tall(v.oMin)} / ${tall(v.oIdeal)} / ${tall(v.oMax)} mm`],
+    ['Avvik mellom påbord før kløyving / største kløyving', `±${tall(v.avvikPabord ?? 5)} / ${tall(v.maksKloyvPabord ?? 20)} mm`],
     ['Kløyvde underbord valgt', kloyv.length ? kloyv.map(([n, b]) => `${vask(n)}: ${tall(b)} mm`).join('; ') : 'Ingen'],
   ])}</tbody></table>
   <table class="u-tabell"><thead><tr><th>Åpning</th><th>Fra venstre hjørne</th><th>Bredde</th><th>Høyde på karm</th><th>Fra bakken</th></tr></thead>
@@ -59,18 +60,19 @@ function inndataTabell(v) {
 
 function oppsettTabell(r) {
   const linjer = lagOppsettliste(r).map((o) => {
-    if (!o.ok) return `<tr class="u-feil"><td>${o.nr}</td><td>${vask(o.navn)}</td><td colspan="5">${vask(o.melding)}</td></tr>`;
+    if (!o.ok) return `<tr class="u-feil"><td>${o.nr}</td><td>${vask(o.navn)}</td><td colspan="6">${vask(o.melding)}</td></tr>`;
     const merk = [];
+    if (o.kloyvdPabord) merk.push(`${o.kloyvdPabord.antall} påbord kløyvd til ${tall(o.kloyvdPabord.bredde)} mm`);
     if (o.kloyvdUnderbord) merk.push(`${o.kloyvdUnderbord.antall} underbord kløyvd til ${tall(o.kloyvdUnderbord.bredde)} mm`);
     if (o.kloyvForslag) merk.push(`Forslag: kløyv ${o.kloyvForslag.antall} underbord til ${tall(o.kloyvForslag.bredde)} mm`);
     for (const h of o.hjornebord) merk.push(`Hjørnebord kløyves til ${tall(h.bredde, 1)} mm`);
     return `<tr${o.innenforAnbefalt ? '' : ' class="u-varsel"'}><td>${o.nr}</td><td>${vask(o.navn)}</td>
       <td>${tall(o.fra)}<br><small>${karmTekst(o.fraReferanse, o.referanse)}</small></td>
-      <td>${tall(o.kloss, 1)}</td><td>${o.antall}</td><td>${tall(o.til)}</td>
+      <td>${tall(o.kloss, 1)}</td><td>${o.antall}</td><td>${tall(o.til)}</td><td>${tall(o.avstandPabord, 1)}</td>
       <td>${tall(o.omlegg, 1)}${merk.length ? `<br><small>${merk.join('<br>')}</small>` : ''}</td></tr>`;
   }).join('');
   return `<table class="u-tabell"><thead><tr><th>Nr</th><th>Felt</th><th>Første underbord</th><th>Kloss</th>
-    <th>Antall</th><th>Siste slutter</th><th>Omlegg</th></tr></thead><tbody>${linjer}</tbody></table>`;
+    <th>Antall</th><th>Siste slutter</th><th>Mellom påbord</th><th>Omlegg</th></tr></thead><tbody>${linjer}</tbody></table>`;
 }
 
 function varselListe(r) {
@@ -100,6 +102,7 @@ export function lagUtskrift({ hus, alle, husSvar, liste, versjon, dato = new Dat
       };
       resultat = `
         <p><strong>${r.felt.length} felt, ${ok.filter((f) => f.losning.innenforAnbefalt).length} innenfor anbefalt omlegg.</strong>
+          Avstand mellom påbord ${ok.length ? `${tall(Math.min(...ok.map((f) => f.losning.avstandPabord)), 1)}–${tall(Math.max(...ok.map((f) => f.losning.avstandPabord)), 1)}` : '–'} mm.
           Omlegg ${omlegg.length ? `${tall(Math.min(...omlegg), 1)}–${tall(Math.max(...omlegg), 1)}` : '–'} mm.
           ${new Set(ok.map((f) => Math.round(f.losning.klaring))).size} ulike klosser.</p>
         <h4>Varsler</h4>${varselListe(r)}

@@ -33,6 +33,10 @@ export const STANDARD_VEGG = Object.freeze({
   // på naboveggen, så hjørnet ser like bredt ut fra begge sider (Kenny 2026-11-09).
   klyvVenstre: 0,
   klyvHoyre: 0,
+  // Lik avstand mellom påbordene (Kenny 2026-11-09): hvor mye avstanden kan avvike fra felles mål
+  // før påbordene i feltet kløyves, og hvor mye et påbord høyst kløyves. Antakelser, kan endres.
+  avvikPabord: 5,
+  maksKloyvPabord: 20,
   // Bordtykkelse. 19 mm er en antakelse om vanlig kledning, kan endres per vegg.
   tykkelseUnder: 19,
   tykkelseOver: 19,

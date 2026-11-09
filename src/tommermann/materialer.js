@@ -60,6 +60,10 @@ export function lagMaterialliste(vegger, { kapptillegg = STANDARD_MATERIALER.kap
       leggTil(dimO, f.overliggere.length);
       const kloyves = Object.values(f.hjornebord ?? {}).map((h) => ({
         dim: h.type === 'O' ? dimO : dimU, bredde: h.bredde, klyvd: h.klyvd, tekst: 'Hjørnebord' }));
+      if (f.losning.kloyvdPabord) {
+        const k = f.losning.kloyvdPabord;
+        kloyves.push({ dim: dimO, bredde: k.bredde, antall: k.antall, tekst: `${k.antall} påbord` });
+      }
       if (f.losning.kloyvdUnderbord) {
         const k = f.losning.kloyvdUnderbord;
         kloyves.push({ dim: dimU, bredde: k.bredde, antall: k.antall, tekst: `${k.antall} underbord` });

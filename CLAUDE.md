@@ -122,6 +122,15 @@ Alle skal kunne endres i innstillinger.
   omlegget blir 25 (ellers høyst 30), med samme antall bord og feltlengde. Tømreren velger det med
   en knapp. Valget lagres per vegg som `kloyvUnderbord: { feltnavn: bredde }` og legges ut på nytt
   i `leggUtKloyvd`. Passer det ikke lenger (målene er endret), brukes det ikke, og appen varsler.
+- **Lik avstand mellom påbordene** (startvalg `lik`, `velgLikAvstand`, standard for nye vegger på
+  skjermen, Kenny 2026-11-09): det viktigste er at avstanden mellom påbordene er mest mulig lik.
+  Alle felt sikter mot samme avstand G (prøves i hele mm slik at G ± avvik gir omlegg 20–30).
+  Hvert felt velger antall bord nærmest G. Er avviket større enn `avvikPabord` (±5 mm), kløyves
+  påbordene inni feltet (ikke de ytterst) akkurat nok, minst 3 og høyst `maksKloyvPabord` (20 mm).
+  Innleggene velges samtidig for hele veggen. Kennys vegg: spenn 16,3 → 9,2 mm. 300 tilfeldige
+  vegger: spenn 28,5 → 12,8 mm i snitt, ca. 2 felt med kløyvde påbord per vegg.
+  Avstand mellom påbord = senteravstand − påbordbredde (+ kløyving); omlegg = (bu − avstand)/2.
+  Forslag om kløyvde underbord vises ikke ved `lik` (det ville flyttet påbordene).
 - «Finn bedre oppsett» (`foreslaVegg`) prøver karm, hjørner, startvalg og standardbredder.
   Omlegg innenfor 20–30 mm regnes som like bra.
 - Påbord er standard både i hjørnene og inn på karmen (Kenny 2026-11-08).

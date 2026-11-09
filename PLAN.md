@@ -55,6 +55,7 @@ Prinsipp fra lommeregner.no og NDLA: kledningen kløyves ikke for å få det til
 - **Slik går delingen opp:** spennet på 10–20 mm i hver karmende brukes først. Omlegget (20–30 mm, varsel over 30 mm) justeres bare når innlegget ikke strekker til. Da blir omlegget så likt som mulig over hele veggen.
 - **Felles rytme:** bordene over og under vinduet skal stå i linje med bordene ved siden av. Viser hvor mye hvert felt avviker fra rytmen.
 - Valg: start fra venstre, fra høyre, eller symmetrisk om midten av veggen eller midten av et vindu. Startvalget avgjør hvor justeringen av innlegget havner.
+- **Lik avstand mellom påbordene er viktigst (Kenny 2026-11-09):** som en tømrer gjør: tilpass antall bord i hvert felt mot en felles avstand. Går det ikke, kløyves påbordene i feltet en cm eller to som nødløsning. Det trenger ikke være helt likt, men ikke mange cm forskjell.
 - **Kløyvde underbord (Kenny 2026-11-09):** felt med omlegg over 30 mm får forslag om å kløyve underbordene inni feltet, så omlegget blir 25 mm. Underbordet er stort sett dekket av påbordene. Tømreren velger det selv.
 - **Påbord inn på karmen:** ligger an på karmen og trenger ikke kloss bak (endret av Kenny 2026-11-08, tidligere kloss i kapplista). Påbord i hjørnet trenger fortsatt underlag.
 
