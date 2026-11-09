@@ -28,7 +28,7 @@
 // - apning:N:  åpning N velges først, så utover mot hjørnene
 // - jevnt:     alle innlegg velges samtidig, jevnest omlegg over hele veggen (velgJevnt)
 
-import { losFeltFleksibel } from './solver.js';
+import { losFeltFleksibel, sjekkSpikring } from './solver.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from './fagverdier.js';
 
 const SLINGRING = 1e-6;
@@ -74,6 +74,12 @@ export function losVegg(inndata) {
   if (kH > 0) kloyvHjornebord(felt.at(-1), 'slutt', kH);
 
   const varsler = [];
+  for (const f of felt) {
+    if (f.kloyvUgyldig) {
+      varsler.push({ felt: f.navn, type: 'kloyv-ugyldig',
+        tekst: 'Kløyvingen som er valgt for feltet, passer ikke lenger med målene. Den er ikke brukt.' });
+    }
+  }
   for (const a of apninger) {
     // Åpenbart feile mål (for eksempel 1 mm høy dør) gir rare felt. Si fra.
     for (const [mal, verdi] of [['Høyden', a.hoyde], ['Bredden', a.bredde]]) {
@@ -338,7 +344,7 @@ function lagFelt(m, svar, e, apninger, inn) {
     return [byggFelt({
       type: 'side', navn, x0, x1: hoyre ? hoyre.x + e[m] : inn.lengde + inn.forlengHoyre, deler: [[0, inn.hoyde]], svar,
       innlegg: { venstre: venstre ? e[m - 1] : null, hoyre: hoyre ? e[m] : null },
-      fjernDelte: false, karmBord: inn.karmBord,
+      fjernDelte: false, karmBord: inn.karmBord, inn,
     })];
   }
 
@@ -347,7 +353,7 @@ function lagFelt(m, svar, e, apninger, inn) {
   const b = inn.karmBord === 'U' ? inn.bu : inn.bo;
   const x0 = a.x + e[m - 1] - b;
   const felles = { x0, x1: a.x + a.bredde - e[m] + b, svar, innlegg: { venstre: e[m - 1], hoyre: e[m] }, fjernDelte: true,
-    karmBord: inn.karmBord, apning: a.navn };
+    karmBord: inn.karmBord, apning: a.navn, inn };
   // Feltet over og feltet under åpningen har nøyaktig samme deling (samme bredde, samme
   // sidebord). Det er ett felt med to høyder.
   const deler = [];
@@ -358,12 +364,20 @@ function lagFelt(m, svar, e, apninger, inn) {
   return [byggFelt({ ...felles, type: 'overunder', navn: `${sted} ${a.navn.toLowerCase()}`, deler })];
 }
 
-function byggFelt({ type, navn, x0, x1, deler, svar, innlegg, fjernDelte, karmBord, apning }) {
+function byggFelt({ type, navn, x0, x1, deler, svar, innlegg, fjernDelte, karmBord, apning, inn }) {
   if (!svar.ok) {
     return { ok: false, type, navn, x0, x1, deler, innlegg, apning,
       melding: svar.melding ?? 'Feltet går ikke opp.' };
   }
-  const l = svar.valgt;
+  let l = svar.valgt;
+  // Kløyvde underbord (valgt av tømreren for feltet): legg ut feltet på nytt med smalere bord
+  const onsket = inn?.kloyvUnderbord?.[navn];
+  let kloyvUgyldig = false;
+  if (Number.isFinite(onsket)) {
+    const ny = leggUtKloyvd(l, onsket, inn);
+    if (ny) l = ny; else kloyvUgyldig = true;
+  }
+  const forslag = !l.kloyvdUnderbord && l.omlegg > (inn?.oMax ?? 30) + SLINGRING ? kloyvForslag(l, inn) : null;
   const tilVegg = (b, bordtype) => ({
     type: bordtype,
     fraEksakt: x0 + b.fraEksakt,
@@ -386,6 +400,90 @@ function byggFelt({ type, navn, x0, x1, deler, svar, innlegg, fjernDelte, karmBo
     losning: l,
     underliggere,
     overliggere,
+    kloyvForslag: forslag,
+    kloyvUgyldig,
+  };
+}
+
+// ---------- Kløyvde underbord (Kenny 2026-11-09) ----------
+// Felt med omlegg over anbefalt maks kan få smalere underbord i stedet: da blir mellomrommet
+// (klossen) større og omlegget mindre, med samme antall bord og samme feltlengde. Underbordet
+// er stort sett dekket av påbordene. Underbord ytterst i feltet (ved karm eller hjørne) beholder
+// full bredde, fordi de deles med feltet ved siden av eller er hjørnebord. Bare de inni kløyves.
+//
+// Feltet: L = (bredde på alle underbord) + (antall påbordsender) · bo/2 + d · g,
+// der d = k − 1 + (antall påbordsender)/2 (som i PLAN.md punkt 3, med ulik bredde på bordene).
+
+function kloyvTall(l, bu) {
+  const nF = (l.start === 'U' ? 1 : 0) + (l.slutt === 'U' ? 1 : 0); // underbord med full bredde
+  const nO = 2 - nF;                                                 // påbord i endene
+  const k = l.antallUnderliggere;
+  return { nF, nO, k, nR: k - nF, d: k - 1 + nO / 2, bu };
+}
+
+// Bredden underbordene inni feltet må kløyves til for omlegget o. Null når det ikke går.
+function breddeFor(l, bu, bo, o) {
+  const t = kloyvTall(l, bu);
+  if (t.nR < 1) return null;
+  const g = bo - 2 * o;
+  return (l.L - t.nF * bu - t.nO * bo / 2 - t.d * g) / t.nR;
+}
+
+// Forslag for et felt: kløyv til hele mm som gir omlegg nær 25 (ellers høyst 30).
+function kloyvForslag(l, inn) {
+  const { bu, bo, oIdeal, oMax } = inn;
+  for (const o of [oIdeal, oMax]) {
+    const b = breddeFor(l, bu, bo, o);
+    if (b === null) return null;
+    const bredde = Math.round(b);
+    const ny = leggUtKloyvd(l, bredde, inn);
+    if (ny && ny.innenforAnbefalt) {
+      return { bredde, antall: ny.kloyvdUnderbord.antall, omlegg: ny.omlegg, kloss: ny.klaring, fra: bu };
+    }
+  }
+  return null;
+}
+
+// Legger ut feltet med underbordene inni kløyvd til `bredde`. Null når det ikke er gyldig
+// (ikke smalere enn fullt bord, for smalt, eller omlegget havner under minimum).
+function leggUtKloyvd(l, bredde, inn) {
+  const { bu, bo } = inn;
+  const t = kloyvTall(l, bu);
+  if (t.nR < 1 || !(bredde < bu - 0.5)) return null;
+  const g = (l.L - t.nF * bu - t.nR * bredde - t.nO * bo / 2) / t.d;
+  const o = (bo - g) / 2;
+  // Underbordet må synes mellom påbordene, og ikke kløyves til under halv bredde
+  if (g <= 0 || o < inn.oMin - SLINGRING || bredde - 2 * o < -SLINGRING || bredde < bu / 2) return null;
+
+  const bredder = Array.from({ length: t.k }, (_, i) => (
+    (i === 0 && l.start === 'U') || (i === t.k - 1 && l.slutt === 'U') ? bu : bredde));
+  const underliggere = [];
+  const overliggere = [];
+  let x = l.start === 'O' ? bo - o : 0;
+  if (l.start === 'O') overliggere.push({ fraEksakt: 0, tilEksakt: bo });
+  bredder.forEach((b, i) => {
+    underliggere.push({ fraEksakt: x, tilEksakt: x + b });
+    if (i < t.k - 1) overliggere.push({ fraEksakt: x + b - o, tilEksakt: x + b - o + bo });
+    x += b + g;
+  });
+  if (l.slutt === 'O') overliggere.push({ fraEksakt: x - g - o, tilEksakt: x - g - o + bo });
+  const avrund = (b) => ({ ...b, fra: Math.round(b.fraEksakt), til: Math.round(b.tilEksakt) });
+
+  const spikring = sjekkSpikring(bo, g, inn);
+  const innenforAnbefalt = o <= inn.oMax + SLINGRING;
+  return {
+    ...l,
+    klaring: g,
+    omlegg: o,
+    senteravstand: bredde + g,
+    innenforAnbefalt,
+    spikring,
+    underliggere: underliggere.map(avrund),
+    overliggere: overliggere.map(avrund),
+    varsler: l.varsler.filter((v) => v.type !== 'omlegg-over-maks' && v.type !== 'spikring')
+      .concat(spikring.ok ? [] : [{ type: 'spikring',
+        tekst: `Klossen blir bare ${Math.round(g * 10) / 10} mm. Påbordet skal ha ${spikring.antallSpikre} spikre, og de trenger minst ${spikring.kreverKlaring} mm.` }]),
+    kloyvdUnderbord: { bredde, antall: t.nR },
   };
 }
 
@@ -624,6 +722,9 @@ export function lagOppsettliste(r) {
       til: siste.til,
       kloss: f.losning.klaring,
       hjornebord: Object.values(f.hjornebord ?? {}),
+      kloyvForslag: f.kloyvForslag ?? null,
+      kloyvdUnderbord: f.losning.kloyvdUnderbord ?? null,
+      kloyvUgyldig: f.kloyvUgyldig ?? false,
       omlegg: f.losning.omlegg,
       innenforAnbefalt: f.losning.innenforAnbefalt,
     };

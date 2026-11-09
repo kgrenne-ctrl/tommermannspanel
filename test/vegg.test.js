@@ -339,3 +339,37 @@ test('Jevnest over hele veggen: finner den beste kombinasjonen av innlegg (sjekk
     assert.equal(sammenlign(kost(jevnt), best), 0, `jevnt ${kost(jevnt)} mot beste ${best}`);
   }
 });
+
+test('Kløyvde underbord: forslag og ny utlegging for felt over 30 mm (håndregnet)', () => {
+  const r = losVegg(GARASJE);
+  const f = r.felt.find((x) => x.navn === 'Over og under vindu 1');
+  // Påbord i begge ender, 5 underbord, L = 1256. For omlegg 25 må klossen bli 148 − 50 = 98.
+  // Underbord: (1256 − 148 − 5 · 98) / 5 = 123,6, rundet til 124. Da blir klossen
+  // (1256 − 5 · 124 − 148) / 5 = 97,6 og omlegget (148 − 97,6) / 2 = 25,2.
+  assert.deepEqual([f.kloyvForslag.bredde, f.kloyvForslag.antall, f.kloyvForslag.fra], [124, 5, 148]);
+  assert.ok(Math.abs(f.kloyvForslag.kloss - 97.6) < 1e-9);
+  assert.ok(Math.abs(f.kloyvForslag.omlegg - 25.2) < 1e-9);
+  // Felt innenfor anbefalt får ikke forslag
+  assert.equal(r.felt.find((x) => x.navn === 'Over port').kloyvForslag, null);
+
+  const r2 = losVegg({ ...GARASJE, kloyvUnderbord: { 'Over og under vindu 1': 124 } });
+  const f2 = r2.felt.find((x) => x.navn === 'Over og under vindu 1');
+  assert.ok(f2.losning.innenforAnbefalt);
+  assert.equal(f2.kloyvForslag, null);
+  assert.deepEqual(f2.losning.kloyvdUnderbord, { bredde: 124, antall: 5 });
+  // Feltet starter og slutter der det gjorde, og underbordene står med lik kloss
+  assert.ok(Math.abs(f2.x0 - f.x0) < 1e-9 && Math.abs(f2.x1 - f.x1) < 1e-9);
+  const U = f2.underliggere;
+  for (const b of U) assert.ok(Math.abs(b.tilEksakt - b.fraEksakt - 124) < 1e-9);
+  for (let i = 1; i < U.length; i++) assert.ok(Math.abs(U[i].fraEksakt - U[i - 1].tilEksakt - 97.6) < 1e-9);
+  // Påbordene ligger 25,2 mm inn over underbordet på hver side
+  for (const o of f2.overliggere) {
+    const v = U.find((u) => u.fraEksakt < o.fraEksakt && u.tilEksakt > o.fraEksakt);
+    const h = U.find((u) => u.tilEksakt > o.tilEksakt && u.fraEksakt < o.tilEksakt);
+    assert.ok(Math.abs(v.tilEksakt - o.fraEksakt - 25.2) < 1e-9);
+    assert.ok(Math.abs(o.tilEksakt - h.fraEksakt - 25.2) < 1e-9);
+  }
+  // Ugyldig kløyving (bredere enn fullt bord) brukes ikke, og appen sier fra
+  const r3 = losVegg({ ...GARASJE, kloyvUnderbord: { 'Over og under vindu 1': 160 } });
+  assert.ok(r3.varsler.some((v) => v.type === 'kloyv-ugyldig' && v.felt === 'Over og under vindu 1'));
+});

@@ -8,24 +8,24 @@
 //   versjonsnummer i navnet, så en lagret fil er aldri utdatert.
 
 // versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd)
-const VERSJON = '20261109-115347';
+const VERSJON = '20261109-115912';
 const FILER = [
   "./",
   "./versjon.json",
   "./manifest.webmanifest",
-  "./css/stil.css?v=20261109-115347",
-  "./src/skjerm/app.js?v=20261109-115347",
-  "./src/skjerm/biter.js?v=20261109-115347",
-  "./src/skjerm/format.js?v=20261109-115347",
-  "./src/skjerm/lagring.js?v=20261109-115347",
-  "./src/skjerm/oppdater.js?v=20261109-115347",
-  "./src/skjerm/tegning.js?v=20261109-115347",
-  "./src/skjerm/vegg-skjerm.js?v=20261109-115347",
-  "./src/tommermann/fagverdier.js?v=20261109-115347",
-  "./src/tommermann/hus.js?v=20261109-115347",
-  "./src/tommermann/materialer.js?v=20261109-115347",
-  "./src/tommermann/solver.js?v=20261109-115347",
-  "./src/tommermann/vegg.js?v=20261109-115347",
+  "./css/stil.css?v=20261109-115912",
+  "./src/skjerm/app.js?v=20261109-115912",
+  "./src/skjerm/biter.js?v=20261109-115912",
+  "./src/skjerm/format.js?v=20261109-115912",
+  "./src/skjerm/lagring.js?v=20261109-115912",
+  "./src/skjerm/oppdater.js?v=20261109-115912",
+  "./src/skjerm/tegning.js?v=20261109-115912",
+  "./src/skjerm/vegg-skjerm.js?v=20261109-115912",
+  "./src/tommermann/fagverdier.js?v=20261109-115912",
+  "./src/tommermann/hus.js?v=20261109-115912",
+  "./src/tommermann/materialer.js?v=20261109-115912",
+  "./src/tommermann/solver.js?v=20261109-115912",
+  "./src/tommermann/vegg.js?v=20261109-115912",
   "./assets/BAKOY_logo_hvit_transparent.png",
   "./assets/ikon-180.png",
   "./assets/ikon-192.png",

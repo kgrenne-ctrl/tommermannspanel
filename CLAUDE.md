@@ -108,6 +108,11 @@ Alle skal kunne endres i innstillinger.
   dynamisk programmering (kjede åpning for åpning), minst sum av (omlegg − 25)². Sjekket mot
   gjennomprøving av alle kombinasjoner. Målt på 300 tilfeldige vegger: bedre på 78, men liten
   gevinst (verste avvik i snitt 12,47 → 12,39 mm), fordi innlegget bare kan variere 10 mm.
+- Kløyvde underbord (Kenny 2026-11-09): felt med omlegg over 30 mm får forslag om å kløyve
+  underbordene inni feltet (ikke de ytterst, som deles med naboen eller er hjørnebord), så
+  omlegget blir 25 (ellers høyst 30), med samme antall bord og feltlengde. Tømreren velger det med
+  en knapp. Valget lagres per vegg som `kloyvUnderbord: { feltnavn: bredde }` og legges ut på nytt
+  i `leggUtKloyvd`. Passer det ikke lenger (målene er endret), brukes det ikke, og appen varsler.
 - «Finn bedre oppsett» (`foreslaVegg`) prøver karm, hjørner, startvalg og standardbredder.
   Omlegg innenfor 20–30 mm regnes som like bra.
 - Påbord er standard både i hjørnene og inn på karmen (Kenny 2026-11-08).

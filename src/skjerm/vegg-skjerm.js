@@ -37,6 +37,10 @@ let sisteAlle = [];
 // Om «Detaljer for den som planlegger» er åpnet (huskes når appen regner på nytt).
 let detaljerApen = false;
 
+// Kløyvde underbord tømreren har valgt for veggen som vises: { feltnavn: bredde i mm }.
+// Står ikke i skjemaet, men lagres sammen med veggen.
+let gjeldendeKloyv = {};
+
 // Huset: alle veggene som tekst slik de står i skjemaet, og hvilken som vises.
 // Skjemaet viser én vegg om gangen. Når man bytter, lagres den gamle i hus.vegger.
 let hus = { vegger: [], aktiv: 0, lukket: true, materialer: {} };
@@ -139,7 +143,7 @@ skjema.addEventListener('click', (hendelse) => {
 // Trykk på en rad i oversikten: åpne feltkortet og bla dit
 resultat.addEventListener('click', (hendelse) => {
   const rad = hendelse.target.closest('[data-ga-til]');
-  if (!rad) return;
+  if (!rad || hendelse.target.closest('button')) return; // knapper i feltet gjør sitt eget
   const kortet = finn(`felt-${rad.dataset.gaTil}`);
   finn('v-detaljer').open = true;
   detaljerApen = true;
@@ -166,6 +170,12 @@ resultat.addEventListener('click', (hendelse) => {
     const [gruppe, nr] = knapp.dataset.forslag.split(':');
     sisteForslag.valgt = knapp.dataset.forslag;
     brukForslag(sisteForslag[gruppe][Number(nr)].oppsett);
+  } else if (knapp.dataset.kloyv) {
+    gjeldendeKloyv[knapp.dataset.kloyv] = Number(knapp.dataset.bredde);
+    oppdater();
+  } else if (knapp.dataset.angreKloyv) {
+    delete gjeldendeKloyv[knapp.dataset.angreKloyv];
+    oppdater();
   } else if (knapp.id === 'v-del-liste') {
     delListe(knapp);
   } else if (knapp.id === 'v-utgangspunkt') {
@@ -276,6 +286,7 @@ function lesTilstand() {
     hjorneHoyre: finn('v-hjorneHoyre').value,
     hjorner: { venstre: hjorne('Venstre'), hoyre: hjorne('Hoyre') },
     startvalg: finn('v-startvalg').value,
+    kloyvUnderbord: { ...gjeldendeKloyv },
     innstillinger: Object.fromEntries(INNSTILLINGER.map((n) => [n, finn(`v-${n}`).value])),
     apninger: [...liste.querySelectorAll('.apning')].map((k) => ({
       type: k.querySelector('.a-type').value,
@@ -291,6 +302,7 @@ function lesTilstand() {
 // av appen), får standardverdien, så ingenting blir hengende igjen fra forrige vegg.
 function settTilstand(t) {
   try {
+    gjeldendeKloyv = { ...(t.kloyvUnderbord ?? {}) };
     finn('v-navn').value = t.navn ?? '';
     finn('v-lengde').value = t.lengde ?? '';
     finn('v-hoyde').value = t.hoyde ?? '';
@@ -445,6 +457,7 @@ function tilInndata(t) {
       return [side, { type: h.type ?? STANDARD_HJORNE.type, kasse: lesTall(h.kasse) ?? STANDARD_HJORNE.kasse }];
     })),
     startvalg: t.startvalg ?? STANDARD.startvalg,
+    kloyvUnderbord: t.kloyvUnderbord ?? {},
     apninger: (t.apninger ?? []).map((a) => ({
       type: a.type, x: lesTall(a.x), bredde: lesTall(a.bredde), hoyde: lesTall(a.hoyde), bunn: lesTall(a.bunn),
     })),
@@ -674,7 +687,7 @@ function visVarsler(r) {
     : `${nrListe.slice(0, -1).join(', ')} og ${nrListe.at(-1)}`);
 
   const ma = r.varsler.filter((v) => v.alvorlig);
-  const spikring = r.varsler.filter((v) => v.type === 'spikring' || v.type === 'hjorne-bord');
+  const spikring = r.varsler.filter((v) => ['spikring', 'hjorne-bord', 'kloyv-ugyldig'].includes(v.type));
   const omlegg = r.varsler.filter((v) => v.type === 'omlegg-over-maks');
   const hjorner = r.varsler.filter((v) => v.type === 'underlag-hjorne');
   const ikkeOpp = r.felt.filter((f) => !f.ok).length;
@@ -694,7 +707,8 @@ function visVarsler(r) {
     const tall = omlegg.map((v) => nr(v.felt)).filter(Boolean);
     const storst = Math.max(...r.felt.filter((f) => f.ok).map((f) => f.losning.omlegg));
     vite.push(`<p>Felt ${liste(tall)} får omlegg over ${mm(r.rytme.maks)} mm (størst ${mm(storst, 1)} mm).
-      Det går an, men er mer enn anbefalt. «Finn bedre oppsett» kan finne noe bedre.</p>`);
+      Det går an, men er mer enn anbefalt. Under «Slik setter du opp» står det hvor kløyvde underbord
+      kan gi 25 mm, og «Finn bedre oppsett» kan finne noe bedre.</p>`);
   }
   if (hjorner.length) {
     const sider = hjorner.map((v) => (v.felt === 'Venstre hjørne' ? 'venstre' : 'høyre'));
@@ -706,6 +720,22 @@ function visVarsler(r) {
     deler.unshift(boks('ok', '<p>Alle felt går opp med omlegg innenfor anbefalt.</p>'));
   }
   return deler.join('');
+}
+
+// Forslag om kløyvde underbord i et felt med for stort omlegg, eller kløyvingen som er valgt
+function visKloyv(o) {
+  if (o.kloyvdUnderbord) {
+    const k = o.kloyvdUnderbord;
+    return `<div class="kloyv valgt">
+      <p class="viktig">${k.antall} underbord kløyves til ${mm(k.bredde)} mm. Omlegg ${mm(o.omlegg, 1)} mm.</p>
+      <button type="button" class="knapp lenkeknapp liten-knapp" data-angre-kloyv="${o.navn}">Bruk fulle bord igjen</button></div>`;
+  }
+  if (!o.kloyvForslag) return '';
+  const f = o.kloyvForslag;
+  return `<div class="kloyv">
+    <p>Forslag: kløyv ${f.antall} underbord fra ${mm(f.fra)} til ${mm(f.bredde)} mm. Da blir omlegget
+      ${mm(f.omlegg, 1)} mm og klossen ${mm(f.kloss, 1)} mm.</p>
+    <button type="button" class="knapp liten-knapp" data-kloyv="${o.navn}" data-bredde="${f.bredde}">Bruk kløyvde underbord</button></div>`;
 }
 
 // «Slik setter du opp»: én blokk per felt med det tømreren trenger
@@ -728,6 +758,7 @@ function visOppsett(r) {
         <div><span class="liten">Siste slutter</span><strong>${mm(o.til)}</strong>
           <span class="liten">kontrollmål</span></div>
       </div>
+      ${visKloyv(o)}
       ${o.hjornebord.map((h) => `<p class="viktig">Hjørnebordet (${h.type === 'O' ? 'påbord' : 'underbord'}) kløyves til ${mm(h.bredde, 1)} mm.</p>`).join('')}
       ${o.type === 'side' ? '' : `<p class="liten">Bare over og under åpningen. Sidebordene står i feltene ved siden av.</p>`}
     </div>`;
@@ -852,7 +883,7 @@ function visMaterialer(liste) {
       ${v.felt.map((f) => `<tr class="felt-rad"><td colspan="3">${f.nr}. ${f.navn}</td></tr>`
         + f.biter.map((b) => `<tr><td>${b.antall} stk</td><td><strong>${mm(b.lengde)}</strong></td>
         <td><span class="ingen-brudd">${b.dim.navn}</span><span class="liten">${b.del}</span></td></tr>`).join('')
-        + (f.kloyves ?? []).map((k) => `<tr><td colspan="3" class="viktig">Hjørnebord ${k.dim.navn} kløyves til ${mm(k.bredde, 1)} mm bredde</td></tr>`).join('')).join('')}
+        + (f.kloyves ?? []).map((k) => `<tr><td colspan="3" class="viktig">${k.tekst ?? 'Hjørnebord'} ${k.dim.navn} kløyves til ${mm(k.bredde, 1)} mm bredde</td></tr>`).join('')).join('')}
       </tbody></table></details>`).join('');
   return `<h3 id="v-materialer">Materialliste for hele huset</h3>
     <p class="hjelp">Løpemeter per dimensjon (tykkelse × bredde i mm), med ${mm(liste.svinn)} % svinn,

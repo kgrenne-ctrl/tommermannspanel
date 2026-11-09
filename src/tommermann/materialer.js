@@ -59,7 +59,11 @@ export function lagMaterialliste(vegger, { kapptillegg = STANDARD_MATERIALER.kap
       leggTil(dimU, f.underliggere.length);
       leggTil(dimO, f.overliggere.length);
       const kloyves = Object.values(f.hjornebord ?? {}).map((h) => ({
-        dim: h.type === 'O' ? dimO : dimU, bredde: h.bredde, klyvd: h.klyvd }));
+        dim: h.type === 'O' ? dimO : dimU, bredde: h.bredde, klyvd: h.klyvd, tekst: 'Hjørnebord' }));
+      if (f.losning.kloyvdUnderbord) {
+        const k = f.losning.kloyvdUnderbord;
+        kloyves.push({ dim: dimU, bredde: k.bredde, antall: k.antall, tekst: `${k.antall} underbord` });
+      }
       veggListe.felt.push({ nr: i + 1, navn: f.navn, biter: [...biter.values()], kloyves });
     });
     kappliste.push(veggListe);
@@ -117,7 +121,7 @@ export function materialTekst(liste, { tittel = 'Tømmermannskledning', hjorner 
     for (const f of v.felt) {
       ut.push(`  ${f.nr}. ${f.navn}`);
       for (const b of f.biter) ut.push(`    ${b.antall} stk ${tall(b.lengde)} mm (${b.dim.navn}, ${b.del.toLowerCase()})`);
-      for (const k of f.kloyves ?? []) ut.push(`    Hjørnebord ${k.dim.navn} kløyves til ${k.bredde.toLocaleString('nb-NO', { maximumFractionDigits: 1 })} mm bredde`);
+      for (const k of f.kloyves ?? []) ut.push(`    ${k.tekst ?? 'Hjørnebord'} ${k.dim.navn} kløyves til ${k.bredde.toLocaleString('nb-NO', { maximumFractionDigits: 1 })} mm bredde`);
     }
   }
   return ut.join('\n');
