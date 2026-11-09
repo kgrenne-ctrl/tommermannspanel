@@ -7,7 +7,9 @@
 // Hvert hjørne har en type på hver av de to veggene:
 // - 'forbi': kledningen går forbi hjørnet og dekker enden av kledningen på naboveggen.
 //            Feltet blir lengre med naboveggens kledningstykkelse i hjørnet.
-// - 'mot':   kledningen slutter mot naboveggen, som går forbi. Feltet = vegglengden.
+// - 'mot':   kledningen slutter mot naboveggen, som går forbi. Har naboveggen påbord ytterst,
+//            går kledningen likevel så langt forbi hjørnet som underbordet (klossen) på
+//            naboveggen er tykt, så påbordene møtes (Kenny 2026-11-09). Ellers = vegglengden.
 // - 'kasse': kledningen slutter mot en hjørnekasse. Feltet blir kortere med kassebredden.
 // Vegglengden måles utenpå lektene, og målene regnes fra hjørnet på veggen.
 
@@ -29,13 +31,23 @@ export function tykkelseIHjornet(vegg, side) {
   return v.tykkelseUnder + (bord === 'O' ? v.tykkelseOver : 0);
 }
 
+// Hvor langt inn fra naboveggens lekter innsiden av det ytterste bordet i hjørnet ligger.
+// Påbord ytterst ligger utenpå klossen (underbordets tykkelse). Underbord ligger rett på lekta.
+export function innsideIHjornet(vegg, side) {
+  const v = { ...STANDARD_VEGG, ...vegg };
+  const bord = side === 'venstre' ? v.hjorneVenstre : v.hjorneHoyre;
+  return bord === 'O' ? v.tykkelseUnder : 0;
+}
+
 // Hvor mye lengre (pluss) eller kortere (minus) feltet blir enn vegglengden i ett hjørne.
-// `naboTykkelse` er kledningstykkelsen i hjørnet på naboveggen.
-export function forlengelse(hjorne, naboTykkelse) {
+// `nabo` = { tykkelse, innside }: kledningstykkelsen i hjørnet på naboveggen, og hvor langt
+// inn innsiden av det ytterste bordet der ligger. (Et tall alene regnes som tykkelsen.)
+export function forlengelse(hjorne, nabo) {
   const h = { ...STANDARD_HJORNE, ...hjorne };
-  if (h.type === 'forbi') return naboTykkelse;
+  const n = typeof nabo === 'number' ? { tykkelse: nabo, innside: 0 } : nabo;
+  if (h.type === 'forbi') return n.tykkelse;
   if (h.type === 'kasse') return -h.kasse;
-  return 0;
+  return n.innside;
 }
 
 // Hvilke vegger møtes i hvert hjørne? Gir naboen til venstre og høyre for vegg k (indeks
@@ -63,10 +75,15 @@ export function losHus({ vegger, lukket = true }) {
     // Naboveggens kledningstykkelse i det hjørnet de deler (dens høyre er vårt venstre)
     const naboVenstre = nb.venstre !== null && vegger[nb.venstre] ? vegger[nb.venstre] : null;
     const naboHoyre = nb.hoyre !== null && vegger[nb.hoyre] ? vegger[nb.hoyre] : null;
-    const tV = naboVenstre ? tykkelseIHjornet(naboVenstre, 'hoyre') : tykkelseIHjornet(v, 'venstre');
-    const tH = naboHoyre ? tykkelseIHjornet(naboHoyre, 'venstre') : tykkelseIHjornet(v, 'hoyre');
-    const forlengVenstre = forlengelse(hj.venstre, tV);
-    const forlengHoyre = forlengelse(hj.hoyre, tH);
+    const naboMal = (nabo, naboSide, minSide) => (nabo
+      ? { tykkelse: tykkelseIHjornet(nabo, naboSide), innside: innsideIHjornet(nabo, naboSide) }
+      : { tykkelse: tykkelseIHjornet(v, minSide), innside: innsideIHjornet(v, minSide) });
+    const nV = naboMal(naboVenstre, 'hoyre', 'venstre');
+    const nH = naboMal(naboHoyre, 'venstre', 'hoyre');
+    const forlengVenstre = forlengelse(hj.venstre, nV);
+    const forlengHoyre = forlengelse(hj.hoyre, nH);
+    hj.venstre.nabo = nV;
+    hj.hoyre.nabo = nH;
 
     const r = losVegg({ ...v, hjorner: hj, forlengVenstre, forlengHoyre });
     if (r.feil) return { navn: v.navn, feil: r.feil, forleng: { venstre: forlengVenstre, hoyre: forlengHoyre } };
@@ -77,8 +94,16 @@ export function losHus({ vegger, lukket = true }) {
       const min = hj[side].type;
       const deres = { ...STANDARD_HJORNE, ...vegger[nabo].hjorner?.[naboSide] }.type;
       const tekst = hjorneFeil(min, deres, vegger[nabo].navn ?? `vegg ${nabo + 1}`);
-      if (tekst) {
-        r.varsler.unshift({ felt: side === 'venstre' ? 'Venstre hjørne' : 'Høyre hjørne', alvorlig: true, tekst });
+      const felt = side === 'venstre' ? 'Venstre hjørne' : 'Høyre hjørne';
+      if (tekst) r.varsler.unshift({ felt, alvorlig: true, tekst });
+      // Begge hjørneløsningene har samme bord ytterst på begge veggene: underbord mot
+      // underbord, eller påbord mot påbord med kloss bak (Kenny 2026-11-09).
+      const mitt = side === 'venstre' ? v.hjorneVenstre ?? 'O' : v.hjorneHoyre ?? 'O';
+      const deresBord = naboSide === 'venstre' ? vegger[nabo].hjorneVenstre ?? 'O' : vegger[nabo].hjorneHoyre ?? 'O';
+      if (!tekst && min !== 'kasse' && mitt !== deresBord) {
+        const navn = { U: 'underbord', O: 'påbord' };
+        r.varsler.push({ felt, type: 'hjorne-bord',
+          tekst: `Denne veggen har ${navn[mitt]} ytterst, ${vegger[nabo].navn ?? `vegg ${nabo + 1}`} har ${navn[deresBord]}. Vanlig er samme bord ytterst på begge veggene i et hjørne.` });
       }
     }
     r.navn = v.navn;

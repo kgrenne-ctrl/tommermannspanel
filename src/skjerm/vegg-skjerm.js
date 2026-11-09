@@ -413,9 +413,9 @@ function fyllEksempel() {
   }
   finn('v-startvalg').value = 'venstre';
   liste.innerHTML = '';
-  leggTilApning({ type: 'vindu', x: 500, bredde: 1000, hoyde: 1200, bunn: 900 });
-  leggTilApning({ type: 'dor', x: 2400, bredde: 900, hoyde: 2100, bunn: 0 });
-  leggTilApning({ type: 'vindu', x: 4300, bredde: 1000, hoyde: 1200, bunn: 900 });
+  leggTilApning({ type: 'vindu', x: 800, bredde: 1000, hoyde: 1200, bunn: 900 });
+  leggTilApning({ type: 'dor', x: 2600, bredde: 900, hoyde: 2100, bunn: 0 });
+  leggTilApning({ type: 'vindu', x: 4200, bredde: 1000, hoyde: 1200, bunn: 900 });
 }
 
 // ---------- Lese skjema og vise resultat ----------
@@ -524,7 +524,9 @@ function visNaboer(r) {
     let tillegg = '';
     const f = r && !r.feil ? r.forleng[side] : null;
     if (f !== null && f !== undefined) {
-      if (f > 0) tillegg = ` Kledningen går ${mm(f, 1)} mm forbi hjørnet.`;
+      const type = finn(`v-hjorne${Side}Type`).value;
+      if (f > 0 && type === 'mot') tillegg = ` Påbordet går ${mm(f, 1)} mm forbi hjørnet, inn til påbordet på naboveggen.`;
+      else if (f > 0) tillegg = ` Kledningen går ${mm(f, 1)} mm forbi hjørnet.`;
       else if (f < 0) tillegg = ` Kledningen starter ${mm(-f, 1)} mm fra hjørnet.`;
       else tillegg = ' Kledningen slutter i hjørnet.';
     }
@@ -618,7 +620,7 @@ function visVarsler(r) {
     : `${nrListe.slice(0, -1).join(', ')} og ${nrListe.at(-1)}`);
 
   const ma = r.varsler.filter((v) => v.alvorlig);
-  const spikring = r.varsler.filter((v) => v.type === 'spikring');
+  const spikring = r.varsler.filter((v) => v.type === 'spikring' || v.type === 'hjorne-bord');
   const omlegg = r.varsler.filter((v) => v.type === 'omlegg-over-maks');
   const hjorner = r.varsler.filter((v) => v.type === 'underlag-hjorne');
   const ikkeOpp = r.felt.filter((f) => !f.ok).length;

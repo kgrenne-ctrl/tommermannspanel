@@ -113,6 +113,10 @@ Alle skal kunne endres i innstillinger.
   i hjørnet: underbordets tykkelse, pluss påbordets når naboveggen har påbord i hjørnet.
   `kasse` gjør feltet kortere med kassebredden. `losVegg` får dette som `forlengVenstre` og
   `forlengHoyre` (mm, minus = kortere).
+- `mot` med påbord ytterst på naboveggen: kledningen går likevel forbi hjørnet med naboveggens
+  underbordtykkelse (klossen bak hjørnet), så påbordene møtes (Kenny 2026-11-09, ut fra hans
+  skisse «Overligger i hjørnet»). Med underbord ytterst på naboveggen er tillegget 0.
+- Vanlig er samme bord ytterst på begge veggene i et hjørne. Ulikt gir varsel (`hjorne-bord`).
 - Nullpunktet er alltid hjørnet på veggen. Bord som går forbi hjørnet får minusmål.
 - `src/tommermann/hus.js`: et hus er veggene i rekkefølge rundt huset. Høyre hjørne på vegg k er
   venstre hjørne på vegg k+1, og siste møter første når huset er lukket. `losHus` regner ut

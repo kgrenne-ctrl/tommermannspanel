@@ -267,12 +267,16 @@ test('Merkeliste: felt som ikke går opp, er ikke med', () => {
   assert.ok(!liste.some((m) => m.feltNavn === 'Vindu 1 – Port'));
 });
 
-test('Eksempelveggen i appen går opp med omlegg innenfor anbefalt', () => {
-  // Samme vegg som «Fyll inn eksempel» (src/skjerm/vegg-skjerm.js)
-  const r = losVegg({ lengde: 6000, hoyde: 2400, bu: 98, bo: 98, karmBord: 'O', apninger: [
-    { type: 'vindu', x: 500, bredde: 1000, hoyde: 1200, bunn: 900 },
-    { type: 'dor', x: 2400, bredde: 900, hoyde: 2100, bunn: 0 },
-    { type: 'vindu', x: 4300, bredde: 1000, hoyde: 1200, bunn: 900 }] });
+test('Eksempelveggen i appen går opp med omlegg innenfor anbefalt', async () => {
+  // Samme vegg som «Fyll inn eksempel» (src/skjerm/vegg-skjerm.js), regnet slik appen gjør
+  // (gjennom huset, med påbord ytterst og «mot naboveggen» i begge hjørner)
+  const { losHus } = await import('../src/tommermann/hus.js');
+  const r = losHus({ vegger: [{ lengde: 6000, hoyde: 2400, bu: 98, bo: 98, karmBord: 'O',
+    hjorneVenstre: 'O', hjorneHoyre: 'O', startvalg: 'venstre',
+    hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'mot' } }, apninger: [
+      { type: 'vindu', x: 800, bredde: 1000, hoyde: 1200, bunn: 900 },
+      { type: 'dor', x: 2600, bredde: 900, hoyde: 2100, bunn: 0 },
+      { type: 'vindu', x: 4200, bredde: 1000, hoyde: 1200, bunn: 900 }] }] }).vegger[0];
   assert.equal(r.ok, true);
   assert.ok(r.felt.every((f) => f.losning.innenforAnbefalt));
   assert.ok(!r.varsler.some((v) => v.type === 'spikring' || v.alvorlig));

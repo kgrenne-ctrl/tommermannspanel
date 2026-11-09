@@ -238,11 +238,21 @@ export function tegnSnitt(vegg, snittHoyde) {
     if (type === 'kasse') {
       const x0 = side === 'venstre' ? 0 : W + f;
       deler.push(`<rect data-hjorne="${side}" x="${x0}" y="${yU}" width="${-f}" height="${2 * t}" fill="var(--karm)" stroke="var(--tekst)" stroke-width="${strek}"/>`);
-    } else if (type === 'forbi' || type === 'mot') {
-      const bredde = type === 'forbi' ? f : naboTykk;
-      const x0 = ut < 0 ? x - bredde : x;
-      const y1 = type === 'forbi' ? yVegg : yYtterst;
-      deler.push(`<rect data-hjorne="${side}" data-nabo="ja" x="${x0}" y="${karmTopp - skrift}" width="${bredde}" height="${y1 - karmTopp + skrift}" fill="var(--tekst-gra)" opacity="0.5"/>`);
+    } else if (type === 'forbi') {
+      // Naboveggens kledning stopper ved lekta på denne veggen, og denne kledningen dekker enden
+      const x0 = ut < 0 ? x - f : x;
+      deler.push(`<rect data-hjorne="${side}" data-nabo="ja" x="${x0}" y="${karmTopp - skrift}" width="${f}" height="${yVegg - karmTopp + skrift}" fill="var(--tekst-gra)" opacity="0.5"/>`);
+    } else if (type === 'mot') {
+      // Naboveggen går forbi. Dens ytterste bord går ned forbi denne kledningen. Bak det
+      // (mellom lekta og innsiden av bordet) går denne kledningen inn, f mm forbi hjørnet.
+      const tykk = vegg.hjorner[side].nabo?.tykkelse ?? naboTykk;
+      const ytterst = tykk - f; // tykkelsen på naboveggens ytterste bord
+      const x0 = ut < 0 ? x - tykk : x + f;
+      deler.push(`<rect data-hjorne="${side}" data-nabo="ja" x="${x0}" y="${karmTopp - skrift}" width="${ytterst}" height="${yYtterst - karmTopp + skrift}" fill="var(--tekst-gra)" opacity="0.5"/>`);
+      if (f > 0) {
+        const xi = ut < 0 ? x - f : x;
+        deler.push(`<rect data-hjorne="${side}" data-nabo="ja" x="${xi}" y="${karmTopp - skrift}" width="${f}" height="${yVegg - karmTopp + skrift}" fill="var(--tekst-gra)" opacity="0.5"/>`);
+      }
     }
   }
 
