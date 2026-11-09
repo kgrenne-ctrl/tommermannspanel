@@ -118,6 +118,8 @@ Alle skal kunne endres i innstillinger.
   skisse «Overligger i hjørnet»). Med underbord ytterst på naboveggen er tillegget 0.
 - Vanlig er samme bord ytterst på begge veggene i et hjørne. Ulikt gir varsel (`hjorne-bord`).
 - Nullpunktet er alltid hjørnet på veggen. Bord som går forbi hjørnet får minusmål.
+- «Hjørnene sett ovenfra» (`tegnHjorne` i tegning.js): hvert hjørne i riktig målestokk med
+  begge veggene, bord og kloss. Snittet A–A har overdrevet bordtykkelse og viser hjørnet bare forenklet.
 - `src/tommermann/hus.js`: et hus er veggene i rekkefølge rundt huset. Høyre hjørne på vegg k er
   venstre hjørne på vegg k+1, og siste møter første når huset er lukket. `losHus` regner ut
   forlengelsene og sier fra når et hjørne ikke henger sammen (begge går forbi, eller ingen).

@@ -278,3 +278,108 @@ export function tegnSnitt(vegg, snittHoyde) {
     + deler.join('')
     + '</svg>';
 }
+
+// ---------- Hjørnet sett ovenfra, i riktig målestokk ----------
+// Viser ett hjørne slik det blir: veggen og naboveggen (grått), underbord, påbord og kloss
+// bak påbordet der det ikke er underbord. 1 enhet = 1 mm, ca. 500 mm i hver retning.
+//
+// Tegnes i et eget koordinatsystem der hjørnet (der lektene på de to veggene møtes) er 0,0.
+// Denne veggen går mot høyre, utsiden er ned. Naboveggen går oppover, med utsiden til venstre.
+// Høyre hjørne tegnes likt og speilvendes.
+//
+// vegg: resultat fra losHus. side: 'venstre' eller 'hoyre'.
+// nabo: resultat for naboveggen (eller null når den ikke er lagt inn), naboNavn: navnet.
+export function tegnHjorne(vegg, side, nabo = null, naboNavn = 'Naboveggen') {
+  const RAMME = 520;
+  const venstre = side === 'venstre';
+  const W = vegg.lengde;
+  const tU = vegg.tykkelse?.under ?? 19;
+  const tO = vegg.tykkelse?.over ?? 19;
+  const mittBord = venstre ? vegg.hjorneVenstre : vegg.hjorneHoyre;
+  const type = vegg.hjorner?.[side]?.type ?? 'mot';
+  const f = vegg.forleng?.[side] ?? 0;
+
+  // Denne veggens bord i hjørnefeltet, målt fra hjørnet
+  const felt = venstre ? vegg.felt[0] : vegg.felt.at(-1);
+  const lokal = (b) => (venstre ? [b.fraEksakt, b.tilEksakt] : [W - b.tilEksakt, W - b.fraEksakt]);
+  const mineU = felt?.ok ? felt.underliggere.map(lokal) : [];
+  const mineO = felt?.ok ? felt.overliggere.map(lokal) : [];
+
+  // Naboveggen: dens høyre ende møter vårt venstre hjørne, og omvendt
+  const naboSide = venstre ? 'hoyre' : 'venstre';
+  let naboU = [];
+  let naboO = [];
+  let ntU = tU;
+  let ntO = tO;
+  let naboBord = mittBord;
+  let antatt = false;
+  if (nabo && !nabo.feil) {
+    ntU = nabo.tykkelse?.under ?? 19;
+    ntO = nabo.tykkelse?.over ?? 19;
+    naboBord = venstre ? nabo.hjorneHoyre : nabo.hjorneVenstre;
+    const nf = venstre ? nabo.felt.at(-1) : nabo.felt[0];
+    const Wn = nabo.lengde;
+    const tilY = (b) => (venstre ? [b.fraEksakt - Wn, b.tilEksakt - Wn] : [-b.tilEksakt, -b.fraEksakt]);
+    if (nf?.ok) {
+      naboU = nf.underliggere.map(tilY);
+      naboO = nf.overliggere.map(tilY);
+    }
+  } else if (type !== 'kasse') {
+    // Ikke lagt inn: vis bare hjørnebordet, antatt likt som på denne veggen
+    antatt = true;
+    const ende = type === 'mot' ? tU + (mittBord === 'O' ? tO : 0) : (mittBord === 'O' ? tU : 0);
+    const bredde = mittBord === 'O' ? vegg.bo : vegg.bu;
+    (mittBord === 'O' ? naboO : naboU).push([ende - bredde, ende]);
+  }
+
+  const synlig = ([a, b]) => b > -RAMME && a < RAMME;
+  const deler = [];
+  const r1 = (v) => Math.round(v * 10) / 10;
+  const rekt = (x, y, w, h, fyll, ekstra = '') => deler.push(
+    `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="${fyll}" stroke="var(--bord-kant)" stroke-width="1.2" ${ekstra}/>`);
+
+  // Vegg og lekter (innenfor kledningen)
+  const VEGG = 120;
+  deler.push(`<path data-vegg="ja" d="M ${RAMME} ${-VEGG} L ${VEGG} ${-VEGG} L ${VEGG} ${-RAMME} L 0 ${-RAMME} L 0 0 L ${RAMME} 0 Z" fill="var(--karm)" stroke="var(--tekst-gra)" stroke-width="1.5"/>`);
+
+  if (type === 'kasse') {
+    const k = -f;
+    const T = tU + tO;
+    rekt(0, 0, k, T, 'var(--tekst-gra)', 'data-hjornekasse="ja" opacity="0.6"');
+    rekt(-T, -k, T, k + T, 'var(--tekst-gra)', 'data-hjornekasse="ja" opacity="0.6"');
+  }
+
+  // Kloss bak påbordet der det ikke er underbord: i underbordsjiktet, fra første underbord
+  // og inn til naboveggens underbordsjikt (ikke inn i påbordet på naboveggen).
+  if (type !== 'kasse' && mittBord === 'O' && mineU.length) {
+    const forste = Math.min(...mineU.map(([a]) => a));
+    rekt(-ntU, 0, forste + ntU, tU, 'var(--kloss)', 'data-kloss="ja"');
+  }
+  if (type !== 'kasse' && naboBord === 'O' && naboU.length && !antatt) {
+    const siste = Math.max(...naboU.map(([, b]) => b));
+    rekt(-ntU, siste, ntU, tU - siste, 'var(--kloss)', 'data-kloss="ja"');
+  }
+
+  // Underbord, så påbord (påbordet ligger utenpå)
+  for (const [a, b] of mineU.filter(synlig)) rekt(a, 0, Math.min(b, RAMME) - a, tU, 'var(--underligger)', 'data-bord="u"');
+  for (const [a, b] of naboU.filter(synlig)) rekt(-ntU, Math.max(a, -RAMME), ntU, b - Math.max(a, -RAMME), 'var(--underligger)', 'data-bord="u" data-nabo="ja"');
+  for (const [a, b] of mineO.filter(synlig)) rekt(a, tU, Math.min(b, RAMME) - a, tO, 'var(--overligger)', 'data-bord="o"');
+  for (const [a, b] of naboO.filter(synlig)) rekt(-ntU - ntO, Math.max(a, -RAMME), ntO, b - Math.max(a, -RAMME), 'var(--overligger)', 'data-bord="o" data-nabo="ja"');
+
+  // Speilvend høyre hjørne. Teksten skrives utenfor speilingen, så den ikke blir baklengs.
+  const sx = venstre ? 1 : -1;
+  const tekst = (x, y, t, anker = 'start', ekstra = '') => `<text x="${x * sx}" y="${y}" font-size="22" fill="var(--tekst)" text-anchor="${venstre ? anker : (anker === 'start' ? 'end' : anker === 'end' ? 'start' : anker)}" ${ekstra}>${t}</text>`;
+  const forklaring = type === 'kasse' ? `Hjørnekasse ${Math.round(-f)} mm`
+    : f > 0 ? `Kledningen går ${Math.round(f)} mm forbi hjørnet` : 'Kledningen slutter i hjørnet';
+  const tekster = [
+    tekst(260, tU + tO + 40, 'Denne veggen', 'middle'),
+    tekst(-ntU - ntO - 70, -260, antatt ? `${naboNavn} (antatt)` : naboNavn, 'middle',
+      `transform="rotate(-90 ${(-ntU - ntO - 70) * sx} -260)"`),
+    tekst(-ntU - ntO - 10, tU + tO + 80, forklaring),
+    tekst(VEGG + 20, -VEGG - 20, 'Vegg og lekter'),
+  ];
+
+  const vb = venstre ? `${-200} ${-RAMME} ${RAMME + 200} ${RAMME + 200}` : `${-RAMME} ${-RAMME} ${RAMME + 200} ${RAMME + 200}`;
+  return `<svg class="tegning hjorne" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${venstre ? 'Venstre' : 'Høyre'} hjørne sett ovenfra">`
+    + `<g transform="scale(${sx},1)">${deler.join('')}</g>${tekster.join('')}</svg>`;
+}

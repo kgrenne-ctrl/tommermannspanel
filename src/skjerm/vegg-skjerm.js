@@ -5,7 +5,7 @@ import { foreslaVegg, vurderVegg, lagMerkeliste, lagOppsettliste } from '../tomm
 import { losHus, naboer, speilHjorne } from '../tommermann/hus.js';
 import { lagMaterialliste, materialTekst, STANDARD_MATERIALER } from '../tommermann/materialer.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG, STANDARD_HJORNE } from '../tommermann/fagverdier.js';
-import { tegnVegg, tegnSnitt } from './tegning.js';
+import { tegnVegg, tegnSnitt, tegnHjorne } from './tegning.js';
 import { lesTall, mm } from './format.js';
 import { fyllBreddevalg, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
@@ -28,6 +28,8 @@ let sisteForslag = null;
 
 // Siste resultat for veggen som vises (trengs når forslagene regnes ut).
 let sisteResultat = null;
+// Hele huset regnet ut (trengs for å tegne naboveggen i hjørnene)
+let sisteHus = null;
 
 // Om «Detaljer for den som planlegger» er åpnet (huskes når appen regner på nytt).
 let detaljerApen = false;
@@ -476,6 +478,7 @@ function oppdater() {
   // Regn alle veggene, så hjørnene og statusen på hver vegg stemmer
   const alle = hus.vegger.map(tilInndata);
   const husSvar = losHus({ vegger: alle.map((v) => (mangler(v) ? null : v)), lukket: hus.lukket });
+  sisteHus = husSvar;
   visFaner(husSvar);
   visNaboer(husSvar.vegger[hus.aktiv]);
   sisteListe = lagMaterialliste(husSvar.vegger.map((r, k) => (r ? { ...r, navn: veggNavn(hus.vegger[k], k) } : null)), {
@@ -576,6 +579,8 @@ function visVegg(r) {
       Tallene i ringene er feltnumrene. Rød stiplet = feltet går ikke opp.
       Grått i hjørnet = hjørnekasse.</p>
 
+    ${visHjorner(r)}
+
     ${visMaterialer(sisteListe)}
 
     <details class="detaljer" id="v-detaljer" ${detaljerApen ? 'open' : ''}>
@@ -590,7 +595,8 @@ function visVegg(r) {
       <p class="hjelp">Sett ovenfra, veggen øverst og utsiden ned. Oransje linje på tegningen over
         viser hvor snittet er tatt. Zoom med + og −, og skyv for å se resten. Tallene under kledningen
         ved karmen er hvor langt bordet går inn på karmen (mm). Oransje stiplet = underlag bak påbord i hjørnet.
-        Grått ved hjørnet = kledningen på naboveggen. Bordtykkelsen er tegnet tykkere enn den er.</p>
+        Grått ved hjørnet = kledningen på naboveggen, forenklet. Bordtykkelsen er tegnet tykkere enn den er,
+        så hjørnet ser riktig ut bare i «Hjørnene sett ovenfra».</p>
 
       ${visMerkeliste(r)}
 
@@ -602,6 +608,23 @@ function visVegg(r) {
       <p class="hjelp">Alle bord i hvert felt, løpende mål fra venstre hjørne.</p>
       ${r.felt.map((f, i) => visFelt(f, i + 1, r.rytme.maks)).join('')}
     </details>`;
+}
+
+// Begge hjørnene sett ovenfra i riktig målestokk, med naboveggen når den er lagt inn
+function visHjorner(r) {
+  const nb = naboer(hus.aktiv, hus.vegger.length, hus.lukket);
+  const tegning = (side, tittel) => {
+    const k = nb[side];
+    const nabo = k === null ? null : sisteHus?.vegger[k] ?? null;
+    const navn = k === null ? 'Naboveggen' : veggNavn(hus.vegger[k], k);
+    return `<h4>${tittel}</h4>${zoomBoks(`hjorne-${side}`, tegnHjorne(r, side, nabo, navn))}`;
+  };
+  return `<h3>Hjørnene sett ovenfra</h3>
+    ${tegning('venstre', 'Venstre hjørne')}
+    ${tegning('hoyre', 'Høyre hjørne')}
+    <p class="hjelp">I riktig målestokk. Utsiden er ned. Grått er veggen med lekter. Lyse bord er
+      underbord, blå er påbord, lys oransje er kloss bak påbordet der det ikke er underbord.
+      Er naboveggen ikke lagt inn, vises bare hjørnebordet på den, antatt likt som på denne veggen.</p>`;
 }
 
 // Mål fra karmen: «17 mm før venstre karm vindu 1» (til venstre for karmkanten) eller

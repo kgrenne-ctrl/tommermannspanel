@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { lesTall, mm } from '../src/skjerm/format.js';
-import { tegnFelt, tegnVegg, tegnSnitt } from '../src/skjerm/tegning.js';
+import { tegnFelt, tegnVegg, tegnSnitt, tegnHjorne } from '../src/skjerm/tegning.js';
 import { losFelt } from '../src/tommermann/solver.js';
 import { losHus } from '../src/tommermann/hus.js';
 
@@ -112,4 +112,22 @@ test('Hjørner: hjørnekasse tegnes forfra, og snittet viser kasse og nabovegg',
   assert.match(snitt, /data-hjorne="venstre" x="0" y="\d+" width="98"/);
   // Naboveggen til høyre: kledningen går 38 mm forbi og dekker enden av naboens kledning
   assert.match(snitt, /data-hjorne="hoyre" data-nabo="ja" x="3000" y="\d+" width="38"/);
+});
+
+test('Hjørnet sett ovenfra: påbord mot påbord med kloss, i riktig mål', () => {
+  // A går forbi i høyre hjørne, B slutter mot i venstre, påbord ytterst på begge
+  const v = { lengde: 3000, hoyde: 2400, bu: 148, bo: 148 };
+  const { vegger: [a, b] } = losHus({ lukket: false, vegger: [
+    { ...v, navn: 'A', hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'forbi' } } },
+    { ...v, navn: 'B', hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'mot' } } }] });
+  const svgB = tegnHjorne(b, 'venstre', a, 'A');
+  // Påbordet på B starter 19 mm før hjørnet, utenpå underbordsjiktet (y = 19, 19 mm tykt)
+  assert.match(svgB, /x="-19" y="19" width="148" height="19"[^>]*data-bord="o"/);
+  // Påbordet på A står på tvers, fra x = −38 til −19, og går ned til y = 38
+  assert.match(svgB, /x="-38" y="-110" width="19" height="148"[^>]*data-bord="o" data-nabo="ja"/);
+  // Kloss bak påbordene på begge veggene
+  assert.equal((svgB.match(/data-kloss="ja"/g) ?? []).length, 2);
+  assert.match(svgB, />A</);
+  // Uten nabovegg: bare hjørnebordet, merket som antatt
+  assert.match(tegnHjorne(b, 'hoyre', null, 'Naboveggen'), /Naboveggen \(antatt\)/);
 });
