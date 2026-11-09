@@ -101,6 +101,12 @@ export function tegnVegg(vegg, snittHoyde = null) {
     deler.push(`<rect x="${a.x + karmbredde}" y="${y(a.bunn + a.hoyde) + karmbredde}" width="${Math.max(a.bredde - 2 * karmbredde, 0)}" height="${Math.max(a.hoyde - 2 * karmbredde, 0)}" fill="var(--glass)" stroke="var(--tekst-gra)" stroke-width="${strek}"/>`);
   }
 
+  // Hjørnekasse: kledningen starter ved kassa
+  const fV = vegg.forleng?.venstre ?? 0;
+  const fH = vegg.forleng?.hoyre ?? 0;
+  if (fV < 0) deler.push(`<rect data-hjornekasse="venstre" x="0" y="0" width="${-fV}" height="${H}" fill="var(--karm)" stroke="var(--tekst)" stroke-width="${strek * 2}"/>`);
+  if (fH < 0) deler.push(`<rect data-hjornekasse="hoyre" x="${W + fH}" y="0" width="${-fH}" height="${H}" fill="var(--karm)" stroke="var(--tekst)" stroke-width="${strek * 2}"/>`);
+
   // Et felt kan ha flere høyder (feltet over og under en åpning er ett felt med to deler)
   for (const f of felt) {
     if (!f.ok) {
@@ -216,8 +222,29 @@ export function tegnSnitt(vegg, snittHoyde) {
       deler.push(`<rect data-underlag="ja" x="${fra}" y="${yU}" width="${til - fra}" height="${t}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="${strek * 2}" stroke-dasharray="10 6"/>`);
     }
   };
-  if (vegg.hjorneVenstre === 'O' && underbord.length) underlag(0, underbord[0].fraEksakt);
-  if (vegg.hjorneHoyre === 'O' && underbord.length) underlag(underbord.at(-1).tilEksakt, W);
+  const kledning = vegg.kledning ?? { fra: 0, til: W };
+  if (vegg.hjorneVenstre === 'O' && underbord.length) underlag(kledning.fra, underbord[0].fraEksakt);
+  if (vegg.hjorneHoyre === 'O' && underbord.length) underlag(underbord.at(-1).tilEksakt, kledning.til);
+
+  // Hjørnene: naboveggens kledning (grå) og hjørnekasse. Naboveggen står på tvers, så den
+  // går oppover i tegningen fra hjørnet. Går kledningen forbi, dekker den enden av naboens
+  // kledning. Slutter den mot naboen, går naboens kledning forbi denne veggen.
+  const naboTykk = (vegg.tykkelse?.under ?? 19) + (vegg.tykkelse?.over ?? 19);
+  const yYtterst = yO + t;
+  for (const [side, x] of [['venstre', 0], ['hoyre', W]]) {
+    const type = vegg.hjorner?.[side]?.type;
+    const f = vegg.forleng?.[side] ?? 0;
+    const ut = side === 'venstre' ? -1 : 1; // retning ut fra veggen
+    if (type === 'kasse') {
+      const x0 = side === 'venstre' ? 0 : W + f;
+      deler.push(`<rect data-hjorne="${side}" x="${x0}" y="${yU}" width="${-f}" height="${2 * t}" fill="var(--karm)" stroke="var(--tekst)" stroke-width="${strek}"/>`);
+    } else if (type === 'forbi' || type === 'mot') {
+      const bredde = type === 'forbi' ? f : naboTykk;
+      const x0 = ut < 0 ? x - bredde : x;
+      const y1 = type === 'forbi' ? yVegg : yYtterst;
+      deler.push(`<rect data-hjorne="${side}" data-nabo="ja" x="${x0}" y="${karmTopp - skrift}" width="${bredde}" height="${y1 - karmTopp + skrift}" fill="var(--tekst-gra)" opacity="0.5"/>`);
+    }
+  }
 
   // Innlegg på karm skrevet under kledningen ved karmkantene
   for (const a of gjennom) {

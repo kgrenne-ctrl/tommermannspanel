@@ -479,3 +479,50 @@ footer {
   color: var(--tekst-gra);
   text-align: center;
 }
+
+/* ---------- Huset: veggene som faner ---------- */
+
+.vegg-faner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.vegg-faner button {
+  font: inherit;
+  font-size: 16px;
+  min-height: 48px;
+  padding: 6px 12px;
+  border: 1px solid var(--linje);
+  border-radius: 8px;
+  background: var(--hvit);
+  color: var(--tekst);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vegg-faner button.aktiv {
+  border: 2px solid var(--bakoy-bla);
+  background: var(--flate);
+  font-weight: 600;
+}
+
+.avkryssing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.avkryssing input { width: 24px; height: 24px; accent-color: var(--bakoy-bla); }
+
+.felt.hjorne .felt { margin: 0; }
+.felt.hjorne .hjelp { margin: 0; }
+
+/* hidden skal alltid skjule, også elementer med display: flex */
+[hidden] { display: none !important; }

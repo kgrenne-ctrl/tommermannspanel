@@ -3,8 +3,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { lesTall, mm } from '../src/skjerm/format.js';
-import { tegnFelt } from '../src/skjerm/tegning.js';
+import { tegnFelt, tegnVegg, tegnSnitt } from '../src/skjerm/tegning.js';
 import { losFelt } from '../src/tommermann/solver.js';
+import { losHus } from '../src/tommermann/hus.js';
 
 const tell = (tekst, bit) => tekst.split(bit).length - 1;
 
@@ -99,4 +100,16 @@ test('Veggtegningen har nummer på hvert felt, også felt som ikke går opp', as
   const svg = tegnVegg(r);
   assert.equal(tell(svg, 'data-feltnr='), r.felt.length);
   for (let nr = 1; nr <= r.felt.length; nr++) assert.ok(svg.includes(`data-feltnr="${nr}"`));
+});
+
+test('Hjørner: hjørnekasse tegnes forfra, og snittet viser kasse og nabovegg', () => {
+  const { vegger: [r] } = losHus({ vegger: [{ lengde: 3000, hoyde: 2400, bu: 148, bo: 148,
+    hjorner: { venstre: { type: 'kasse', kasse: 98 }, hoyre: { type: 'forbi' } } }] });
+  const forfra = tegnVegg(r);
+  assert.match(forfra, /data-hjornekasse="venstre" x="0" y="0" width="98"/);
+  assert.doesNotMatch(forfra, /data-hjornekasse="hoyre"/);
+  const snitt = tegnSnitt(r, 1200);
+  assert.match(snitt, /data-hjorne="venstre" x="0" y="\d+" width="98"/);
+  // Naboveggen til høyre: kledningen går 38 mm forbi og dekker enden av naboens kledning
+  assert.match(snitt, /data-hjorne="hoyre" data-nabo="ja" x="3000" y="\d+" width="38"/);
 });

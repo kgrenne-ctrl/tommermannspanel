@@ -106,6 +106,22 @@ Alle skal kunne endres i innstillinger.
 - `lagMerkeliste(r)` i `vegg.js`: alle underbord fra venstre, med mål fra hjørnet og fra nærmeste
   karmkant til venstre, høyde (full / over og under), felt og distanseklosse.
 
+## Hjørner og hus (fase 4, avklart med Kenny 2026-11-09)
+- Hvert hjørne har en hjørnetype: `forbi` (kledningen går forbi hjørnet), `mot` (slutter mot
+  naboveggen, som går forbi) eller `kasse` (slutter mot hjørnekasse med egen bredde).
+- Vegglengden måles utenpå lektene. `forbi` gjør feltet lengre med naboveggens kledningstykkelse
+  i hjørnet: underbordets tykkelse, pluss påbordets når naboveggen har påbord i hjørnet.
+  `kasse` gjør feltet kortere med kassebredden. `losVegg` får dette som `forlengVenstre` og
+  `forlengHoyre` (mm, minus = kortere).
+- Nullpunktet er alltid hjørnet på veggen. Bord som går forbi hjørnet får minusmål.
+- `src/tommermann/hus.js`: et hus er veggene i rekkefølge rundt huset. Høyre hjørne på vegg k er
+  venstre hjørne på vegg k+1, og siste møter første når huset er lukket. `losHus` regner ut
+  forlengelsene og sier fra når et hjørne ikke henger sammen (begge går forbi, eller ingen).
+- Bordtykkelse per vegg, standard 19 mm for både underbord og påbord (antakelse, kan endres).
+- Skjermen viser én vegg om gangen med veggene som knapper øverst (status per vegg). Huset lagres
+  under nøkkelen `hus` ({ vegger, aktiv, lukket }). Gammel nøkkel `vegg` blir første vegg.
+  Hjørnet på veggen som vises, bestemmer hjørnet på naboveggen (`synkHjorner`).
+
 ## Tester
 - `npm test` (eller `node --test`) kjører alle tester i `test/`.
 - Alle tester skal være grønne før en fase er ferdig og før commit.

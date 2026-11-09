@@ -37,6 +37,9 @@ const TYPENAVN = { vindu: 'Vindu', dor: 'Dør', port: 'Port' };
 export function losVegg(inndata) {
   const inn = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG, ...inndata };
   const { lengde: W, hoyde: H, bu, bo } = inn;
+  // Kledningen går fra fV til W + fH. Nullpunktet er hjørnet på veggen (Kenny 2026-11-09).
+  const fV = inn.forlengVenstre;
+  const fH = inn.forlengHoyre;
 
   const apninger = (inn.apninger ?? [])
     .map((a, i) => ({ ...a, nr: i }))
@@ -106,6 +109,10 @@ export function losVegg(inndata) {
     karmBord: inn.karmBord,
     hjorneVenstre: inn.hjorneVenstre,
     hjorneHoyre: inn.hjorneHoyre,
+    forleng: { venstre: fV, hoyre: fH },
+    kledning: { fra: -fV, til: W + fH },
+    tykkelse: { under: inn.tykkelseUnder, over: inn.tykkelseOver },
+    hjorner: inn.hjorner ?? null,
     apninger: apninger.map((a, j) => ({
       ...a,
       innlegg: { venstre: e[2 * j], hoyre: e[2 * j + 1] },
@@ -214,8 +221,8 @@ function geometri(m, apninger, inn) {
     // Felt i full høyde mellom hjørne/åpning og åpning/hjørne. Bordene går INN på karmen,
     // så innlegget gjør feltet lengre.
     const j = m / 2;
-    const fra = j === 0 ? 0 : apninger[j - 1].x + apninger[j - 1].bredde;
-    const til = j === n ? inn.lengde : apninger[j].x;
+    const fra = j === 0 ? -inn.forlengVenstre : apninger[j - 1].x + apninger[j - 1].bredde;
+    const til = j === n ? inn.lengde + inn.forlengHoyre : apninger[j].x;
     return {
       grunn: til - fra,
       koeff: 1,
@@ -256,10 +263,10 @@ function lagFelt(m, svar, e, apninger, inn) {
     const j = m / 2;
     const venstre = j === 0 ? null : apninger[j - 1];
     const hoyre = j === n ? null : apninger[j];
-    const x0 = venstre ? venstre.x + venstre.bredde - e[m - 1] : 0;
+    const x0 = venstre ? venstre.x + venstre.bredde - e[m - 1] : -inn.forlengVenstre;
     const navn = `${venstre ? venstre.navn : 'Venstre hjørne'} – ${hoyre ? hoyre.navn : 'Høyre hjørne'}`;
     return [byggFelt({
-      type: 'side', navn, x0, x1: hoyre ? hoyre.x + e[m] : inn.lengde, deler: [[0, inn.hoyde]], svar,
+      type: 'side', navn, x0, x1: hoyre ? hoyre.x + e[m] : inn.lengde + inn.forlengHoyre, deler: [[0, inn.hoyde]], svar,
       innlegg: { venstre: venstre ? e[m - 1] : null, hoyre: hoyre ? e[m] : null },
       fjernDelte: false, karmBord: inn.karmBord,
     })];
@@ -337,6 +344,15 @@ function kontroller(inn, apninger) {
     ['Bredde underligger', inn.bu], ['Bredde overligger', inn.bo]]) {
     if (!tall(v) || v <= 0) feil.push(`${navn} må være et tall større enn 0.`);
   }
+  for (const [navn, v] of [['Tykkelse underbord', inn.tykkelseUnder], ['Tykkelse påbord', inn.tykkelseOver]]) {
+    if (!tall(v) || v <= 0) feil.push(`${navn} må være et tall større enn 0.`);
+  }
+  for (const [navn, v] of [['Venstre hjørne', inn.forlengVenstre], ['Høyre hjørne', inn.forlengHoyre]]) {
+    if (!tall(v)) feil.push(`${navn}: tillegget må være et tall.`);
+  }
+  if (feil.length === 0 && inn.lengde + inn.forlengVenstre + inn.forlengHoyre <= 0) {
+    feil.push('Hjørnekassene er bredere enn veggen.');
+  }
   for (const [navn, v] of [['Karmbord', inn.karmBord], ['Venstre hjørne', inn.hjorneVenstre],
     ['Høyre hjørne', inn.hjorneHoyre]]) {
     if (v !== 'U' && v !== 'O') feil.push(`${navn} må være 'U' eller 'O'.`);
@@ -354,8 +370,9 @@ function kontroller(inn, apninger) {
   }
   if (feil.length > 0) return feil;
 
-  let forrigeSlutt = 0;
-  let forrigeNavn = 'venstre hjørne';
+  // Med hjørnekasse starter kledningen et stykke inn på veggen
+  let forrigeSlutt = Math.max(0, -inn.forlengVenstre);
+  let forrigeNavn = inn.forlengVenstre < 0 ? 'hjørnekassa til venstre' : 'venstre hjørne';
   for (const a of apninger) {
     for (const [navn, v, min] of [['avstand fra hjørnet', a.x, 0], ['bredde', a.bredde, 0],
       ['høyde', a.hoyde, 0], ['høyde over bakken', a.bunn, -1]]) {
@@ -367,8 +384,10 @@ function kontroller(inn, apninger) {
     forrigeSlutt = a.x + a.bredde;
     forrigeNavn = a.navn.toLowerCase();
   }
-  if (apninger.length > 0 && forrigeSlutt >= inn.lengde) {
-    feil.push(`${apninger.at(-1).navn} går forbi høyre hjørne.`);
+  if (apninger.length > 0 && forrigeSlutt >= inn.lengde + Math.min(0, inn.forlengHoyre)) {
+    feil.push(inn.forlengHoyre < 0
+      ? `${apninger.at(-1).navn} overlapper eller står inntil hjørnekassa til høyre.`
+      : `${apninger.at(-1).navn} går forbi høyre hjørne.`);
   }
   return feil;
 }

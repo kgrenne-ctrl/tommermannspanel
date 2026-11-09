@@ -57,6 +57,9 @@ function lagVegg(tilfeldig) {
     hjorneVenstre: velg(['U', 'O']),
     hjorneHoyre: velg(['U', 'O']),
     startvalg: velg(['venstre', 'hoyre', 'midten', ...apninger.map((_, j) => `apning:${j}`)]),
+    // Hjørner (fase 4): går forbi (+19/+38), slutter mot naboen (0) eller hjørnekasse (minus)
+    forlengVenstre: velg([0, 19, 38, -73, -98]),
+    forlengHoyre: velg([0, 19, 38, -73, -98]),
   };
 }
 
@@ -100,7 +103,10 @@ test('Tilfeldige vegger: felt, innlegg, dekning og overlapp stemmer', () => {
       if (a.bunn + a.hoyde < r.hoyde - 20) hoyder.push((a.bunn + a.hoyde + r.hoyde) / 2);
     }
 
-    for (const y of hoyder) {
+    // Et snitt akkurat i over- eller underkanten av en åpning sier ingenting (der møtes to
+    // felt), så de høydene hoppes over.
+    const paKant = (y) => r.apninger.some((a) => Math.abs(y - a.bunn) < 1 || Math.abs(y - a.bunn - a.hoyde) < 1);
+    for (const y of hoyder.filter((h) => !paKant(h))) {
       sjekketSnitt++;
       const hvor = `${hva}, høyde ${y}`;
       const aktive = r.felt.filter((f) => f.deler.some(([y0, y1]) => y > y0 && y < y1));
@@ -123,13 +129,13 @@ test('Tilfeldige vegger: felt, innlegg, dekning og overlapp stemmer', () => {
       const dekket = [...U, ...O].map((b) => [b.fraEksakt, b.tilEksakt]);
       for (const a of gjennom) dekket.push([a.x + a.innlegg.venstre, a.x + a.bredde - a.innlegg.hoyre]);
       dekket.sort((a, b) => a[0] - b[0]);
-      let til = 0;
-      assert.ok(Math.abs(dekket[0][0]) < E, `${hvor}: veggen starter ikke på 0`);
+      let til = r.kledning.fra;
+      assert.ok(Math.abs(dekket[0][0] - r.kledning.fra) < E, `${hvor}: kledningen starter ikke på ${r.kledning.fra}`);
       for (const [fra, slutt] of dekket) {
         assert.ok(fra <= til + E, `${hvor}: hull i kledningen mellom ${til.toFixed(1)} og ${fra.toFixed(1)}`);
         til = Math.max(til, slutt);
       }
-      assert.ok(Math.abs(til - r.lengde) < E, `${hvor}: kledningen slutter på ${til}, ikke ${r.lengde}`);
+      assert.ok(Math.abs(til - r.kledning.til) < E, `${hvor}: kledningen slutter på ${til}, ikke ${r.kledning.til}`);
 
       // 2b. Bordet ved karmen slutter akkurat der innlegget sier
       for (const a of gjennom) {
@@ -145,7 +151,7 @@ test('Tilfeldige vegger: felt, innlegg, dekning og overlapp stemmer', () => {
         const hoyre = U.filter((u) => u.tilEksakt > o.tilEksakt && u.fraEksakt < o.tilEksakt - E);
         const omleggV = venstre.length ? venstre[0].tilEksakt - o.fraEksakt : null;
         const omleggH = hoyre.length ? o.tilEksakt - hoyre[0].fraEksakt : null;
-        const vedKarmEllerHjorne = (x) => x < E || x > r.lengde - E
+        const vedKarmEllerHjorne = (x) => x < r.kledning.fra + E || x > r.kledning.til - E
           || gjennom.some((a) => x >= a.x - E && x <= a.x + a.bredde + E);
         if (omleggV === null) {
           assert.ok(vedKarmEllerHjorne(o.fraEksakt) || vedKarmEllerHjorne(o.tilEksakt),
