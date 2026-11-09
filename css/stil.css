@@ -562,3 +562,7 @@ footer {
 .hjorne-punkt p { margin: 2px 0 0; font-size: 15px; }
 .hjorne-punkt.sjekk { border-left-color: var(--varsel-tekst); background: var(--varsel-flate); }
 .hjorne-punkt.feil { border-left-color: var(--feil-tekst); background: var(--feil-flate); color: var(--feil-tekst); }
+
+footer p { margin: 4px 0; }
+.hjemskjerm { text-align: left; max-width: 520px; margin: 12px auto 0; }
+.hjemskjerm summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; justify-content: center; }

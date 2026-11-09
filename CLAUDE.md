@@ -67,6 +67,16 @@ Alle skal kunne endres i innstillinger.
 - `src/skjerm/oppdater.js` sjekker `versjon.json` ved oppstart og laster siden på nytt hvis
   telefonen har en eldre lagret side. Ikke start appen med `<script src=...>`, bruk `import`.
 
+## Bruk uten nett (fase 6, 2026-11-09)
+- `sw.js` (service worker) lagrer appen på telefonen. Siden og versjon.json hentes fra nett først
+  (nyeste versjon når det er dekning), alt annet fra lageret først (filene har ?v=nummer).
+- `scripts/versjon.mjs` skriver fillista og versjonsnummeret i `sw.js` ved hver commit. Nytt nummer
+  = ny service worker, som henter alt på nytt og sletter det gamle lageret.
+- `manifest.webmanifest` og ikonene (`assets/ikon-*.png`, laget med `swift scripts/lag-ikon.swift`)
+  gjør at appen kan legges på hjemskjermen.
+- Nettleseren inne i Claude-appen godtar ikke service worker. Test uten nett i Chrome (localhost),
+  og fjern registreringen etterpå.
+
 ## Se appen lokalt
 - `npm start` og åpne http://localhost:8000. Dobbeltklikk på `index.html` virker ikke, fordi
   nettleseren ikke laster JavaScript-moduler fra en fil på disken.

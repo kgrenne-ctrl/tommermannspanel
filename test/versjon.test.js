@@ -26,3 +26,21 @@ test('Siden, stilfila og versjon.json har samme versjon', () => {
   // Appen startes via importkartet, ikke direkte (da ville versjonen ikke blitt brukt)
   assert.ok(!/<script type="module" src=/.test(html), 'appen må startes med import, ikke src=');
 });
+
+test('Bruk uten nett: sw.js lagrer alle filene med samme versjon', async () => {
+  const { filerUtenNett } = await import('../scripts/versjon.mjs');
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+  assert.ok(sw.includes(`const VERSJON = '${versjon}';`), 'sw.js har feil versjon. Kjør: npm run versjon');
+  const filer = JSON.parse(sw.match(/const FILER = (\[[\s\S]*?\]);/)[1]);
+  assert.deepEqual(filer, filerUtenNett(versjon));
+  for (const fil of finnModuler()) assert.ok(filer.includes(`./${fil}?v=${versjon}`), `${fil} lagres ikke`);
+  for (const fil of ['./', './versjon.json', './manifest.webmanifest', `./css/stil.css?v=${versjon}`,
+    './assets/BAKOY_logo_hvit_transparent.png', './assets/ikon-192.png', './assets/ikon-512.png']) {
+    assert.ok(filer.includes(fil), `${fil} lagres ikke`);
+  }
+  // Manifest og hjemskjerm
+  const manifest = JSON.parse(readFileSync(new URL('../manifest.webmanifest', import.meta.url), 'utf8'));
+  assert.equal(manifest.display, 'standalone');
+  assert.ok(html.includes('rel="manifest"'));
+  assert.ok(html.includes('apple-touch-icon'));
+});
