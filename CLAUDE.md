@@ -177,6 +177,10 @@ Alle skal kunne endres i innstillinger.
 - «Ett felt» har en skisse over tabellen med utdelingsmål (`tegnNullpunkt`, Kenny 2026-11-10):
   starten av feltet sett ovenfra, nullpunktet (0 = startkanten, oransje strek) og de første
   løpende målene. Nullpunktet er ytterkanten av første bord, og feltlengden måles fra samme kant.
+- «Hel vegg»: nullpunktet for alle mål er venstre hjørne utenpå lektene (der vegglengden måles
+  fra), ikke ytterkanten av kledningen. Hjørneskissene (`tegnHjorne`) viser det med oransje strek
+  og «0» i venstre hjørne og vegglengden i høyre (Kenny 2026-11-10). Går kledningen forbi
+  hjørnet, starter første bord før 0 og får minusmål.
 - `src/tommermann/hus.js`: et hus er veggene i rekkefølge rundt huset. Høyre hjørne på vegg k er
   venstre hjørne på vegg k+1, og siste møter første når huset er lukket. `losHus` regner ut
   forlengelsene og sier fra når et hjørne ikke henger sammen (begge går forbi, eller ingen).

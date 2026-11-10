@@ -435,6 +435,12 @@ export function tegnHjorne(vegg, side, nabo = null, naboNavn = 'Naboveggen') {
   for (const [a, b] of mineO.filter(synlig)) rekt(a, tU, Math.min(b, RAMME) - a, tO, 'var(--overligger)', 'data-bord="o"');
   for (const [a, b] of naboO.filter(synlig)) rekt(-ntU - ntO, Math.max(a, -RAMME), ntO, b - Math.max(a, -RAMME), 'var(--overligger)', 'data-bord="o" data-nabo="ja"');
 
+  // Nullpunktet (Kenny 2026-11-10): alle mål på veggen regnes fra venstre hjørne utenpå lektene,
+  // altså hjørnet på det grå. Oransje strek tvers gjennom kledningen der. I høyre hjørne er
+  // samme punkt vegglengden.
+  const maalIHjornet = venstre ? '0' : mm(W);
+  deler.push(`<line data-nullpunkt="${venstre ? 0 : W}" x1="0" y1="${-14}" x2="0" y2="${tU + tO + 16}" stroke="var(--bakoy-oransje)" stroke-width="3"/>`);
+
   // Speilvend høyre hjørne. Teksten skrives utenfor speilingen, så den ikke blir baklengs.
   const sx = venstre ? 1 : -1;
   const tekst = (x, y, t, anker = 'start', ekstra = '') => `<text x="${x * sx}" y="${y}" font-size="22" fill="var(--tekst)" text-anchor="${venstre ? anker : (anker === 'start' ? 'end' : anker === 'end' ? 'start' : anker)}" ${ekstra}>${t}</text>`;
@@ -444,7 +450,10 @@ export function tegnHjorne(vegg, side, nabo = null, naboNavn = 'Naboveggen') {
     tekst(260, tU + tO + 40, 'Denne veggen', 'middle'),
     tekst(-ntU - ntO - 70, -260, antatt ? `${naboNavn} (antatt)` : naboNavn, 'middle',
       `transform="rotate(-90 ${(-ntU - ntO - 70) * sx} -260)"`),
+    tekst(0, tU + tO + 40, maalIHjornet, 'middle', 'font-weight="700"'),
     tekst(-ntU - ntO - 10, tU + tO + 80, forklaring),
+    tekst(-ntU - ntO - 10, tU + tO + 110, venstre ? '0 = hjørnet utenpå lektene. Målene regnes herfra.'
+      : `${maalIHjornet} = hjørnet utenpå lektene (vegglengden).`),
     tekst(VEGG + 20, -VEGG - 20, 'Vegg og lekter'),
   ];
 

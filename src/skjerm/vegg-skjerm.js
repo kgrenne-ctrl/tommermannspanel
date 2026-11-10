@@ -684,6 +684,9 @@ function visHjorner(r) {
     ${tegning('hoyre', 'Høyre hjørne')}
     <p class="hjelp">I riktig målestokk. Utsiden er ned. Grått er veggen med lekter. Lyse bord er
       underbord, blå er påbord, lys oransje er kloss bak påbordet der det ikke er underbord.
+      Oransje strek er nullpunktet: hjørnet utenpå lektene, der vegglengden måles fra. Alle mål på
+      veggen regnes fra venstre hjørne. Går kledningen forbi hjørnet, starter første bord før 0
+      og får minusmål.
       Er naboveggen ikke lagt inn, vises bare hjørnebordet på den, antatt likt som på denne veggen.</p>`;
 }
 

@@ -158,6 +158,13 @@ test('Hjørnet sett ovenfra: påbord mot påbord med kloss, i riktig mål', () =
   // Kloss bak påbordene på begge veggene
   assert.equal((svgB.match(/data-kloss="ja"/g) ?? []).length, 2);
   assert.match(svgB, />A</);
+  // Nullpunktet er hjørnet utenpå lektene (x = 0 i tegningen). Påbordet starter 19 mm før.
+  assert.match(svgB, /<line data-nullpunkt="0" x1="0" /);
+  assert.match(svgB, /0 = hjørnet utenpå lektene/);
+  // I høyre hjørne er samme punkt vegglengden
+  const svgHoyre = tegnHjorne(b, 'hoyre', null, 'Naboveggen');
+  assert.match(svgHoyre, /<line data-nullpunkt="3000" x1="0" /);
+  assert.match(svgHoyre, /3\s000 = hjørnet utenpå lektene \(vegglengden\)/);
   // Uten nabovegg: bare hjørnebordet, merket som antatt
   assert.match(tegnHjorne(b, 'hoyre', null, 'Naboveggen'), /Naboveggen \(antatt\)/);
 });
