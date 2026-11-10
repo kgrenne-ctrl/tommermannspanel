@@ -170,7 +170,8 @@ function visLosning(l, alle, indeks) {
     ${andre}
     <h3>Tegning</h3>
     ${zoomBoks('felt', tegnFelt(l))}
-    <p class="hjelp">Øverst sett forfra. Under: snitt sett ovenfra med veggen nederst.
+    <p class="hjelp">Øverst sett forfra. Under: snitt sett ovenfra med veggen nederst. Målene langs
+      veggen er i riktig målestokk, bordtykkelsen er tegnet litt tykkere enn den er, så den synes.
       Oransje stiplet = trenger underlag.</p>
     <h3>Utdelingsmål</h3>
     <p class="hjelp">Løpende mål fra startkanten. Underbordene settes opp først, med klossen mellom.</p>

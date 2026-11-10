@@ -33,6 +33,21 @@ test('Tegningen har alle bordene, i begge visningene', () => {
   assert.equal(tell(svg, 'data-underlag'), 0);
 });
 
+test('Tegningen: bordene i snittet er like tykke i korte og lange felt, og flatere enn de er brede', () => {
+  // Før var tykkelsen 5 % av feltlengden: 438 mm i et felt på 8760 mm (Kenny 2026-11-10)
+  const tykkelser = [1350, 8760].map((L) => {
+    const l = losFelt({ L, bu: 148, bo: 148, start: 'U', slutt: 'U' }).valgt;
+    const bord = [...tegnFelt(l).matchAll(/<rect data-bord="[uo]"[^>]* width="([\d.]+)" height="([\d.]+)"/g)]
+      .map((m) => ({ bredde: Number(m[1]), hoyde: Number(m[2]) }));
+    // Første halvdel er tegningen forfra, andre halvdel er snittet
+    const snitt = bord.filter((b) => b.hoyde < L * 0.3 - 1e-6);
+    assert.equal(snitt.length, bord.length / 2);
+    for (const b of snitt) assert.ok(b.hoyde < b.bredde / 3, `bord ${b.bredde} x ${b.hoyde}`);
+    return snitt[0].hoyde;
+  });
+  assert.equal(tykkelser[0], tykkelser[1]);
+});
+
 test('Tegningen markerer underlag i kanter med overligger', () => {
   const l = losFelt({ L: 1266, bu: 98, bo: 98, start: 'O', slutt: 'O' }).valgt;
   assert.equal(tell(tegnFelt(l), 'data-underlag'), 2);

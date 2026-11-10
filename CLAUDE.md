@@ -171,6 +171,9 @@ Alle skal kunne endres i innstillinger.
 - Nullpunktet er alltid hjørnet på veggen. Bord som går forbi hjørnet får minusmål.
 - «Hjørnene sett ovenfra» (`tegnHjorne` i tegning.js): hvert hjørne i riktig målestokk med
   begge veggene, bord og kloss. Snittet A–A har overdrevet bordtykkelse og viser hjørnet bare forenklet.
+- Bordtykkelsen i snittene sett ovenfra (ett felt og A–A) tegnes som `TEGNET_TYKKELSE` (40 mm) i
+  `tegning.js`, uansett feltlengde. Før fulgte den feltlengden i «Ett felt» (5 %), og lange felt
+  fikk bord som så ut som stolper (Kenny 2026-11-10). Mål langs veggen er alltid i riktig skala.
 - `src/tommermann/hus.js`: et hus er veggene i rekkefølge rundt huset. Høyre hjørne på vegg k er
   venstre hjørne på vegg k+1, og siste møter første når huset er lukket. `losHus` regner ut
   forlengelsene og sier fra når et hjørne ikke henger sammen (begge går forbi, eller ingen).

@@ -4,13 +4,18 @@
 // Under:  snitt sett ovenfra, med veggen nederst. Underliggerne ligger inn mot veggen,
 //         overliggerne utenpå. Der viser omlegget og klaringen seg tydelig.
 //
-// Tegningen bruker mm som enhet, så bordene står i riktig skala. Tykkelser, skrift og
+// Tegningen bruker mm som enhet, så bordene står i riktig skala langs veggen. Skrift og
 // streker regnes ut fra feltlengden, så tegningen ser lik ut på korte og lange felt.
+// Bordtykkelsen i snittet er tegnet som TEGNET_TYKKELSE, omtrent det dobbelte av et vanlig
+// bord, så den synes. Den følger ikke feltlengden: før var den 5 % av lengden, og i et felt
+// på 8760 mm ble bordene da tegnet 438 mm tykke (Kenny 2026-11-10).
 
 import { mm } from './format.js';
 
 // Synlig karm rundt vinduer og dører i tegningene, i mm. Bare til pynt, ingen regning bygger på den.
 const KARMBREDDE = 60;
+// Bordtykkelsen i snittene sett ovenfra, i mm. Felles for ett felt og for veggsnittet A–A.
+const TEGNET_TYKKELSE = 40;
 
 export function tegnFelt(losning) {
   const { L, underliggere, overliggere, trengerUnderlag } = losning;
@@ -19,7 +24,9 @@ export function tegnFelt(losning) {
   const skrift = L * 0.04;
   const strek = L * 0.0025;
   const hoydeForfra = L * 0.3;
-  const tykkelse = L * 0.05;       // bordtykkelse i snittet (overdrevet så den synes)
+  const tykkelse = TEGNET_TYKKELSE;
+  // I snittet er bordene tynne, så streken rundt dem må være tynnere enn i tegningen forfra
+  const strekSnitt = Math.min(strek, tykkelse * 0.12);
 
   const yForfra = kant;
   const ySnittO = yForfra + hoydeForfra + kant * 1.5;  // overliggere (utenpå)
@@ -40,21 +47,21 @@ export function tegnFelt(losning) {
   }
 
   // Snitt sett ovenfra
-  for (const b of underliggere) deler.push(rekt(b, ySnittU, tykkelse, 'u', strek));
-  for (const b of overliggere) deler.push(rekt(b, ySnittO, tykkelse, 'o', strek));
+  for (const b of underliggere) deler.push(rekt(b, ySnittU, tykkelse, 'u', strekSnitt));
+  for (const b of overliggere) deler.push(rekt(b, ySnittO, tykkelse, 'o', strekSnitt));
 
   // Markering der overliggeren i kanten mangler underlag
   const forsteU = underliggere[0];
   const sisteU = underliggere[underliggere.length - 1];
   if (trengerUnderlag.start) {
-    deler.push(underlag(0, forsteU.fraEksakt, ySnittU, tykkelse, strek));
+    deler.push(underlag(0, forsteU.fraEksakt, ySnittU, tykkelse, strekSnitt));
   }
   if (trengerUnderlag.slutt) {
-    deler.push(underlag(sisteU.tilEksakt, L, ySnittU, tykkelse, strek));
+    deler.push(underlag(sisteU.tilEksakt, L, ySnittU, tykkelse, strekSnitt));
   }
 
   // Veggen
-  deler.push(`<line x1="0" y1="${yVegg}" x2="${L}" y2="${yVegg}" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
+  deler.push(`<line x1="0" y1="${yVegg + strekSnitt * 1.5}" x2="${L}" y2="${yVegg + strekSnitt * 1.5}" stroke="var(--tekst-gra)" stroke-width="${strekSnitt * 3}"/>`);
 
   // Målsetting av hele feltet
   const pil = skrift * 0.4;
@@ -170,12 +177,12 @@ export function tegnVegg(vegg, snittHoyde = null) {
 
 // Horisontalsnitt A–A i høyden snittHoyde, sett ovenfra. Veggen og karmen øverst,
 // kledningen nederst (utsiden ned), slik plantegninger vanligvis er.
-// Underbordene ligger inn mot veggen, påbordene utenpå. Bordtykkelsen er overdrevet (40 mm)
+// Underbordene ligger inn mot veggen, påbordene utenpå. Bordtykkelsen er overdrevet (TEGNET_TYKKELSE)
 // så den synes, men alle mål langs veggen er i riktig skala.
 // Tegningen er bred (målestokk ca. 1:8 på skjermen) og ligger i en boks man kan skyve sidelengs.
 export function tegnSnitt(vegg, snittHoyde) {
   const { lengde: W, felt, apninger, karmBord } = vegg;
-  const t = 40;                  // tegnet bordtykkelse
+  const t = TEGNET_TYKKELSE;
   const skrift = 100;
   const strek = 3;
   const kant = 150;
