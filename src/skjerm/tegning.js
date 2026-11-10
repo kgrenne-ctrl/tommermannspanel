@@ -1,8 +1,9 @@
 // Tegner ett felt som SVG ut fra en løsning fra solver.js. Ingen regning av kledning her.
 //
 // Øverst: feltet sett forfra (slik veggen ser ut).
-// Under:  snitt sett ovenfra, med veggen nederst. Underliggerne ligger inn mot veggen,
-//         overliggerne utenpå. Der viser omlegget og klaringen seg tydelig.
+// Under:  snitt sett ovenfra, med veggen øverst og utsiden ned, som i veggsnittet og
+//         hjørneskissene (Kenny 2026-11-10). Underliggerne ligger inn mot veggen,
+//         overliggerne utenpå, nederst. Der viser omlegget og klaringen seg tydelig.
 //
 // Tegningen bruker mm som enhet, så bordene står i riktig skala langs veggen. Skrift og
 // streker regnes ut fra feltlengden, så tegningen ser lik ut på korte og lange felt.
@@ -29,10 +30,10 @@ export function tegnFelt(losning) {
   const strekSnitt = Math.min(strek, tykkelse * 0.12);
 
   const yForfra = kant;
-  const ySnittO = yForfra + hoydeForfra + kant * 1.5;  // overliggere (utenpå)
-  const ySnittU = ySnittO + tykkelse;                  // underliggere (inn mot vegg)
-  const yVegg = ySnittU + tykkelse;
-  const yMal = yVegg + kant * 1.2;
+  const yVegg = yForfra + hoydeForfra + kant * 1.5;    // veggen øverst i snittet
+  const ySnittU = yVegg;                               // underliggere (inn mot vegg)
+  const ySnittO = ySnittU + tykkelse;                  // overliggere (utenpå, nederst)
+  const yMal = ySnittO + tykkelse + kant * 1.2;
   const hoyde = yMal + skrift * 1.6;
   const bredde = L + 2 * kant;
 
@@ -61,7 +62,7 @@ export function tegnFelt(losning) {
   }
 
   // Veggen
-  deler.push(`<line x1="0" y1="${yVegg + strekSnitt * 1.5}" x2="${L}" y2="${yVegg + strekSnitt * 1.5}" stroke="var(--tekst-gra)" stroke-width="${strekSnitt * 3}"/>`);
+  deler.push(`<line x1="0" y1="${yVegg - strekSnitt * 1.5}" x2="${L}" y2="${yVegg - strekSnitt * 1.5}" stroke="var(--tekst-gra)" stroke-width="${strekSnitt * 3}"/>`);
 
   // Målsetting av hele feltet
   const pil = skrift * 0.4;
@@ -80,7 +81,7 @@ export function tegnFelt(losning) {
 }
 
 // Skisse til utdelingsmålene i «Ett felt» (Kenny 2026-11-10): starten av feltet sett ovenfra,
-// med veggen nederst. Viser nullpunktet (startkanten, oransje strek) og de første løpende
+// med veggen øverst og utsiden ned. Viser nullpunktet (startkanten, oransje strek) og de første løpende
 // målene i tabellen: fra og til på første underbord og fra på det andre. Alle målene går fra 0.
 export function tegnNullpunkt(losning) {
   const { L, underliggere, overliggere } = losning;
@@ -99,10 +100,10 @@ export function tegnNullpunkt(losning) {
   leggTil(underliggere[0].tilEksakt, underliggere[0].til);
   if (andre) leggTil(andre.fraEksakt, andre.fra);
 
-  const yO = skrift * 2;        // påbord (utenpå)
-  const yU = yO + t;            // underbord (inn mot veggen)
-  const yVegg = yU + t;
-  const yMaal = (i) => yVegg + skrift * 1.4 + i * skrift * 1.5;
+  const yVegg = skrift * 2;     // veggen øverst
+  const yU = yVegg;             // underbord (inn mot veggen)
+  const yO = yU + t;            // påbord (utenpå, nederst)
+  const yMaal = (i) => yO + t + skrift * 1.4 + i * skrift * 1.5;
   const hoyde = yMaal(Math.max(maal.length - 1, 0)) + skrift * 0.9;
   const pil = skrift * 0.3;
 
@@ -115,14 +116,14 @@ export function tegnNullpunkt(losning) {
     bord.push(`<text x="${midt}" y="${yU + t / 2 + skrift * 0.3}" font-size="${skrift * 0.8}" text-anchor="middle" fill="var(--tekst)">${i + 1}</text>`);
   });
   for (const b of overliggere) if (b.fraEksakt < slutt) bord.push(rekt(b, yO, t, 'o', strek));
-  bord.push(`<line x1="0" y1="${yVegg + strek}" x2="${slutt}" y2="${yVegg + strek}" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
+  bord.push(`<line x1="0" y1="${yVegg - strek}" x2="${slutt}" y2="${yVegg - strek}" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
   deler.push(`<g clip-path="url(#nullpunkt-klipp)">${bord.join('')}</g>`);
 
   // Målene: strek fra 0 til bordkanten, tallet ved enden, og tynn hjelpestrek opp til kanten
   maal.forEach((m, i) => {
     const y = yMaal(i);
     deler.push(
-      `<line x1="${m.x}" y1="${yU}" x2="${m.x}" y2="${y + pil}" stroke="var(--tekst-gra)" stroke-width="${strek * 0.6}" stroke-dasharray="${strek * 2} ${strek * 2}"/>`,
+      `<line x1="${m.x}" y1="${yU + t}" x2="${m.x}" y2="${y + pil}" stroke="var(--tekst-gra)" stroke-width="${strek * 0.6}" stroke-dasharray="${strek * 2} ${strek * 2}"/>`,
       `<line data-maal="${m.tall}" x1="0" y1="${y}" x2="${m.x}" y2="${y}" stroke="var(--tekst)" stroke-width="${strek}"/>`,
       `<text x="${m.x + skrift * 0.25}" y="${y + skrift * 0.35}" font-size="${skrift}" fill="var(--tekst)">${mm(m.tall)}</text>`,
     );
@@ -358,7 +359,9 @@ export function tegnSnitt(vegg, snittHoyde) {
 //
 // vegg: resultat fra losHus. side: 'venstre' eller 'hoyre'.
 // nabo: resultat for naboveggen (eller null når den ikke er lagt inn), naboNavn: navnet.
-export function tegnHjorne(vegg, side, nabo = null, naboNavn = 'Naboveggen') {
+// startkant: bare for «Ett felt» som starter i et hjørne (feltSomHjorne i hus.js). Der er
+// nullpunktet startkanten av feltet, ikke lekthjørnet, og startkant sier hvor den ligger (x).
+export function tegnHjorne(vegg, side, nabo = null, naboNavn = 'Naboveggen', { startkant = null } = {}) {
   const RAMME = 520;
   const venstre = side === 'venstre';
   const W = vegg.lengde;
@@ -438,8 +441,16 @@ export function tegnHjorne(vegg, side, nabo = null, naboNavn = 'Naboveggen') {
   // Nullpunktet (Kenny 2026-11-10): alle mål på veggen regnes fra venstre hjørne utenpå lektene,
   // altså hjørnet på det grå. Oransje strek tvers gjennom kledningen der. I høyre hjørne er
   // samme punkt vegglengden.
+  // I «Ett felt» er nullpunktet startkanten av feltet (startkant), som kan ligge utenfor lekthjørnet.
+  const nullX = startkant ?? 0;
   const maalIHjornet = venstre ? '0' : mm(W);
-  deler.push(`<line data-nullpunkt="${venstre ? 0 : W}" x1="0" y1="${-14}" x2="0" y2="${tU + tO + 16}" stroke="var(--bakoy-oransje)" stroke-width="3"/>`);
+  deler.push(`<line data-nullpunkt="${venstre ? 0 : W}" x1="${nullX}" y1="${-14}" x2="${nullX}" y2="${tU + tO + 16}" stroke="var(--bakoy-oransje)" stroke-width="3"/>`);
+  let nullTekst = venstre ? '0 = hjørnet utenpå lektene. Målene regnes herfra.'
+    : `${maalIHjornet} = hjørnet utenpå lektene (vegglengden).`;
+  if (startkant !== null) {
+    nullTekst = startkant < 0 ? `0 = startkanten, ${mm(-startkant)} mm utenfor hjørnet på lektene.`
+      : '0 = startkanten, i hjørnet på lektene.';
+  }
 
   // Speilvend høyre hjørne. Teksten skrives utenfor speilingen, så den ikke blir baklengs.
   const sx = venstre ? 1 : -1;
@@ -450,10 +461,9 @@ export function tegnHjorne(vegg, side, nabo = null, naboNavn = 'Naboveggen') {
     tekst(260, tU + tO + 40, 'Denne veggen', 'middle'),
     tekst(-ntU - ntO - 70, -260, antatt ? `${naboNavn} (antatt)` : naboNavn, 'middle',
       `transform="rotate(-90 ${(-ntU - ntO - 70) * sx} -260)"`),
-    tekst(0, tU + tO + 40, maalIHjornet, 'middle', 'font-weight="700"'),
+    tekst(nullX, tU + tO + 40, maalIHjornet, 'middle', 'font-weight="700"'),
     tekst(-ntU - ntO - 10, tU + tO + 80, forklaring),
-    tekst(-ntU - ntO - 10, tU + tO + 110, venstre ? '0 = hjørnet utenpå lektene. Målene regnes herfra.'
-      : `${maalIHjornet} = hjørnet utenpå lektene (vegglengden).`),
+    tekst(-ntU - ntO - 10, tU + tO + 110, nullTekst),
     tekst(VEGG + 20, -VEGG - 20, 'Vegg og lekter'),
   ];
 

@@ -181,6 +181,13 @@ Alle skal kunne endres i innstillinger.
   fra), ikke ytterkanten av kledningen. Hjørneskissene (`tegnHjorne`) viser det med oransje strek
   og «0» i venstre hjørne og vegglengden i høyre (Kenny 2026-11-10). Går kledningen forbi
   hjørnet, starter første bord før 0 og får minusmål.
+- «Ett felt» har valget «Feltet starter» (`startsted`: ikke i hjørne, mot eller forbi naboveggen,
+  Kenny 2026-11-10). I et hjørne vises «Hjørnet sett ovenfra» med `tegnHjorne` og
+  `feltSomHjorne` (hus.js): nullpunktet er startkanten av feltet, og skissen sier hvor langt
+  utenfor lekthjørnet den ligger (påbord mot: 19, påbord forbi: 38, underbord mot: 0, forbi: 19).
+  Naboveggen er antatt: samme bord ytterst og 19 mm tykkelse. Hjørnebordet kløyves ikke her.
+- Alle snitt sett ovenfra har veggen øverst og utsiden (påbordene) ned, også i «Ett felt»
+  (snudd 2026-11-10 etter ønske fra Kenny, så de stemmer med veggsnittet og hjørneskissene).
 - `src/tommermann/hus.js`: et hus er veggene i rekkefølge rundt huset. Høyre hjørne på vegg k er
   venstre hjørne på vegg k+1, og siste møter første når huset er lukket. `losHus` regner ut
   forlengelsene og sier fra når et hjørne ikke henger sammen (begge går forbi, eller ingen).

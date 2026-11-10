@@ -62,6 +62,36 @@ test('Skissen av nullpunktet viser startkanten og de første målene i tabellen'
   assert.deepEqual(maal(tegnNullpunkt(u)), [148, u.underliggere[1].fra]);
 });
 
+test('Snittene i «Ett felt» har veggen øverst og påbordene nederst, som veggskissen', () => {
+  const l = losFelt({ L: 1350, bu: 148, bo: 148, start: 'O', slutt: 'O' }).valgt;
+  const y = (svg, type) => [...svg.matchAll(new RegExp(`<rect data-bord="${type}"[^>]* y="([\\d.]+)"`, 'g'))].map((m) => Number(m[1]));
+  // tegnFelt: første halvdel er tegningen forfra, andre halvdel snittet
+  const fU = y(tegnFelt(l), 'u'); const fO = y(tegnFelt(l), 'o');
+  assert.ok(fO.at(-1) > fU.at(-1), 'påbordene skal ligge under underbordene i snittet');
+  // Skissen av nullpunktet
+  const nU = y(tegnNullpunkt(l), 'u'); const nO = y(tegnNullpunkt(l), 'o');
+  assert.ok(Math.min(...nO) > Math.max(...nU));
+});
+
+test('Ett felt som starter i et hjørne: hjørnet tegnes med nullpunktet i startkanten', async () => {
+  const { feltSomHjorne } = await import('../src/tommermann/hus.js');
+  const o = losFelt({ L: 1266, bu: 98, bo: 98, start: 'O', slutt: 'O' }).valgt;
+  const u = losFelt({ L: 1350, bu: 148, bo: 148, start: 'U', slutt: 'U' }).valgt;
+  // Hvor langt utenfor lekthjørnet startkanten ligger (19 mm bord, samme bord på naboveggen):
+  // påbord mot: 19 (inn til påbordet på naboveggen), påbord forbi: 38, underbord mot: 0, forbi: 19
+  const ut = (l, type) => feltSomHjorne(l, type).forleng.venstre;
+  assert.deepEqual([ut(o, 'mot'), ut(o, 'forbi'), ut(u, 'mot'), ut(u, 'forbi')], [19, 38, 0, 19]);
+  // Første påbord står fra −19 til 79 målt fra lekthjørnet, og er 98 mm bredt (ikke kløyvd)
+  const v = feltSomHjorne(o, 'mot');
+  assert.deepEqual([v.felt[0].overliggere[0].fraEksakt, v.felt[0].overliggere[0].tilEksakt], [-19, 79]);
+  const svg = tegnHjorne(v, 'venstre', null, 'Naboveggen', { startkant: -19 });
+  assert.match(svg, /<line data-nullpunkt="0" x1="-19" /);
+  assert.match(svg, /0 = startkanten, 19 mm utenfor hjørnet på lektene/);
+  assert.match(svg, /x="-19" y="19" width="98" height="19"[^>]*data-bord="o"/);
+  // Underbord som slutter mot: startkanten er i lekthjørnet
+  assert.match(tegnHjorne(feltSomHjorne(u, 'mot'), 'venstre', null, 'Naboveggen', { startkant: 0 }), /0 = startkanten, i hjørnet på lektene/);
+});
+
 test('Tegningen markerer underlag i kanter med overligger', () => {
   const l = losFelt({ L: 1266, bu: 98, bo: 98, start: 'O', slutt: 'O' }).valgt;
   assert.equal(tell(tegnFelt(l), 'data-underlag'), 2);

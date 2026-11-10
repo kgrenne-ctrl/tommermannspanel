@@ -4,7 +4,8 @@
 import { sjekkVersjon, registrerUtenNett } from './oppdater.js';
 import { losFelt } from '../tommermann/solver.js';
 import { STANDARD_INNSTILLINGER } from '../tommermann/fagverdier.js';
-import { tegnFelt, tegnNullpunkt } from './tegning.js';
+import { feltSomHjorne } from '../tommermann/hus.js';
+import { tegnFelt, tegnNullpunkt, tegnHjorne } from './tegning.js';
 import { lesTall, mm } from './format.js';
 import { EGEN, fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
@@ -66,6 +67,7 @@ function lesTilstand() {
     bo: bredde('bo'),
     start: skjema.elements.start.value,
     slutt: skjema.elements.slutt.value,
+    startsted: finn('startsted').value,
     innstillinger: Object.fromEntries(INNSTILLING_FELT.map((n) => [n, finn(n).value])),
   };
 }
@@ -81,6 +83,7 @@ function settTilstand(t) {
     }
     if (t.start) skjema.elements.start.value = t.start;
     if (t.slutt) skjema.elements.slutt.value = t.slutt;
+    finn('startsted').value = ['mot', 'forbi'].includes(t.startsted) ? t.startsted : '';
     for (const [n, v] of Object.entries(t.innstillinger ?? {})) if (finn(n)) finn(n).value = v;
   } catch {
     // Lagret tilstand fra en eldre versjon som ikke passer: start blankt
@@ -158,6 +161,22 @@ function visLosning(l, alle, indeks) {
         </button>`).join('')}</div>`
     : '';
 
+  // Starter feltet i et hjørne, vises hjørnet sett ovenfra med nullpunktet mot naboveggen
+  const hjornetype = finn('startsted').value;
+  let hjorne = '';
+  if (hjornetype) {
+    const somVegg = feltSomHjorne(l, hjornetype);
+    const ut = somVegg.forleng.venstre;
+    hjorne = `<h3>Hjørnet sett ovenfra</h3>
+    ${zoomBoks('felt-hjorne', tegnHjorne(somVegg, 'venstre', null, 'Naboveggen', { startkant: -ut }))}
+    <p class="hjelp">Utsiden er ned. Grått er veggen med lekter. Oransje strek er nullpunktet (0),
+      altså startkanten av feltet. ${ut > 0
+    ? `Den ligger ${mm(ut)} mm utenfor hjørnet på lektene. Feltlengden er da målet fra lekthjørnet pluss ${mm(ut)} mm.`
+    : 'Den ligger i hjørnet på lektene, og feltlengden måles derfra.'}
+      Regnet med ${mm(somVegg.tykkelse.under)} mm tykke bord og samme bord ytterst på naboveggen (antakelse).
+      «Hel vegg» regner hjørnet nøyaktig, med naboveggen og kløyvd hjørnebord.</p>`;
+  }
+
   return `
     <h2>Resultat</h2>
     <div class="nokkeltall">
@@ -170,7 +189,7 @@ function visLosning(l, alle, indeks) {
     ${andre}
     <h3>Tegning</h3>
     ${zoomBoks('felt', tegnFelt(l))}
-    <p class="hjelp">Øverst sett forfra. Under: snitt sett ovenfra med veggen nederst. Målene langs
+    <p class="hjelp">Øverst sett forfra. Under: snitt sett ovenfra med veggen øverst og påbordene nederst. Målene langs
       veggen er i riktig målestokk, bordtykkelsen er tegnet litt tykkere enn den er, så den synes.
       Oransje stiplet = trenger underlag.</p>
     <h3>Utdelingsmål</h3>
@@ -178,8 +197,9 @@ function visLosning(l, alle, indeks) {
       ytterkanten av første ${l.start === 'O' ? 'påbord' : 'underbord'}. Feltlengden er målt fra samme kant.
       Underbordene settes opp først, med klossen mellom.</p>
     ${tegnNullpunkt(l)}
-    <p class="hjelp">Starten av feltet sett ovenfra, med veggen nederst. Tallene er de første målene
+    <p class="hjelp">Starten av feltet sett ovenfra, med veggen øverst og påbordene nederst. Tallene er de første målene
       i tabellen under.</p>
+    ${hjorne}
     ${tabell('Underbord', l.underliggere)}
     ${tabell('Påbord', l.overliggere)}
     <p class="hjelp">Ikke spikre gjennom to bord. Én spiker i underbordet, spikrene i

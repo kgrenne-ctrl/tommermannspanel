@@ -57,6 +57,28 @@ export function forlengelse(hjorne, nabo) {
   return n.innside;
 }
 
+// «Ett felt» som starter i et hjørne (Kenny 2026-11-10): gjør løsningen for feltet om til en
+// vegg med ett felt, slik at hjørnet kan tegnes med tegnHjorne. Feltet har sitt eget nullpunkt
+// i startkanten. Her flyttes bordene så hjørnet utenpå lektene blir 0, som i resten av huset.
+// Naboveggen er ikke kjent: den regnes med samme bord ytterst og standard bordtykkelse.
+// type: 'mot' eller 'forbi'. forleng.venstre sier hvor langt utenfor lekthjørnet startkanten ligger.
+// Hjørnebordet kløyves ikke her, slik det gjøres i en hel vegg som slutter mot naboveggen.
+export function feltSomHjorne(losning, type) {
+  const v = { hjorneVenstre: losning.start };
+  const f = forlengelse({ type }, { tykkelse: tykkelseIHjornet(v, 'venstre'), innside: innsideIHjornet(v, 'venstre') });
+  const flytt = (b) => ({ ...b, fraEksakt: b.fraEksakt - f, tilEksakt: b.tilEksakt - f });
+  return {
+    lengde: losning.L,
+    bu: losning.bu,
+    bo: losning.bo,
+    tykkelse: { under: STANDARD_VEGG.tykkelseUnder, over: STANDARD_VEGG.tykkelseOver },
+    hjorneVenstre: losning.start,
+    hjorner: { venstre: { type } },
+    forleng: { venstre: f },
+    felt: [{ ok: true, underliggere: losning.underliggere.map(flytt), overliggere: losning.overliggere.map(flytt) }],
+  };
+}
+
 // Hvilke vegger møtes i hvert hjørne? Gir naboen til venstre og høyre for vegg k (indeks
 // eller null når hjørnet er en fri ende).
 export function naboer(k, antall, lukket) {
