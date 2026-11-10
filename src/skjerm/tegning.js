@@ -79,6 +79,66 @@ export function tegnFelt(losning) {
     + '</svg>';
 }
 
+// Skisse til utdelingsmålene i «Ett felt» (Kenny 2026-11-10): starten av feltet sett ovenfra,
+// med veggen nederst. Viser nullpunktet (startkanten, oransje strek) og de første løpende
+// målene i tabellen: fra og til på første underbord og fra på det andre. Alle målene går fra 0.
+export function tegnNullpunkt(losning) {
+  const { L, underliggere, overliggere } = losning;
+  const t = TEGNET_TYKKELSE;
+  // Vis til litt forbi starten av andre underbord, eller hele feltet når det er kortere
+  const andre = underliggere[1];
+  const slutt = andre ? Math.min(L, andre.fraEksakt + (andre.tilEksakt - andre.fraEksakt) * 0.6) : L;
+  const kant = slutt * 0.08;
+  const skrift = slutt * 0.06;
+  const strek = slutt * 0.004;
+
+  // Løpende mål: avrundet tall som i tabellen, tegnet der bordkanten faktisk står
+  const maal = [];
+  const leggTil = (x, tall) => { if (x > 1e-6 && x <= slutt && !maal.some((m) => m.tall === tall)) maal.push({ x, tall }); };
+  leggTil(underliggere[0].fraEksakt, underliggere[0].fra);
+  leggTil(underliggere[0].tilEksakt, underliggere[0].til);
+  if (andre) leggTil(andre.fraEksakt, andre.fra);
+
+  const yO = skrift * 2;        // påbord (utenpå)
+  const yU = yO + t;            // underbord (inn mot veggen)
+  const yVegg = yU + t;
+  const yMaal = (i) => yVegg + skrift * 1.4 + i * skrift * 1.5;
+  const hoyde = yMaal(Math.max(maal.length - 1, 0)) + skrift * 0.9;
+  const pil = skrift * 0.3;
+
+  const deler = [`<defs><clipPath id="nullpunkt-klipp"><rect x="${-kant}" y="0" width="${kant + slutt}" height="${hoyde}"/></clipPath></defs>`];
+  const bord = [];
+  underliggere.forEach((b, i) => {
+    if (b.fraEksakt >= slutt) return;
+    bord.push(rekt(b, yU, t, 'u', strek));
+    const midt = (b.fraEksakt + Math.min(b.tilEksakt, slutt)) / 2;
+    bord.push(`<text x="${midt}" y="${yU + t / 2 + skrift * 0.3}" font-size="${skrift * 0.8}" text-anchor="middle" fill="var(--tekst)">${i + 1}</text>`);
+  });
+  for (const b of overliggere) if (b.fraEksakt < slutt) bord.push(rekt(b, yO, t, 'o', strek));
+  bord.push(`<line x1="0" y1="${yVegg + strek}" x2="${slutt}" y2="${yVegg + strek}" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
+  deler.push(`<g clip-path="url(#nullpunkt-klipp)">${bord.join('')}</g>`);
+
+  // Målene: strek fra 0 til bordkanten, tallet ved enden, og tynn hjelpestrek opp til kanten
+  maal.forEach((m, i) => {
+    const y = yMaal(i);
+    deler.push(
+      `<line x1="${m.x}" y1="${yU}" x2="${m.x}" y2="${y + pil}" stroke="var(--tekst-gra)" stroke-width="${strek * 0.6}" stroke-dasharray="${strek * 2} ${strek * 2}"/>`,
+      `<line data-maal="${m.tall}" x1="0" y1="${y}" x2="${m.x}" y2="${y}" stroke="var(--tekst)" stroke-width="${strek}"/>`,
+      `<text x="${m.x + skrift * 0.25}" y="${y + skrift * 0.35}" font-size="${skrift}" fill="var(--tekst)">${mm(m.tall)}</text>`,
+    );
+  });
+
+  // Nullpunktet: startkanten av feltet
+  deler.push(
+    `<line data-nullpunkt="ja" x1="0" y1="${skrift * 1.4}" x2="0" y2="${hoyde - skrift * 0.3}" stroke="var(--bakoy-oransje)" stroke-width="${strek * 2}"/>`,
+    `<text x="${-kant * 0.4}" y="${skrift * 1.1}" font-size="${skrift}" font-weight="700" fill="var(--tekst)">0 = startkanten</text>`,
+  );
+
+  return `<svg class="tegning nullpunkt" viewBox="${-kant} 0 ${slutt + kant * 3} ${hoyde}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Skisse av starten på feltet. Nullpunktet er startkanten, målene er ${maal.map((m) => mm(m.tall)).join(', ')} mm">`
+    + deler.join('')
+    + '</svg>';
+}
+
 function rekt(b, y, h, type, strek) {
   const fyll = type === 'u' ? 'var(--underligger)' : 'var(--overligger)';
   return `<rect data-bord="${type}" x="${b.fraEksakt}" y="${y}" width="${b.tilEksakt - b.fraEksakt}" height="${h}" fill="${fyll}" stroke="var(--bord-kant)" stroke-width="${strek}"/>`;

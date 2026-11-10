@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { lesTall, mm, trygtNavn } from '../src/skjerm/format.js';
-import { tegnFelt, tegnVegg, tegnSnitt, tegnHjorne, tegnHus } from '../src/skjerm/tegning.js';
+import { tegnFelt, tegnNullpunkt, tegnVegg, tegnSnitt, tegnHjorne, tegnHus } from '../src/skjerm/tegning.js';
 import { losFelt } from '../src/tommermann/solver.js';
 import { losHus } from '../src/tommermann/hus.js';
 
@@ -46,6 +46,20 @@ test('Tegningen: bordene i snittet er like tykke i korte og lange felt, og flate
     return snitt[0].hoyde;
   });
   assert.equal(tykkelser[0], tykkelser[1]);
+});
+
+test('Skissen av nullpunktet viser startkanten og de første målene i tabellen', () => {
+  // Kennys felt: 8760 mm, 148/148, påbord i begge ender. Første underbord står fra 123 til 271.
+  const o = losFelt({ L: 8760, bu: 148, bo: 148, start: 'O', slutt: 'O' }).valgt;
+  assert.deepEqual([o.underliggere[0].fra, o.underliggere[0].til], [123, 271]);
+  const svgO = tegnNullpunkt(o);
+  assert.equal(tell(svgO, 'data-nullpunkt'), 1);
+  const maal = (svg) => [...svg.matchAll(/data-maal="(\d+)" x1="0"/g)].map((m) => Number(m[1]));
+  assert.deepEqual(maal(svgO), [123, 271, o.underliggere[1].fra]);
+  assert.ok(svgO.includes('0 = startkanten'));
+  // Starter feltet med underbord, står det i nullpunktet: da er første mål enden av bordet
+  const u = losFelt({ L: 1350, bu: 148, bo: 148, start: 'U', slutt: 'U' }).valgt;
+  assert.deepEqual(maal(tegnNullpunkt(u)), [148, u.underliggere[1].fra]);
 });
 
 test('Tegningen markerer underlag i kanter med overligger', () => {

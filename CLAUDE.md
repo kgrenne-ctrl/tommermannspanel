@@ -174,6 +174,9 @@ Alle skal kunne endres i innstillinger.
 - Bordtykkelsen i snittene sett ovenfra (ett felt og A–A) tegnes som `TEGNET_TYKKELSE` (40 mm) i
   `tegning.js`, uansett feltlengde. Før fulgte den feltlengden i «Ett felt» (5 %), og lange felt
   fikk bord som så ut som stolper (Kenny 2026-11-10). Mål langs veggen er alltid i riktig skala.
+- «Ett felt» har en skisse over tabellen med utdelingsmål (`tegnNullpunkt`, Kenny 2026-11-10):
+  starten av feltet sett ovenfra, nullpunktet (0 = startkanten, oransje strek) og de første
+  løpende målene. Nullpunktet er ytterkanten av første bord, og feltlengden måles fra samme kant.
 - `src/tommermann/hus.js`: et hus er veggene i rekkefølge rundt huset. Høyre hjørne på vegg k er
   venstre hjørne på vegg k+1, og siste møter første når huset er lukket. `losHus` regner ut
   forlengelsene og sier fra når et hjørne ikke henger sammen (begge går forbi, eller ingen).

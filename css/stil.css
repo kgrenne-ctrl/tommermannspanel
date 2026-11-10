@@ -277,6 +277,13 @@ input[type="text"]:focus, select:focus {
   background: var(--hvit);
 }
 
+/* Skissen av nullpunktet viser bare starten av feltet og skal ikke fylle hele bredden */
+.tegning.nullpunkt {
+  max-width: 560px;
+  border: 1px solid var(--linje);
+  border-radius: 8px;
+}
+
 .maltabell {
   width: 100%;
   border-collapse: collapse;

@@ -4,7 +4,7 @@
 import { sjekkVersjon, registrerUtenNett } from './oppdater.js';
 import { losFelt } from '../tommermann/solver.js';
 import { STANDARD_INNSTILLINGER } from '../tommermann/fagverdier.js';
-import { tegnFelt } from './tegning.js';
+import { tegnFelt, tegnNullpunkt } from './tegning.js';
 import { lesTall, mm } from './format.js';
 import { EGEN, fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
@@ -174,7 +174,12 @@ function visLosning(l, alle, indeks) {
       veggen er i riktig målestokk, bordtykkelsen er tegnet litt tykkere enn den er, så den synes.
       Oransje stiplet = trenger underlag.</p>
     <h3>Utdelingsmål</h3>
-    <p class="hjelp">Løpende mål fra startkanten. Underbordene settes opp først, med klossen mellom.</p>
+    <p class="hjelp">Løpende mål fra startkanten. Nullpunktet (0) er kanten feltet starter i, her
+      ytterkanten av første ${l.start === 'O' ? 'påbord' : 'underbord'}. Feltlengden er målt fra samme kant.
+      Underbordene settes opp først, med klossen mellom.</p>
+    ${tegnNullpunkt(l)}
+    <p class="hjelp">Starten av feltet sett ovenfra, med veggen nederst. Tallene er de første målene
+      i tabellen under.</p>
     ${tabell('Underbord', l.underliggere)}
     ${tabell('Påbord', l.overliggere)}
     <p class="hjelp">Ikke spikre gjennom to bord. Én spiker i underbordet, spikrene i
