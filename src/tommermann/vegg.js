@@ -226,23 +226,34 @@ function velgInnlegg(startvalg, apninger, inn, e) {
 function velgJevnt(apninger, inn, e, kandidater) {
   const n = apninger.length;
   const sett = (j, v) => { e[2 * j] = v; e[2 * j + 1] = v; };
-  const kost = (m) => kostnadJevn(regnLedd(m, e, apninger, inn), inn);
+  const kost = (m) => kostnad(regnLedd(m, e, apninger, inn), inn, true);
   const innlegg = (v) => { const k = nullKost(); k[5] = Math.abs(v - inn.innleggStandard); return k; };
+  besteKjede(n, kandidater, sett, kost, innlegg).spor.forEach((v, j) => sett(j, v));
+}
 
-  // beste[i] = { kost, forrige } for innlegg kandidater[i] i åpningen vi står i
-  let beste = kandidater.map((v) => {
+// Selve kjeden, felles for «jevnest» og «lik avstand». Går åpning for åpning og husker, for hvert
+// mulig innlegg i åpningen den står i, den beste måten å komme dit på. Gir den beste rekka av
+// innlegg (spor) og kostnaden for hele veggen.
+//   sett(j, v)  setter innlegg v i åpning j
+//   kost(m)     kostnaden for felt m med innleggene som er satt akkurat nå
+//               (felt 2j er til venstre for åpning j, felt 2j+1 er over og under den)
+//   innlegg(v)  kostnaden for at innlegget v avviker fra standard
+// Veggen har alltid minst én åpning her (velgInnlegg gir seg ellers før den kommer hit).
+function besteKjede(n, kandidater, sett, kost, innlegg) {
+  let rad = kandidater.map((v) => {
     sett(0, v);
     return { kost: leggSammen(leggSammen(leggSammen(null, kost(0)), kost(1)), innlegg(v)), spor: [v] };
   });
   for (let j = 1; j < n; j++) {
-    beste = kandidater.map((v) => {
+    const forrige = rad;
+    rad = kandidater.map((v) => {
       sett(j, v);
       const over = leggSammen(kost(2 * j + 1), innlegg(v));
       let best = null;
       kandidater.forEach((u, i) => {
         sett(j - 1, u);
-        const k = leggSammen(leggSammen(beste[i].kost, kost(2 * j)), over);
-        if (!best || sammenlignKost(k, best.kost) < 0) best = { kost: k, spor: [...beste[i].spor, v] };
+        const k = leggSammen(leggSammen(forrige[i].kost, kost(2 * j)), over);
+        if (!best || sammenlignKost(k, best.kost) < 0) best = { kost: k, spor: [...forrige[i].spor, v] };
       });
       return best;
     });
@@ -250,10 +261,10 @@ function velgJevnt(apninger, inn, e, kandidater) {
   let vinner = null;
   kandidater.forEach((v, i) => {
     sett(n - 1, v);
-    const k = leggSammen(beste[i].kost, kost(2 * n));
-    if (!vinner || sammenlignKost(k, vinner.kost) < 0) vinner = { kost: k, spor: beste[i].spor };
+    const k = leggSammen(rad[i].kost, kost(2 * n));
+    if (!vinner || sammenlignKost(k, vinner.kost) < 0) vinner = { kost: k, spor: rad[i].spor };
   });
-  vinner.spor.forEach((v, j) => sett(j, v));
+  return vinner;
 }
 
 // ---------- Lik avstand mellom påbordene (Kenny 2026-11-09) ----------
@@ -318,31 +329,7 @@ function velgLikAvstand(apninger, inn, e, kandidater) {
   if (gFra > gTil) { gFra = Math.ceil(inn.bu - 2 * inn.oMax); gTil = Math.floor(inn.bu - 2 * inn.oMin); }
   for (let G = gFra; G <= gTil; G += 1) {
     const kost = (m) => feltMotMaal(ledd(m), G, inn).kost;
-    // Veggen har alltid minst én åpning her (velgInnlegg gir seg ellers før den kommer hit)
-    let rad = kandidater.map((v) => {
-      sett(0, v);
-      return { kost: leggSammen(leggSammen(leggSammen(null, kost(0)), kost(1)), innlegg(v)), spor: [v] };
-    });
-    for (let j = 1; j < n; j++) {
-      const forrige = rad;
-      rad = kandidater.map((v) => {
-        sett(j, v);
-        const over = leggSammen(kost(2 * j + 1), innlegg(v));
-        let b = null;
-        kandidater.forEach((u, i) => {
-          sett(j - 1, u);
-          const k = leggSammen(leggSammen(forrige[i].kost, kost(2 * j)), over);
-          if (!b || sammenlignKost(k, b.kost) < 0) b = { kost: k, spor: [...forrige[i].spor, v] };
-        });
-        return b;
-      });
-    }
-    let resultat = null;
-    kandidater.forEach((v, i) => {
-      sett(n - 1, v);
-      const k = leggSammen(rad[i].kost, kost(2 * n));
-      if (!resultat || sammenlignKost(k, resultat.kost) < 0) resultat = { kost: k, spor: rad[i].spor };
-    });
+    const resultat = besteKjede(n, kandidater, sett, kost, innlegg);
     if (!best || sammenlignKost(resultat.kost, best.kost) < 0) best = { ...resultat, G };
   }
   best.spor.forEach((v, j) => sett(j, v));
@@ -351,24 +338,18 @@ function velgLikAvstand(apninger, inn, e, kandidater) {
   for (let m = 0; m <= 2 * n; m++) inn.likValg[m] = feltMotMaal(ledd(m), best.G, inn).valg;
 }
 
-// Som kostnad(), men med kvadratisk avvik fra ideelt omlegg, så store avvik straffes mest.
-function kostnadJevn(svar, inn) {
-  if (svar.tom) return nullKost();
-  if (!svar.ok) return [1, 0, 0, 0, 0, 0];
-  const l = svar.valgt;
-  return [0, l.spikring.ok ? 0 : 1, l.innenforAnbefalt ? 0 : 1,
-    Math.max(0, l.omlegg - inn.oMax), (l.omlegg - inn.oIdeal) ** 2, 0];
-}
-
 // Kostnad for ett ledd, som tall som sammenlignes ett for ett (lavere er bedre):
 // [går ikke opp, spikervarsel, over maks, mm over maks, mm fra ideelt, innlegg fra standard].
 // Over og under en åpning er ett felt (samme deling), så det teller én gang.
-function kostnad(svar, inn) {
+// Med kvadrat = true («jevnest») regnes avviket fra ideelt omlegg i annen potens, så store avvik
+// straffes mest.
+function kostnad(svar, inn, kvadrat = false) {
   if (svar.tom) return nullKost();
   if (!svar.ok) return [1, 0, 0, 0, 0, 0];
   const l = svar.valgt;
+  const fraIdeelt = Math.abs(l.omlegg - inn.oIdeal);
   return [0, l.spikring.ok ? 0 : 1, l.innenforAnbefalt ? 0 : 1,
-    Math.max(0, l.omlegg - inn.oMax), Math.abs(l.omlegg - inn.oIdeal), 0];
+    Math.max(0, l.omlegg - inn.oMax), kvadrat ? fraIdeelt ** 2 : fraIdeelt, 0];
 }
 
 const nullKost = () => [0, 0, 0, 0, 0, 0];
@@ -736,12 +717,16 @@ export function foreslaVegg(inndata, { bredder = STANDARD_BREDDER, antall = 3 } 
 
   const valg = [];
   const proev = (endring) => {
-    const forsok = { ...inn, ...endring };
+    // Kløyvde underbord hører til oppsettet de ble valgt i. Forslagene regnes med fulle bord,
+    // og skjermen nullstiller kløyvingen når et forslag tas i bruk.
+    const forsok = { ...inn, ...endring, kloyvUnderbord: {} };
+    const hva = hvaErEndret(inn, forsok);
+    if (!hva.length) return; // dagens oppsett er ikke et forslag
     const r = losVegg(forsok);
     if (r.feil) return;
     const vurdering = vurderVegg(r, inn.oMax);
     if (sammenlign(vurdering, naaVurdering) >= 0) return; // bare det som er bedre
-    valg.push({ endring: hvaErEndret(inn, forsok), oppsett: plukk(forsok), vurdering });
+    valg.push({ endring: hva, oppsett: plukk(forsok), vurdering });
   };
 
   const hjorner = [['O', 'O'], ['U', 'U'], ['O', 'U'], ['U', 'O']];

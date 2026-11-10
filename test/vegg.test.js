@@ -232,6 +232,24 @@ test('Forslag: en vegg som allerede er perfekt, får ingen forslag', () => {
   assert.equal(f.sammeBord.length + f.andreBord.length, 0);
 });
 
+test('Forslag: regnes med fulle underbord, også når veggen har kløyvde underbord fra før', () => {
+  // Venstre felt har omlegg 42,7 mm og er kløyvd til 89 mm. Før ble kløyvingen med inn i
+  // forslagene, så «lik avstand» lovet 29,7 mm. Uten kløyvingen (som skjermen nullstiller når
+  // et forslag tas i bruk) ga det 42,7 mm.
+  const vegg = { lengde: 4300, hoyde: 2400, bu: 148, bo: 148, startvalg: 'venstre',
+    apninger: [{ type: 'vindu', x: 700, bredde: 1000, hoyde: 1200, bunn: 900 }] };
+  const felt = losVegg(vegg).felt[0];
+  assert.deepEqual([felt.navn, felt.kloyvForslag.bredde], ['Venstre hjørne \u2013 Vindu', 89]);
+  const medKloyv = { ...vegg, kloyvUnderbord: { [felt.navn]: 89 } };
+  const f = foreslaVegg(medKloyv);
+  // Utgangspunktet er veggen slik den står, med kløyvingen
+  assert.deepEqual(f.naa, vurderVegg(losVegg(medKloyv)));
+  for (const v of [...f.sammeBord, ...f.andreBord]) {
+    assert.deepEqual(vurderVegg(losVegg({ ...vegg, ...v.oppsett })), v.vurdering, v.endring.join(', '));
+    assert.ok(v.endring.length > 0, 'dagens oppsett uten kløyving er ikke et forslag');
+  }
+});
+
 test('Merkeliste: alle underbord i rekkefølge, med mål fra hjørnet og fra karmkanten', () => {
   const r = losVegg(GARASJE);
   const liste = lagMerkeliste(r);

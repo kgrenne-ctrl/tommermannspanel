@@ -117,11 +117,14 @@ Alle skal kunne endres i innstillinger.
   dynamisk programmering (kjede åpning for åpning), minst sum av (omlegg − 25)². Sjekket mot
   gjennomprøving av alle kombinasjoner. Målt på 300 tilfeldige vegger: bedre på 78, men liten
   gevinst (verste avvik i snitt 12,47 → 12,39 mm), fordi innlegget bare kan variere 10 mm.
+  Selve kjeden ligger i `besteKjede` og er felles for `jevnt` og `lik`.
 - Kløyvde underbord (Kenny 2026-11-09): felt med omlegg over 30 mm får forslag om å kløyve
   underbordene inni feltet (ikke de ytterst, som deles med naboen eller er hjørnebord), så
   omlegget blir 25 (ellers høyst 30), med samme antall bord og feltlengde. Tømreren velger det med
   en knapp. Valget lagres per vegg som `kloyvUnderbord: { feltnavn: bredde }` og legges ut på nytt
   i `leggUtKloyvd`. Passer det ikke lenger (målene er endret), brukes det ikke, og appen varsler.
+  Valget nullstilles på skjermen når bordbredden byttes, når startvalget byttes til `lik`, og når
+  et forslag fra «Finn bedre oppsett» tas i bruk. «Tilbake til utgangspunktet» henter det igjen.
 - **Lik avstand mellom påbordene** (startvalg `lik`, `velgLikAvstand`, standard for nye vegger på
   skjermen, Kenny 2026-11-09): det viktigste er at avstanden mellom påbordene er mest mulig lik.
   Alle felt sikter mot samme avstand G (prøves i hele mm slik at G ± avvik gir omlegg 20–30).
@@ -132,7 +135,9 @@ Alle skal kunne endres i innstillinger.
   Avstand mellom påbord = senteravstand − påbordbredde (+ kløyving); omlegg = (bu − avstand)/2.
   Forslag om kløyvde underbord vises ikke ved `lik` (det ville flyttet påbordene).
 - «Finn bedre oppsett» (`foreslaVegg`) prøver karm, hjørner, startvalg og standardbredder.
-  Omlegg innenfor 20–30 mm regnes som like bra.
+  Omlegg innenfor 20–30 mm regnes som like bra. Forslagene regnes med fulle underbord (uten
+  `kloyvUnderbord`), utgangspunktet slik veggen står. Knappen viser «Regner …» mens den regner
+  (utregningen startes med `setTimeout`, så nettleseren rekker å tegne teksten først).
 - Påbord er standard både i hjørnene og inn på karmen (Kenny 2026-11-08).
 - `solver.js` har `losFeltFleksibel` for felt med slingringsmonn i lengden. `losFelt` er det
   samme med fast lengde.

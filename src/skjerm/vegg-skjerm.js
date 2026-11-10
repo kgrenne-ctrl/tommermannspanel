@@ -113,6 +113,10 @@ skjema.addEventListener('input', (hendelse) => {
   if (hendelse.target.id === 'm-kapptillegg') hus.materialer.kapptillegg = hendelse.target.value;
   if (hendelse.target.id === 'm-svinn') hus.materialer.svinn = hendelse.target.value;
   if (hendelse.target.dataset.pris) hus.materialer.priser[hendelse.target.dataset.pris] = hendelse.target.value;
+  // Kløyvde underbord hører til oppsettet de ble valgt i. Byttes bordbredden, eller byttes det til
+  // lik avstand (der kløyving ikke tilbys), brukes fulle bord igjen.
+  const id = hendelse.target.id;
+  if (/^vb[uo]-/.test(id) || (id === 'v-startvalg' && hendelse.target.value === 'lik')) gjeldendeKloyv = {};
   sisteForslag = null;
   oppdaterStartvalg();
   oppdater();
@@ -163,17 +167,11 @@ resultat.addEventListener('click', (hendelse) => {
   const knapp = hendelse.target.closest('button');
   if (!knapp) return;
   if (knapp.id === 'v-finn-forslag') {
-    // Hjørnene regnes ut av huset (naboveggene), så de tas med som de er
-    const inndata = { ...lesSkjema(), forlengVenstre: sisteResultat.forleng.venstre,
-      forlengHoyre: sisteResultat.forleng.hoyre, klyvVenstre: sisteResultat.klyv.venstre,
-      klyvHoyre: sisteResultat.klyv.hoyre };
-    sisteForslag = foreslaVegg(inndata);
-    // Husk utgangspunktet, så man kan gå tilbake til det
-    const { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg } = inndata;
-    sisteForslag.utgangspunkt = { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg };
-    sisteForslag.valgt = null;
-    oppdater();
-    finn('v-forslag')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Utregningen tar et par sekunder. Si fra på knappen først og regn rett etterpå, ellers
+    // rekker ikke nettleseren å tegne teksten før den blir opptatt.
+    knapp.disabled = true;
+    knapp.textContent = 'Regner …';
+    setTimeout(finnForslag, 50);
   } else if (knapp.dataset.forslag) {
     const [gruppe, nr] = knapp.dataset.forslag.split(':');
     sisteForslag.valgt = knapp.dataset.forslag;
@@ -194,7 +192,25 @@ resultat.addEventListener('click', (hendelse) => {
   }
 });
 
+function finnForslag() {
+  // Er noe endret mens den ventet, så veggen ikke lenger kan regnes, er det ikke noe å foreslå
+  if (!sisteResultat) return;
+  // Hjørnene regnes ut av huset (naboveggene), så de tas med som de er
+  const inndata = { ...lesSkjema(), forlengVenstre: sisteResultat.forleng.venstre,
+    forlengHoyre: sisteResultat.forleng.hoyre, klyvVenstre: sisteResultat.klyv.venstre,
+    klyvHoyre: sisteResultat.klyv.hoyre };
+  sisteForslag = foreslaVegg(inndata);
+  // Husk utgangspunktet, så man kan gå tilbake til det
+  const { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg } = inndata;
+  sisteForslag.utgangspunkt = { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg, kloyv: { ...gjeldendeKloyv } };
+  sisteForslag.valgt = null;
+  oppdater();
+  finn('v-forslag')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function brukForslag(o) {
+  // Forslagene er regnet med fulle underbord. Bare utgangspunktet har med kløyvingen sin.
+  gjeldendeKloyv = { ...(o.kloyv ?? {}) };
   settBredde('vbu', o.bu);
   settBredde('vbo', o.bo);
   skjema.elements.karmBord.value = o.karmBord;

@@ -355,6 +355,11 @@ input[type="text"]:focus, select:focus {
   cursor: pointer;
 }
 
+.knapp:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .knapp.fjern {
   border-color: var(--linje);
   color: var(--tekst-gra);
