@@ -10,6 +10,7 @@ import { lesTall, mm, trygtNavn } from './format.js';
 import { EGEN, fyllBreddevalg, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
 import { lagUtskrift, lesEksempeldata } from './utskrift.js';
+import { EKSEMPELHUS } from './eksempel.js';
 
 const finn = (id) => document.getElementById(id);
 const skjema = finn('vegg-skjema');
@@ -131,6 +132,8 @@ skjema.addEventListener('click', (hendelse) => {
     return;
   } else if (knapp.id === 'v-last-data') {
     if (!lastInnData()) return;
+  } else if (knapp.id === 'v-eksempelhus') {
+    if (!fyllEksempelhus()) return;
   } else if (knapp.id === 'v-ny-vegg') {
     nyVegg();
   } else if (knapp.id === 'v-slett-vegg') {
@@ -441,6 +444,33 @@ function fyllEksempel() {
   leggTilApning({ type: 'vindu', x: 4200, bredde: 1000, hoyde: 1200, bunn: 900 });
   oppdaterStartvalg();
   finn('v-startvalg').value = STANDARD.startvalg;
+}
+
+// Eksempelhus med fire vegger som alle går opp (eksempel.js). Erstatter huset som er lagt inn.
+// Det som ikke står i eksempelet (tykkelse, hjørnebord, innstillinger), får standardverdiene.
+function fyllEksempelhus() {
+  hus.vegger[hus.aktiv] = lesTilstand();
+  const harInnhold = hus.vegger.some((v) => v.lengde || (v.apninger ?? []).length);
+  if (harInnhold && !window.confirm('Erstatte huset som er lagt inn nå med eksempelhuset (4 vegger)?')) return false;
+  hus.vegger = EKSEMPELHUS.vegger.map((v) => ({
+    navn: v.navn,
+    lengde: String(v.lengde),
+    hoyde: String(v.hoyde),
+    vbu: { valg: String(v.bu), egen: '' },
+    vbo: { valg: String(v.bo), egen: '' },
+    hjorner: { venstre: { ...v.hjorner.venstre }, hoyre: { ...v.hjorner.hoyre } },
+    apninger: v.apninger.map((a) => ({
+      type: a.type, x: String(a.x), bredde: String(a.bredde), hoyde: String(a.hoyde), bunn: String(a.bunn),
+    })),
+  }));
+  hus.aktiv = 0;
+  hus.lukket = EKSEMPELHUS.lukket;
+  finn('v-lukket').checked = hus.lukket;
+  prisDimensjoner = '';
+  settTilstand(hus.vegger[0]);
+  sisteForslag = null;
+  valgtSnitt = null;
+  return true;
 }
 
 // ---------- Lese skjema og vise resultat ----------

@@ -13,27 +13,28 @@
   <meta name="apple-mobile-web-app-title" content="Tømmermann">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd) -->
-  <script>window.APP_VERSJON = '20261110-081831';</script>
+  <script>window.APP_VERSJON = '20261110-082618';</script>
   <script type="importmap">
   {
     "imports": {
-      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261110-081831",
-      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261110-081831",
-      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261110-081831",
-      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261110-081831",
-      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261110-081831",
-      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261110-081831",
-      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261110-081831",
-      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261110-081831",
-      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261110-081831",
-      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261110-081831",
-      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261110-081831",
-      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261110-081831",
-      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261110-081831"
+      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261110-082618",
+      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261110-082618",
+      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261110-082618",
+      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261110-082618",
+      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261110-082618",
+      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261110-082618",
+      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261110-082618",
+      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261110-082618",
+      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261110-082618",
+      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261110-082618",
+      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261110-082618",
+      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261110-082618",
+      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261110-082618",
+      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261110-082618"
     }
   }
   </script>
-  <link rel="stylesheet" href="css/stil.css?v=20261110-081831">
+  <link rel="stylesheet" href="css/stil.css?v=20261110-082618">
   <!-- versjon:slutt -->
 </head>
 <body>
@@ -119,6 +120,7 @@
         </div>
         <label class="avkryssing"><input type="checkbox" id="v-lukket" checked>
           <span>Veggene går rundt hele huset (siste vegg møter første)</span></label>
+        <button type="button" class="knapp lenkeknapp" id="v-eksempelhus">Fyll inn eksempelhus (4 vegger)</button>
         <details class="innstillinger">
           <summary>Materialer for huset</summary>
           <div class="to-kol">
@@ -247,7 +249,7 @@
         </details>
 
         <div class="knapperad to">
-          <button type="button" class="knapp lenkeknapp" id="v-eksempel">Fyll inn eksempel</button>
+          <button type="button" class="knapp lenkeknapp" id="v-eksempel">Fyll inn eksempelvegg</button>
           <button type="button" class="knapp lenkeknapp" id="v-tom">Tøm denne veggen</button>
         </div>
         <p class="hjelp">Det du skriver inn, lagres på denne telefonen og er der neste gang du åpner appen.</p>

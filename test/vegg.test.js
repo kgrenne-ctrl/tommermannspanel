@@ -269,7 +269,7 @@ test('Merkeliste: felt som ikke går opp, er ikke med', () => {
 });
 
 test('Eksempelveggen i appen går opp med omlegg innenfor anbefalt', async () => {
-  // Samme vegg som «Fyll inn eksempel» (src/skjerm/vegg-skjerm.js), regnet slik appen gjør
+  // Samme vegg som «Fyll inn eksempelvegg» (src/skjerm/vegg-skjerm.js), regnet slik appen gjør
   // (gjennom huset, med påbord ytterst og «mot naboveggen» i begge hjørner)
   const { losHus } = await import('../src/tommermann/hus.js');
   const r = losHus({ vegger: [{ lengde: 6000, hoyde: 2400, bu: 98, bo: 98, karmBord: 'O',

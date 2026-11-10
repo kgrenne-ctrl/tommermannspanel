@@ -200,7 +200,11 @@ Alle skal kunne endres i innstillinger.
   første underbord, kloss, antall, kontrollmål per felt), tegning, materialer. Alt for den som
   planlegger (snitt, alle mål bord for bord, innlegg, felt for felt) ligger under «Detaljer».
 - Mål fra karm skrives «X mm før / etter … karm», ikke med minus.
-- «Fyll inn eksempel» skal alltid gi en vegg som går opp (sjekkes av test i `vegg.test.js`).
+- «Fyll inn eksempelvegg» skal alltid gi en vegg som går opp (sjekkes av test i `vegg.test.js`).
+- «Fyll inn eksempelhus (4 vegger)» under Huset (Kenny 2026-11-10) erstatter huset med
+  `EKSEMPELHUS` fra `src/skjerm/eksempel.js`: 8 x 6 m, Sør, Øst, Nord, Vest, 98 mm bord,
+  langveggene forbi og gavlene mot. Alle vegger skal gå opp med omlegg innenfor anbefalt
+  (sjekkes av test i `hus.test.js`). Spør før det erstatter et hus med innhold.
 
 ## Tester
 - `npm test` (eller `node --test`) kjører alle tester i `test/`.

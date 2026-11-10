@@ -308,3 +308,21 @@ test('Forslag gjennom huset: retter ulikt bord i hjørnet, sier hvilke nabovegge
   assert.ok(begge);
   assert.deepEqual(begge.naboer.map((n) => [n.navn, n.bedre]), [['Vegg 1', true], ['Vegg 3', true]]);
 });
+
+test('Eksempelhuset i appen: fire vegger som alle går opp med omlegg innenfor anbefalt', async () => {
+  const { EKSEMPELHUS } = await import('../src/skjerm/eksempel.js');
+  const { lagHjorneoversikt, kontrollerFirkant } = await import('../src/tommermann/hus.js');
+  assert.deepEqual(EKSEMPELHUS.vegger.map((v) => [v.navn, v.lengde]), [['Sør', 8000], ['Øst', 6000], ['Nord', 8000], ['Vest', 6000]]);
+  const svar = losHus(EKSEMPELHUS).vegger;
+  for (const r of svar) {
+    assert.equal(r.ok, true, r.navn);
+    assert.ok(r.felt.every((f) => f.ok && f.losning.innenforAnbefalt), r.navn);
+    // Ingen varsler som må fikses eller bør sjekkes (spikring, ulikt bord i hjørnet)
+    assert.deepEqual(r.varsler.filter((v) => v.alvorlig || ['spikring', 'hjorne-bord'].includes(v.type)), [], r.navn);
+  }
+  // Motstående vegger er like lange, og alle fire hjørner henger sammen
+  assert.deepEqual(kontrollerFirkant(EKSEMPELHUS.vegger), []);
+  const { hjorner: alleHjorner } = lagHjorneoversikt({ vegger: EKSEMPELHUS.vegger, resultater: svar, lukket: true });
+  assert.equal(alleHjorner.length, 4);
+  assert.ok(alleHjorner.every((h) => !h.feil && h.likeBord));
+});
