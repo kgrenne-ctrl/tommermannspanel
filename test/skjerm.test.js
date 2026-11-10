@@ -2,7 +2,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lesTall, mm } from '../src/skjerm/format.js';
+import { lesTall, mm, trygtNavn } from '../src/skjerm/format.js';
 import { tegnFelt, tegnVegg, tegnSnitt, tegnHjorne, tegnHus } from '../src/skjerm/tegning.js';
 import { losFelt } from '../src/tommermann/solver.js';
 import { losHus } from '../src/tommermann/hus.js';
@@ -148,4 +148,12 @@ test('Husskissen: fire vegger går i ring, og veggen som går forbi vises i hjø
   // Feil lengde: huset går ikke i ring
   const skjev = tegnHus({ vegger: vegger.map((v, i) => (i === 2 ? { ...v, lengde: 3500 } : v)), hjorner: o.hjorner, lukket: true });
   assert.match(skjev, /data-glipe="ja"/);
+});
+
+test('trygtNavn tar bort tegn som ville blitt lest som kode i siden', () => {
+  assert.equal(trygtNavn('  Vegg mot nord '), 'Vegg mot nord');
+  assert.equal(trygtNavn('<b>Sør</b>'), 'bSør/b');
+  assert.equal(trygtNavn('Vegg 2 & garasje'), 'Vegg 2 & garasje');
+  assert.equal(trygtNavn(undefined), '');
+  assert.equal(trygtNavn('<>'), '');
 });

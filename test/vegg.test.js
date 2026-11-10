@@ -402,3 +402,25 @@ test('Lik avstand mellom påbordene: Kennys vegg (6650 mm, 98 mm bord) går fra 
     assert.ok(Math.abs((v1.tilEksakt - o.fraEksakt) - (o.tilEksakt - h1.fraEksakt)) < 1e-9);
   }
 });
+
+test('Kløyvde påbord: varselet om stort omlegg blir stående med nytt tall når omlegget fortsatt er over anbefalt', () => {
+  const r = losVegg({ lengde: 6233, hoyde: 2400, bu: 173, bo: 148, startvalg: 'lik', apninger: [
+    { type: 'vindu', x: 768, bredde: 1353, hoyde: 1200, bunn: 900 },
+    { type: 'vindu', x: 3019, bredde: 737, hoyde: 1200, bunn: 900 }] });
+  const kloyvde = r.felt.filter((f) => f.ok && f.losning.kloyvdPabord);
+  assert.ok(kloyvde.length > 0, 'veggen skal ha minst ett felt med kløyvde påbord');
+  for (const f of r.felt.filter((x) => x.ok)) {
+    const varsel = r.varsler.find((v) => v.felt === f.navn && v.type === 'omlegg-over-maks');
+    if (f.losning.omlegg > 30 + 1e-6) {
+      // Tallet i varselet er omlegget slik feltet faktisk blir, med komma som desimaltegn
+      assert.ok(varsel, `${f.navn} mangler varsel (omlegg ${f.losning.omlegg})`);
+      assert.ok(varsel.tekst.includes(`${String(Math.round(f.losning.omlegg * 10) / 10).replace('.', ',')} mm`), varsel.tekst);
+    } else {
+      assert.equal(varsel, undefined, `${f.navn} har varsel uten grunn`);
+    }
+  }
+  // Kløyvingen er alltid i hele millimeter
+  for (const f of kloyvde) assert.ok(Number.isInteger(f.losning.kloyvdPabord.bredde));
+  const forste = r.felt.find((f) => f.navn === 'Venstre hjørne – Vindu 1');
+  assert.ok(forste.losning.kloyvdPabord && forste.losning.omlegg > 30);
+});

@@ -23,7 +23,9 @@ export const STANDARD_VEGG = Object.freeze({
   karmBord: 'O',        // hvilket bord som går inn på karmen: 'O' påbord, 'U' underbord
   hjorneVenstre: 'O',   // hva veggen starter med i venstre hjørne
   hjorneHoyre: 'O',     // hva veggen slutter med i høyre hjørne
-  startvalg: 'venstre', // 'venstre', 'hoyre', 'midten' eller 'apning:N' (midten av åpning N)
+  // 'venstre', 'hoyre', 'midten', 'apning:N' (åpning N først), 'jevnt' eller 'lik' (se vegg.js).
+  // Skjermen starter nye vegger med 'lik' (vegg-skjerm.js).
+  startvalg: 'venstre',
 
   // Hjørner (fase 4, Kenny 2026-11-09). Hvor mye lengre feltet blir enn vegglengden i hvert
   // hjørne: pluss når kledningen går forbi hjørnet, minus ved hjørnekasse. Regnes ut av hus.js.
@@ -42,9 +44,9 @@ export const STANDARD_VEGG = Object.freeze({
   tykkelseOver: 19,
 });
 
-// Standard bordbredder (godkjent 2026-11-08).
 // Hjørnetype: 'forbi' (kledningen går forbi hjørnet), 'mot' (slutter mot naboveggen, som
 // går forbi) eller 'kasse' (slutter mot hjørnekasse). Én vegg alene starter og slutter rett.
 export const STANDARD_HJORNE = Object.freeze({ type: 'mot', kasse: 98 });
 
+// Standard bordbredder (godkjent 2026-11-08).
 export const STANDARD_BREDDER = Object.freeze([73, 98, 123, 148, 173, 198, 223]);

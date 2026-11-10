@@ -80,10 +80,7 @@ function byggLosning(L, bu, bo, start, slutt, k, g, inn) {
 
   const varsler = [];
   if (o > inn.oMax + SLINGRING) {
-    varsler.push({
-      type: 'omlegg-over-maks',
-      tekst: `Omlegget blir ${en(o)} mm, over anbefalt ${inn.oMax} mm.`,
-    });
+    varsler.push(omleggVarsel(o, inn.oMax));
   }
 
   // Overligger i kanten har ingen underligger bak seg ytterst, så den trenger underlag.
@@ -97,10 +94,7 @@ function byggLosning(L, bu, bo, start, slutt, k, g, inn) {
 
   const spikring = sjekkSpikring(bo, g, inn);
   if (!spikring.ok) {
-    varsler.push({
-      type: 'spikring',
-      tekst: `Klossen blir bare ${en(g)} mm. Påbordet skal ha ${spikring.antallSpikre} spikre, og de trenger minst ${spikring.kreverKlaring} mm. Ellers går spikeren gjennom underbordet også.`,
-    });
+    varsler.push(spikerVarsel(g, spikring));
   }
 
   return {
@@ -132,6 +126,19 @@ function bord(fraEksakt, tilEksakt) {
 // Én desimal med komma, slik det skrives på norsk.
 function en(tall) {
   return (Math.round(tall * 10) / 10).toString().replace('.', ',');
+}
+
+// Varslene om omlegg og spikring brukes også når vegg.js legger ut et felt på nytt med
+// kløyvde bord. Teksten står bare her, så den er lik begge steder.
+export function omleggVarsel(o, oMax) {
+  return { type: 'omlegg-over-maks', tekst: `Omlegget blir ${en(o)} mm, over anbefalt ${oMax} mm.` };
+}
+
+export function spikerVarsel(g, spikring) {
+  return {
+    type: 'spikring',
+    tekst: `Klossen blir bare ${en(g)} mm. Påbordet skal ha ${spikring.antallSpikre} spikre, og de trenger minst ${spikring.kreverKlaring} mm. Ellers går spikeren gjennom underbordet også.`,
+  };
 }
 
 function kontrollerInndata(L, bu, bo, start, slutt, inn) {

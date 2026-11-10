@@ -6,7 +6,7 @@ import { losFelt } from '../tommermann/solver.js';
 import { STANDARD_INNSTILLINGER } from '../tommermann/fagverdier.js';
 import { tegnFelt } from './tegning.js';
 import { lesTall, mm } from './format.js';
-import { fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
+import { EGEN, fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
 import './vegg-skjerm.js';
 
@@ -77,7 +77,7 @@ function settTilstand(t) {
       if (!t[id]) continue;
       finn(`${id}-valg`).value = t[id].valg;
       finn(`${id}-egen`).value = t[id].egen ?? '';
-      finn(`${id}-egen`).hidden = t[id].valg !== 'egen';
+      finn(`${id}-egen`).hidden = t[id].valg !== EGEN;
     }
     if (t.start) skjema.elements.start.value = t.start;
     if (t.slutt) skjema.elements.slutt.value = t.slutt;

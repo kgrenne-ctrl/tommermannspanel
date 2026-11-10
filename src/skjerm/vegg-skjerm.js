@@ -6,8 +6,8 @@ import { losHus, naboer, speilHjorne, lagHjorneoversikt, hjorneLinjer, kontrolle
 import { lagMaterialliste, materialTekst, STANDARD_MATERIALER } from '../tommermann/materialer.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG, STANDARD_HJORNE } from '../tommermann/fagverdier.js';
 import { tegnVegg, tegnSnitt, tegnHjorne, tegnHus } from './tegning.js';
-import { lesTall, mm } from './format.js';
-import { fyllBreddevalg, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
+import { lesTall, mm, trygtNavn } from './format.js';
+import { EGEN, fyllBreddevalg, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
 import { lagUtskrift, lesEksempeldata } from './utskrift.js';
 
@@ -165,7 +165,8 @@ resultat.addEventListener('click', (hendelse) => {
   if (knapp.id === 'v-finn-forslag') {
     // Hjørnene regnes ut av huset (naboveggene), så de tas med som de er
     const inndata = { ...lesSkjema(), forlengVenstre: sisteResultat.forleng.venstre,
-      forlengHoyre: sisteResultat.forleng.hoyre };
+      forlengHoyre: sisteResultat.forleng.hoyre, klyvVenstre: sisteResultat.klyv.venstre,
+      klyvHoyre: sisteResultat.klyv.hoyre };
     sisteForslag = foreslaVegg(inndata);
     // Husk utgangspunktet, så man kan gå tilbake til det
     const { bu, bo, karmBord, hjorneVenstre, hjorneHoyre, startvalg } = inndata;
@@ -348,7 +349,7 @@ function settTilstand(t) {
 // ---------- Veggene i huset ----------
 
 function veggNavn(t, k) {
-  return t?.navn?.trim() ? t.navn.trim() : `Vegg ${k + 1}`;
+  return trygtNavn(t?.navn) || `Vegg ${k + 1}`;
 }
 
 function byttVegg(k) {
@@ -450,10 +451,10 @@ function fyllEksempel() {
 // ---------- Lese skjema og vise resultat ----------
 
 // Fra lagret tekst til tall for regnemodellen. Gir null når veggen ikke er ferdig utfylt.
-function tilInndata(t) {
-  const bredde = (b) => (b.valg === 'egen' ? lesTall(b.egen) : Number(b.valg));
+function tilInndata(t, k = hus.vegger.indexOf(t)) {
+  const bredde = (b) => (b.valg === EGEN ? lesTall(b.egen) : Number(b.valg));
   const inndata = {
-    navn: veggNavn(t, hus.vegger.indexOf(t)),
+    navn: veggNavn(t, k),
     lengde: lesTall(t.lengde),
     hoyde: lesTall(t.hoyde),
     bu: bredde(t.vbu ?? { valg: '148' }),
@@ -720,9 +721,12 @@ function visVarsler(r) {
   if (omlegg.length) {
     const tall = omlegg.map((v) => nr(v.felt)).filter(Boolean);
     const storst = Math.max(...r.felt.filter((f) => f.ok).map((f) => f.losning.omlegg));
+    // Forslag om kløyvde underbord finnes ikke for alle felt (og ikke ved lik avstand mellom påbordene)
+    const kanKloyves = r.felt.some((f) => f.ok && f.kloyvForslag);
     vite.push(`<p>Felt ${liste(tall)} får omlegg over ${mm(r.rytme.maks)} mm (størst ${mm(storst, 1)} mm).
-      Det går an, men er mer enn anbefalt. Under «Slik setter du opp» står det hvor kløyvde underbord
-      kan gi 25 mm, og «Finn bedre oppsett» kan finne noe bedre.</p>`);
+      Det går an, men er mer enn anbefalt. ${kanKloyves ? `Under «Slik setter du opp» står det hvor kløyvde
+      underbord kan gi mindre omlegg, og «Finn bedre oppsett» kan finne noe bedre.`
+    : '«Finn bedre oppsett» kan finne noe bedre.'}</p>`);
   }
   if (hjorner.length) {
     const sider = hjorner.map((v) => (v.felt === 'Venstre hjørne' ? 'venstre' : 'høyre'));

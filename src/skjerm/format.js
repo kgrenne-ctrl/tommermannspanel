@@ -17,3 +17,9 @@ export function mm(tall, desimaler = 0) {
     maximumFractionDigits: desimaler,
   });
 }
+
+// Navn som brukeren skriver, settes rett inn i siden og i tegningene. Tegnene < og > ville
+// blitt lest som kode og ødelagt visningen, så de tas bort.
+export function trygtNavn(tekst) {
+  return String(tekst ?? '').replace(/[<>]/g, '').trim();
+}

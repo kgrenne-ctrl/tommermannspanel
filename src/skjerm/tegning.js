@@ -9,6 +9,9 @@
 
 import { mm } from './format.js';
 
+// Synlig karm rundt vinduer og dører i tegningene, i mm. Bare til pynt, ingen regning bygger på den.
+const KARMBREDDE = 60;
+
 export function tegnFelt(losning) {
   const { L, underliggere, overliggere, trengerUnderlag } = losning;
 
@@ -90,7 +93,6 @@ export function tegnVegg(vegg, snittHoyde = null) {
   const yMal = H + kant * 2;
   const hoyde = yMal + skrift * 1.6;
   const y = (verdi) => H - verdi; // SVG teller ovenfra, veggen nedenfra
-  const karmbredde = 60;
 
   const deler = [];
   deler.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="var(--bakgrunn)" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
@@ -98,7 +100,7 @@ export function tegnVegg(vegg, snittHoyde = null) {
   // Karm (utvendig karmmål) med glass/dørblad innenfor
   for (const a of apninger) {
     deler.push(`<rect data-apning="${a.navn}" x="${a.x}" y="${y(a.bunn + a.hoyde)}" width="${a.bredde}" height="${a.hoyde}" fill="var(--karm)" stroke="var(--tekst)" stroke-width="${strek * 2}"/>`);
-    deler.push(`<rect x="${a.x + karmbredde}" y="${y(a.bunn + a.hoyde) + karmbredde}" width="${Math.max(a.bredde - 2 * karmbredde, 0)}" height="${Math.max(a.hoyde - 2 * karmbredde, 0)}" fill="var(--glass)" stroke="var(--tekst-gra)" stroke-width="${strek}"/>`);
+    deler.push(`<rect x="${a.x + KARMBREDDE}" y="${y(a.bunn + a.hoyde) + KARMBREDDE}" width="${Math.max(a.bredde - 2 * KARMBREDDE, 0)}" height="${Math.max(a.hoyde - 2 * KARMBREDDE, 0)}" fill="var(--glass)" stroke="var(--tekst-gra)" stroke-width="${strek}"/>`);
   }
 
   // Hjørnekasse: kledningen starter ved kassa
@@ -194,7 +196,7 @@ export function tegnSnitt(vegg, snittHoyde) {
   const gjennom = apninger.filter((a) => snittHoyde > a.bunn && snittHoyde < a.bunn + a.hoyde);
   for (const a of gjennom) {
     deler.push(`<rect data-karm="${a.navn}" x="${a.x}" y="${karmTopp}" width="${a.bredde}" height="${karmBunn - karmTopp}" fill="var(--karm)" stroke="var(--tekst)" stroke-width="${strek}"/>`);
-    deler.push(`<line x1="${a.x + 60}" y1="${(karmTopp + karmBunn) / 2}" x2="${a.x + a.bredde - 60}" y2="${(karmTopp + karmBunn) / 2}" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
+    deler.push(`<line x1="${a.x + KARMBREDDE}" y1="${(karmTopp + karmBunn) / 2}" x2="${a.x + a.bredde - KARMBREDDE}" y2="${(karmTopp + karmBunn) / 2}" stroke="var(--tekst-gra)" stroke-width="${strek * 2}"/>`);
     deler.push(`<text x="${a.x + a.bredde / 2}" y="${karmTopp - skrift * 0.4}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)">${a.navn}</text>`);
   }
 
@@ -217,14 +219,14 @@ export function tegnSnitt(vegg, snittHoyde) {
   // karmen ligger an på karmen og trenger ikke kloss, Kenny 2026-11-08.)
   const underbord = aktive.filter((f) => f.ok).flatMap((f) => f.underliggere)
     .sort((a, b) => a.fraEksakt - b.fraEksakt);
-  const underlag = (fra, til) => {
+  const merkUnderlag = (fra, til) => {
     if (til - fra > 1) {
       deler.push(`<rect data-underlag="ja" x="${fra}" y="${yU}" width="${til - fra}" height="${t}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="${strek * 2}" stroke-dasharray="10 6"/>`);
     }
   };
   const kledning = vegg.kledning ?? { fra: 0, til: W };
-  if (vegg.hjorneVenstre === 'O' && underbord.length) underlag(kledning.fra, underbord[0].fraEksakt);
-  if (vegg.hjorneHoyre === 'O' && underbord.length) underlag(underbord.at(-1).tilEksakt, kledning.til);
+  if (vegg.hjorneVenstre === 'O' && underbord.length) merkUnderlag(kledning.fra, underbord[0].fraEksakt);
+  if (vegg.hjorneHoyre === 'O' && underbord.length) merkUnderlag(underbord.at(-1).tilEksakt, kledning.til);
 
   // Hjørnene: naboveggens kledning (grå) og hjørnekasse. Naboveggen står på tvers, så den
   // går oppover i tegningen fra hjørnet. Går kledningen forbi, dekker den enden av naboens

@@ -21,11 +21,3 @@ export function hent(nokkel) {
     return null;
   }
 }
-
-export function slett(nokkel) {
-  try {
-    window.localStorage.removeItem(PREFIKS + nokkel);
-  } catch {
-    // ignorer
-  }
-}

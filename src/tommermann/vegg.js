@@ -29,11 +29,11 @@
 // - jevnt:     alle innlegg velges samtidig, jevnest omlegg over hele veggen (velgJevnt)
 // - lik:       lik avstand mellom påbordene over hele veggen, kløyv påbord som nødløsning (velgLikAvstand)
 
-import { losFeltFleksibel, sjekkSpikring } from './solver.js';
-import { STANDARD_INNSTILLINGER, STANDARD_VEGG } from './fagverdier.js';
+import { losFeltFleksibel, sjekkSpikring, omleggVarsel, spikerVarsel } from './solver.js';
+import { STANDARD_INNSTILLINGER, STANDARD_VEGG, STANDARD_BREDDER } from './fagverdier.js';
 
 const SLINGRING = 1e-6;
-const MINSTE_APNING = 300; // mm. Mindre enn dette er nesten alltid et tastefeil.
+const MINSTE_APNING = 300; // mm. Mindre enn dette er nesten alltid en tastefeil.
 const TYPENAVN = { vindu: 'Vindu', dor: 'Dør', port: 'Port' };
 
 export function losVegg(inndata) {
@@ -282,7 +282,7 @@ function feltMotMaal(svar, G, inn) {
     let r = 0;
     if (avstand < G - inn.avvikPabord - SLINGRING && inni > 0) {
       // Kløyv akkurat nok til å komme innenfor avviket (hele mm), men ikke under minste omlegg
-      const maks = Math.min(inn.maksKloyvPabord, inn.bo - l.klaring - 2 * inn.oMin);
+      const maks = Math.floor(Math.min(inn.maksKloyvPabord, inn.bo - l.klaring - 2 * inn.oMin) + SLINGRING);
       r = Math.max(0, Math.min(maks, Math.ceil(G - inn.avvikPabord - avstand - SLINGRING)));
       // Under 3 mm er det ikke verdt å kløyve (sagsnittet alene er nesten så mye)
       if (r > 0 && r < 3) r = maks >= 3 ? 3 : 0;
@@ -318,35 +318,31 @@ function velgLikAvstand(apninger, inn, e, kandidater) {
   if (gFra > gTil) { gFra = Math.ceil(inn.bu - 2 * inn.oMax); gTil = Math.floor(inn.bu - 2 * inn.oMin); }
   for (let G = gFra; G <= gTil; G += 1) {
     const kost = (m) => feltMotMaal(ledd(m), G, inn).kost;
-    let resultat;
-    if (n === 0) {
-      resultat = { kost: kost(0), spor: [] };
-    } else {
-      let rad = kandidater.map((v) => {
-        sett(0, v);
-        return { kost: leggSammen(leggSammen(leggSammen(null, kost(0)), kost(1)), innlegg(v)), spor: [v] };
-      });
-      for (let j = 1; j < n; j++) {
-        const forrige = rad;
-        rad = kandidater.map((v) => {
-          sett(j, v);
-          const over = leggSammen(kost(2 * j + 1), innlegg(v));
-          let b = null;
-          kandidater.forEach((u, i) => {
-            sett(j - 1, u);
-            const k = leggSammen(leggSammen(forrige[i].kost, kost(2 * j)), over);
-            if (!b || sammenlignKost(k, b.kost) < 0) b = { kost: k, spor: [...forrige[i].spor, v] };
-          });
-          return b;
+    // Veggen har alltid minst én åpning her (velgInnlegg gir seg ellers før den kommer hit)
+    let rad = kandidater.map((v) => {
+      sett(0, v);
+      return { kost: leggSammen(leggSammen(leggSammen(null, kost(0)), kost(1)), innlegg(v)), spor: [v] };
+    });
+    for (let j = 1; j < n; j++) {
+      const forrige = rad;
+      rad = kandidater.map((v) => {
+        sett(j, v);
+        const over = leggSammen(kost(2 * j + 1), innlegg(v));
+        let b = null;
+        kandidater.forEach((u, i) => {
+          sett(j - 1, u);
+          const k = leggSammen(leggSammen(forrige[i].kost, kost(2 * j)), over);
+          if (!b || sammenlignKost(k, b.kost) < 0) b = { kost: k, spor: [...forrige[i].spor, v] };
         });
-      }
-      resultat = null;
-      kandidater.forEach((v, i) => {
-        sett(n - 1, v);
-        const k = leggSammen(rad[i].kost, kost(2 * n));
-        if (!resultat || sammenlignKost(k, resultat.kost) < 0) resultat = { kost: k, spor: rad[i].spor };
+        return b;
       });
     }
+    let resultat = null;
+    kandidater.forEach((v, i) => {
+      sett(n - 1, v);
+      const k = leggSammen(rad[i].kost, kost(2 * n));
+      if (!resultat || sammenlignKost(k, resultat.kost) < 0) resultat = { kost: k, spor: rad[i].spor };
+    });
     if (!best || sammenlignKost(resultat.kost, best.kost) < 0) best = { ...resultat, G };
   }
   best.spor.forEach((v, j) => sett(j, v));
@@ -524,7 +520,9 @@ function byggFelt({ type, navn, x0, x1, deler, svar, innlegg, fjernDelte, karmBo
       ...l,
       omlegg,
       innenforAnbefalt: omlegg <= inn.oMax + SLINGRING,
-      varsler: l.varsler.filter((v) => v.type !== 'omlegg-over-maks'),
+      // Varselet om omlegg gjelder det nye omlegget: det tas bort, eller står igjen med nytt tall
+      varsler: l.varsler.filter((v) => v.type !== 'omlegg-over-maks')
+        .concat(omlegg > inn.oMax + SLINGRING ? [omleggVarsel(omlegg, inn.oMax)] : []),
       kloyvdPabord: { bredde: inn.bo - pabordKloyv, antall },
     };
   }
@@ -616,8 +614,7 @@ function leggUtKloyvd(l, bredde, inn) {
     underliggere: underliggere.map(avrund),
     overliggere: overliggere.map(avrund),
     varsler: l.varsler.filter((v) => v.type !== 'omlegg-over-maks' && v.type !== 'spikring')
-      .concat(spikring.ok ? [] : [{ type: 'spikring',
-        tekst: `Klossen blir bare ${Math.round(g * 10) / 10} mm. Påbordet skal ha ${spikring.antallSpikre} spikre, og de trenger minst ${spikring.kreverKlaring} mm.` }]),
+      .concat(spikring.ok ? [] : [spikerVarsel(g, spikring)]),
     kloyvdUnderbord: { bredde, antall: t.nR },
   };
 }
@@ -635,11 +632,6 @@ function kloyvHjornebord(f, ende, k) {
   b.klyvd = k;
   b.bredde = b.tilEksakt - b.fraEksakt;
   f.hjornebord = { ...(f.hjornebord ?? {}), [ende]: { type: b.type, klyvd: k, bredde: b.bredde } };
-}
-
-// Ligger feltet i høyden y? (Feltet over og under en åpning har to høydeområder.)
-export function feltIHoyde(f, y) {
-  return f.deler.some(([y0, y1]) => y >= y0 && y <= y1);
 }
 
 // ---------- Navn og kontroll ----------
@@ -736,7 +728,7 @@ function sammenlign(a, b) {
 // Prøver andre valg for samme vegg og gir de beste oppsettene som er bedre enn dagens.
 // To grupper: med samme bordbredder (bare karm, hjørner og startvalg endres), og med
 // andre standardbredder. Hvert forslag sier hva som er endret.
-export function foreslaVegg(inndata, { bredder = [73, 98, 123, 148, 173, 198, 223], antall = 3 } = {}) {
+export function foreslaVegg(inndata, { bredder = STANDARD_BREDDER, antall = 3 } = {}) {
   const inn = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG, ...inndata };
   const naa = losVegg(inn);
   if (naa.feil) return { feil: naa.feil };
@@ -814,12 +806,8 @@ function hvaErEndret(fra, til) {
   return e;
 }
 
-// ---------- Merkeliste ----------
+// ---------- Oppsettliste og merkeliste ----------
 
-// Alle underbord på veggen i rekkefølge fra venstre, slik tømreren merker dem.
-// For hvert bord: løpende mål fra venstre hjørne, mål fra nærmeste karmkant til venstre
-// (tryggere enn å måle hele veien fra hjørnet), om bordet går i full høyde eller bare over
-// og under en åpning, og distanseklossen (klaringen) i feltet.
 // Referanse for mål i et felt: karmkanten til venstre for feltet, ellers venstre hjørne.
 function referanseFor(r, f) {
   if (f.type === 'overunder') {
@@ -868,6 +856,10 @@ export function lagOppsettliste(r) {
   });
 }
 
+// Merkeliste: alle underbord på veggen i rekkefølge fra venstre, slik tømreren merker dem.
+// For hvert bord: løpende mål fra venstre hjørne, mål fra nærmeste karmkant til venstre
+// (tryggere enn å måle hele veien fra hjørnet), om bordet går i full høyde eller bare over
+// og under en åpning, og distanseklossen (klaringen) i feltet.
 export function lagMerkeliste(r) {
   const rader = [];
   r.felt.forEach((f, i) => {

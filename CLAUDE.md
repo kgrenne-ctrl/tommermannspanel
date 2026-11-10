@@ -6,7 +6,7 @@ fasit. Er noe i planen uklart eller ser feil ut: spør Kenny før du koder, ikke
 ## Hvem appen er for
 - Bakøys egne tømrere, på mobilen i nettleseren, gjerne på stillaset.
 - Telefon først: store knapper, stor skrift, lite tekst. Ingen innlogging, ingen App Store.
-- Skal på sikt virke uten nett (PWA, fase 6).
+- Virker uten nett når den har vært åpnet én gang (se «Uten nett» under).
 
 ## Hvordan Kenny vil ha det
 - Kenny er prosjektleder og tømrer, og ny på koding. Forklar kort på norsk hva som gjøres og
@@ -53,7 +53,7 @@ Alle skal kunne endres i innstillinger.
   Innlegget er likt på begge sider av en åpning (Kenny 2026-11-08).
   Rekkefølge for å få delingen til å gå opp: juster innlegget innenfor 10–20 mm først, juster
   omlegget (20–30 mm) bare når innlegget ikke strekker til. Startvalget (venstre, høyre,
-  symmetrisk) avgjør hvor justeringen havner. Påbord inn på karm ligger an på karmen og
+  midten, en åpning, jevnest eller lik avstand) avgjør hvor justeringen havner. Påbord inn på karm ligger an på karmen og
   trenger IKKE kloss (Kenny 2026-11-08). Påbord i hjørnet trenger underlag.
 - **Synlig underligger (lagt til i fase 1, 2026-11-08):** `bu − 2·o` kan ikke være negativ.
   Ellers ligger to overliggere oppå hverandre. Ikke i planen, men fysisk umulig å bygge.
@@ -171,7 +171,7 @@ Alle skal kunne endres i innstillinger.
   like lange. Hjørnene er også med i teksten som deles. Bare utvendige hjørner støttes.
 - Bordtykkelse per vegg, standard 19 mm for både underbord og påbord (antakelse, kan endres).
 - Skjermen viser én vegg om gangen med veggene som knapper øverst (status per vegg). Huset lagres
-  under nøkkelen `hus` ({ vegger, aktiv, lukket }). Gammel nøkkel `vegg` blir første vegg.
+  under nøkkelen `hus` ({ vegger, aktiv, lukket, materialer }). Gammel nøkkel `vegg` blir første vegg.
   Hjørnet på veggen som vises, bestemmer hjørnet på naboveggen (`synkHjorner`).
 
 ## Materialer (fase 5, avklart med Kenny 2026-11-09)
@@ -214,10 +214,15 @@ Claude-mappe. Ved uenighet gjelder den fila.
 ```
 index.html            siden som åpnes i nettleseren
 css/stil.css          utseende, fargene øverst
-assets/               logo
-src/tommermann/       regnemodellen for tømmermannskledning
-src/skjerm/           skjermdelen (felt, vegg, tegning, tallformat, felles biter, versjonssjekk)
+sw.js                 lagrer appen på telefonen, så den virker uten nett
+manifest.webmanifest  navn og ikon når appen legges på hjemskjermen
+versjon.json          versjonsnummeret appen sjekker mot (skrives ved commit)
+assets/               logo og app-ikoner
+src/tommermann/       regnemodellen: felt, vegg, hus (hjørner), materialer, fagverdier
+src/skjerm/           skjermdelen (felt, vegg, tegning, utskrift, lagring, tallformat, felles
+                      biter, versjonssjekk)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)
+scripts/lag-ikon.swift lager app-ikonene
 .githooks/            git-kroker (pre-commit setter versjon)
 test/                 automatiske tester
 PLAN.md               planen (fasit)
