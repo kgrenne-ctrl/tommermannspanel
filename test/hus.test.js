@@ -227,3 +227,84 @@ test('Målkontroll: motstående vegger i et firkantet hus skal være like lange'
   assert.match(feil[0], /Vegg 1 \(3000 mm\) og Vegg 3 \(3100 mm\).*100 mm forskjell/);
   assert.deepEqual(kontrollerFirkant(v([3000, 5000, 3000])), []); // bare for fire vegger
 });
+
+// ---------- Forslag regnet gjennom huset (Kenny 2026-11-10) ----------
+
+const vindu = (x, bredde = 1000) => ({ type: 'vindu', x, bredde, hoyde: 1200, bunn: 900 });
+const hjorner = (venstre, hoyre) => ({ venstre: { type: venstre }, hoyre: { type: hoyre } });
+const FIRE = { lukket: true, vegger: [
+  { navn: 'Vegg 1', lengde: 4300, hoyde: 2400, bu: 148, bo: 148, hjorner: hjorner('forbi', 'forbi'), startvalg: 'venstre', apninger: [vindu(700)] },
+  { navn: 'Vegg 2', lengde: 6000, hoyde: 2400, bu: 148, bo: 148, hjorner: hjorner('mot', 'mot'), apninger: [vindu(900), vindu(3500)] },
+  { navn: 'Vegg 3', lengde: 4300, hoyde: 2400, bu: 148, bo: 148, hjorner: hjorner('forbi', 'forbi'), apninger: [] },
+  { navn: 'Vegg 4', lengde: 6000, hoyde: 2400, bu: 148, bo: 148, hjorner: hjorner('mot', 'mot'), apninger: [vindu(2000, 1400)] }] };
+const ulikeBord = (r) => r.varsler.filter((v) => v.type === 'hjorne-bord').length;
+// Tar forslaget i bruk på vegg k og regner hele huset på nytt
+const medForslag = (hus, k, forslag) => losHus({ ...hus,
+  vegger: hus.vegger.map((v, i) => (i === k ? { ...v, ...forslag.oppsett } : v)) }).vegger;
+
+test('Forslag gjennom huset: en vegg med frie ender får forslag som holder når hjørnebordet byttes', async () => {
+  const { foreslaHus } = await import('../src/tommermann/hus.js');
+  const { vurderVegg } = await import('../src/tommermann/vegg.js');
+  // I en fri ende regnes naboen som lik veggen selv. Byttes hjørnebordet, endres derfor også
+  // hvor langt feltet går. Regnet alene med hjørnene låst lovet «underbord i hjørnene»
+  // 35,2 mm som verste omlegg. Det blir 37,0 mm.
+  const hus = { vegger: [{ navn: 'Vegg 1', lengde: 4300, hoyde: 2400, bu: 148, bo: 148, startvalg: 'venstre',
+    hjorner: hjorner('mot', 'mot'), apninger: [vindu(700)] }] };
+  const f = foreslaHus(hus, 0);
+  const iHjornene = f.sammeBord.find((x) => x.endring.join() === 'underbord i hjørnene');
+  assert.ok(iHjornene, 'skal foreslå underbord i hjørnene');
+  assert.ok(Math.abs(iHjornene.vurdering.verstOmlegg - 37) < 0.05);
+  for (const x of [...f.sammeBord, ...f.andreBord]) {
+    assert.deepEqual(vurderVegg(medForslag(hus, 0, x)[0]), x.vurdering, x.endring.join(', '));
+    assert.deepEqual(x.naboer, []);
+  }
+});
+
+test('Forslag gjennom huset: bytter ikke hjørnebord når naboveggen har det samme, og rører ikke naboveggene', async () => {
+  const { foreslaHus } = await import('../src/tommermann/hus.js');
+  const { vurderVegg } = await import('../src/tommermann/vegg.js');
+  const naa = losHus(FIRE).vegger;
+  let antall = 0;
+  for (let k = 0; k < 4; k++) {
+    const f = foreslaHus(FIRE, k, { antall: 10 });
+    for (const x of [...f.sammeBord, ...f.andreBord]) {
+      antall++;
+      assert.deepEqual([x.oppsett.hjorneVenstre, x.oppsett.hjorneHoyre], ['O', 'O'], `${x.endring.join(', ')} på vegg ${k + 1}`);
+      const etter = medForslag(FIRE, k, x);
+      assert.deepEqual(vurderVegg(etter[k]), x.vurdering);
+      etter.forEach((r, i) => { if (i !== k) assert.deepEqual(r.felt, naa[i].felt); });
+    }
+  }
+  assert.ok(antall > 0, 'huset skal ha vegger som får forslag');
+});
+
+test('Forslag gjennom huset: retter ulikt bord i hjørnet, sier hvilke nabovegger som endres, og gjør ingen dårligere', async () => {
+  const { foreslaHus } = await import('../src/tommermann/hus.js');
+  const { vurderVegg } = await import('../src/tommermann/vegg.js');
+  // Vegg 2 har underbord ytterst i begge hjørner, naboene (vegg 1 og 3) har påbord
+  const hus = { ...FIRE, vegger: FIRE.vegger.map((v, i) => (i === 1 ? { ...v, hjorneVenstre: 'U', hjorneHoyre: 'U' } : v)) };
+  const naa = losHus(hus).vegger;
+  assert.deepEqual(naa.map(ulikeBord), [1, 2, 1, 0]);
+  const f = foreslaHus(hus, 1, { antall: 20 });
+  const alle = [...f.sammeBord, ...f.andreBord];
+  const medNabo = alle.filter((x) => x.naboer.length);
+  assert.ok(medNabo.length > 0, 'skal finne forslag som endrer en nabovegg');
+  for (const x of alle) {
+    const etter = medForslag(hus, 1, x);
+    assert.deepEqual(vurderVegg(etter[1]), x.vurdering, x.endring.join(', '));
+    assert.ok(ulikeBord(etter[1]) <= ulikeBord(naa[1]));
+    for (const i of [0, 2]) {
+      // Naboveggen står i forslaget akkurat når den blir annerledes, og den blir aldri dårligere
+      const endret = JSON.stringify(etter[i].felt) !== JSON.stringify(naa[i].felt) || ulikeBord(etter[i]) !== ulikeBord(naa[i]);
+      const nabo = x.naboer.find((n) => n.navn === hus.vegger[i].navn);
+      assert.equal(Boolean(nabo), endret, `${x.endring.join(', ')}: ${hus.vegger[i].navn}`);
+      const a = vurderVegg(etter[i]); const b = vurderVegg(naa[i]);
+      assert.ok(ulikeBord(etter[i]) <= ulikeBord(naa[i]));
+      assert.ok(a.ikkeOpp <= b.ikkeOpp && a.spikring <= b.spikring && a.overMaks <= b.overMaks);
+    }
+  }
+  // Påbord i begge hjørner på vegg 2 fjerner varselet på begge naboveggene
+  const begge = medNabo.find((x) => x.oppsett.hjorneVenstre === 'O' && x.oppsett.hjorneHoyre === 'O');
+  assert.ok(begge);
+  assert.deepEqual(begge.naboer.map((n) => [n.navn, n.bedre]), [['Vegg 1', true], ['Vegg 3', true]]);
+});

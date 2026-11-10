@@ -8,7 +8,7 @@ import { lagUtskrift, lesEksempeldata } from '../src/skjerm/utskrift.js';
 
 const vegg = (navn, lengde, apninger = []) => ({ navn, lengde, hoyde: 2400, bu: 148, bo: 148, tykkelseUnder: 19,
   tykkelseOver: 19, karmBord: 'O', hjorneVenstre: 'O', hjorneHoyre: 'O', startvalg: 'venstre', innleggMin: 10,
-  innleggStandard: 15, innleggMax: 20, oMin: 20, oIdeal: 25, oMax: 30, apninger, kloyvUnderbord: {},
+  innleggStandard: 15, innleggMax: 20, oMin: 20, oIdeal: 25, oMax: 30, apninger,
   hjorner: { venstre: { type: 'mot', kasse: 98 }, hoyre: { type: 'forbi', kasse: 98 } } });
 
 test('Utskriften har all inndata, resultater for hver vegg, huset og data som gjenskaper det', () => {

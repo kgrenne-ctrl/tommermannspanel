@@ -37,7 +37,6 @@ function inndataTabell(v) {
     const bord = side === 'venstre' ? v.hjorneVenstre : v.hjorneHoyre;
     return `${HJORNETYPE[h.type] ?? h.type}, ${BORD[bord] ?? bord} ytterst${h.type === 'kasse' ? `, kasse ${tall(h.kasse)} mm` : ''}`;
   };
-  const kloyv = Object.entries(v.kloyvUnderbord ?? {});
   return `<table class="u-tabell"><tbody>${rader([
     ['Vegglengde', `${tall(v.lengde)} mm`],
     ['Vegghøyde', `${tall(v.hoyde)} mm`],
@@ -49,8 +48,7 @@ function inndataTabell(v) {
     ['Start inndelingen', startNavn(v.startvalg)],
     ['Innlegg på karm (min / standard / maks)', `${tall(v.innleggMin)} / ${tall(v.innleggStandard)} / ${tall(v.innleggMax)} mm`],
     ['Omlegg (min / ideelt / varsel over)', `${tall(v.oMin)} / ${tall(v.oIdeal)} / ${tall(v.oMax)} mm`],
-    ['Avvik mellom påbord før kløyving / største kløyving', `±${tall(v.avvikPabord ?? 5)} / ${tall(v.maksKloyvPabord ?? 20)} mm`],
-    ['Kløyvde underbord valgt', kloyv.length ? kloyv.map(([n, b]) => `${vask(n)}: ${tall(b)} mm`).join('; ') : 'Ingen'],
+    ['Godtatt avvik i avstand mellom påbord', `±${tall(v.avvikPabord ?? 5)} mm`],
   ])}</tbody></table>
   <table class="u-tabell"><thead><tr><th>Åpning</th><th>Fra venstre hjørne</th><th>Bredde</th><th>Høyde på karm</th><th>Fra bakken</th></tr></thead>
     <tbody>${(v.apninger ?? []).length ? v.apninger.map((a, i) => `<tr><td>${i + 1}. ${TYPENAVN[a.type] ?? a.type}</td>
@@ -62,9 +60,6 @@ function oppsettTabell(r) {
   const linjer = lagOppsettliste(r).map((o) => {
     if (!o.ok) return `<tr class="u-feil"><td>${o.nr}</td><td>${vask(o.navn)}</td><td colspan="6">${vask(o.melding)}</td></tr>`;
     const merk = [];
-    if (o.kloyvdPabord) merk.push(`${o.kloyvdPabord.antall} påbord kløyvd til ${tall(o.kloyvdPabord.bredde)} mm`);
-    if (o.kloyvdUnderbord) merk.push(`${o.kloyvdUnderbord.antall} underbord kløyvd til ${tall(o.kloyvdUnderbord.bredde)} mm`);
-    if (o.kloyvForslag) merk.push(`Forslag: kløyv ${o.kloyvForslag.antall} underbord til ${tall(o.kloyvForslag.bredde)} mm`);
     for (const h of o.hjornebord) merk.push(`Hjørnebord kløyves til ${tall(h.bredde, 1)} mm`);
     return `<tr${o.innenforAnbefalt ? '' : ' class="u-varsel"'}><td>${o.nr}</td><td>${vask(o.navn)}</td>
       <td>${tall(o.fra)}<br><small>${karmTekst(o.fraReferanse, o.referanse)}</small></td>

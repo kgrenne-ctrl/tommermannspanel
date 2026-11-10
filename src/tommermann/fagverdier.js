@@ -24,8 +24,8 @@ export const STANDARD_VEGG = Object.freeze({
   hjorneVenstre: 'O',   // hva veggen starter med i venstre hjørne
   hjorneHoyre: 'O',     // hva veggen slutter med i høyre hjørne
   // 'venstre', 'hoyre', 'midten', 'apning:N' (åpning N først), 'jevnt' eller 'lik' (se vegg.js).
-  // Skjermen starter nye vegger med 'lik' (vegg-skjerm.js).
-  startvalg: 'venstre',
+  // Lik avstand mellom påbordene er standard (Kenny 2026-11-09 og 2026-11-10).
+  startvalg: 'lik',
 
   // Hjørner (fase 4, Kenny 2026-11-09). Hvor mye lengre feltet blir enn vegglengden i hvert
   // hjørne: pluss når kledningen går forbi hjørnet, minus ved hjørnekasse. Regnes ut av hus.js.
@@ -35,10 +35,9 @@ export const STANDARD_VEGG = Object.freeze({
   // på naboveggen, så hjørnet ser like bredt ut fra begge sider (Kenny 2026-11-09).
   klyvVenstre: 0,
   klyvHoyre: 0,
-  // Lik avstand mellom påbordene (Kenny 2026-11-09): hvor mye avstanden kan avvike fra felles mål
-  // før påbordene i feltet kløyves, og hvor mye et påbord høyst kløyves. Antakelser, kan endres.
+  // Lik avstand mellom påbordene (Kenny 2026-11-09): hvor mye avstanden i et felt kan avvike fra
+  // felles mål uten at det teller som avvik. Antakelse, kan endres.
   avvikPabord: 5,
-  maksKloyvPabord: 20,
   // Bordtykkelse. 19 mm er en antakelse om vanlig kledning, kan endres per vegg.
   tykkelseUnder: 19,
   tykkelseOver: 19,

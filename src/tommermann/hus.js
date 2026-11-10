@@ -13,7 +13,7 @@
 // - 'kasse': kledningen slutter mot en hjørnekasse. Feltet blir kortere med kassebredden.
 // Vegglengden måles utenpå lektene, og målene regnes fra hjørnet på veggen.
 
-import { losVegg } from './vegg.js';
+import { losVegg, foreslaVegg } from './vegg.js';
 import { STANDARD_VEGG, STANDARD_HJORNE } from './fagverdier.js';
 
 const SPEIL = { forbi: 'mot', mot: 'forbi', kasse: 'kasse' };
@@ -70,10 +70,11 @@ export function naboer(k, antall, lukket) {
 //   navn, hjorner: { venstre: { type, kasse }, hoyre: { type, kasse } }.
 // En vegg kan være null (ikke ferdig utfylt). Den regnes ikke, men den er fortsatt nabo.
 // For en fri ende (ingen nabovegg) regnes naboen som lik veggen selv.
-export function losHus({ vegger, lukket = true }) {
+// Med `bare` (liste med veggnummer) regnes bare de veggene. Resten er fortsatt naboer.
+export function losHus({ vegger, lukket = true, bare = null }) {
   const n = vegger.length;
   const ut = vegger.map((v, k) => {
-    if (!v) return null;
+    if (!v || (bare && !bare.includes(k))) return null;
     const nb = naboer(k, n, lukket);
     const hj = {
       venstre: { ...STANDARD_HJORNE, ...v.hjorner?.venstre },
@@ -123,6 +124,31 @@ export function losHus({ vegger, lukket = true }) {
     return r;
   });
   return { vegger: ut };
+}
+
+// «Finn bedre oppsett» for vegg k, regnet gjennom huset (Kenny 2026-11-10). Hvert forsøk regner
+// veggen med hjørnene slik huset gir dem, også når forsøket bytter bord ytterst i hjørnet.
+// Naboveggene merker bare hva veggen har ytterst i hjørnene, så de regnes én gang per
+// hjørnevalg og huskes. Se foreslaVegg i vegg.js for hva som tas med.
+export function foreslaHus({ vegger, lukket = true }, k, valg = {}) {
+  const nb = naboer(k, vegger.length, lukket);
+  // Naboveggene, og hvilket hjørne på vegg k hver av dem deler
+  const delt = [['venstre', nb.venstre], ['hoyre', nb.hoyre]].filter(([, i]) => i !== null && vegger[i]);
+  const naboNr = [...new Set(delt.map(([, i]) => i))];
+  const iHjornet = (vegg, side) => [side === 'venstre' ? vegg.hjorneVenstre : vegg.hjorneHoyre,
+    tykkelseIHjornet(vegg, side), innsideIHjornet(vegg, side), hjornebordTykkelse(vegg, side)];
+  const lager = new Map();
+  const regn = (forsok) => {
+    const alle = vegger.map((v, i) => (i === k ? forsok : v));
+    const r = losHus({ vegger: alle, lukket, bare: [k] }).vegger[k];
+    const naboSvar = naboNr.map((i) => {
+      const nokkel = JSON.stringify([i, delt.filter(([, j]) => j === i).map(([side]) => iHjornet(forsok, side))]);
+      if (!lager.has(nokkel)) lager.set(nokkel, losHus({ vegger: alle, lukket, bare: [i] }).vegger[i]);
+      return { navn: vegger[i].navn ?? `Vegg ${i + 1}`, r: lager.get(nokkel) };
+    });
+    return { r, naboer: naboSvar };
+  };
+  return foreslaVegg(vegger[k], { ...valg, regn });
 }
 
 function hjorneFeil(min, deres, naboNavn) {

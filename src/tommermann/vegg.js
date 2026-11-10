@@ -27,9 +27,9 @@
 // - midten:    det som ligger midt på veggen velges først, så utover mot hjørnene
 // - apning:N:  åpning N velges først, så utover mot hjørnene
 // - jevnt:     alle innlegg velges samtidig, jevnest omlegg over hele veggen (velgJevnt)
-// - lik:       lik avstand mellom påbordene over hele veggen, kløyv påbord som nødløsning (velgLikAvstand)
+// - lik:       lik avstand mellom påbordene over hele veggen (velgLikAvstand)
 
-import { losFeltFleksibel, sjekkSpikring, omleggVarsel, spikerVarsel } from './solver.js';
+import { losFeltFleksibel } from './solver.js';
 import { STANDARD_INNSTILLINGER, STANDARD_VEGG, STANDARD_BREDDER } from './fagverdier.js';
 
 const SLINGRING = 1e-6;
@@ -75,12 +75,6 @@ export function losVegg(inndata) {
   if (kH > 0) kloyvHjornebord(felt.at(-1), 'slutt', kH);
 
   const varsler = [];
-  for (const f of felt) {
-    if (f.kloyvUgyldig) {
-      varsler.push({ felt: f.navn, type: 'kloyv-ugyldig',
-        tekst: 'Kløyvingen som er valgt for feltet, passer ikke lenger med målene. Den er ikke brukt.' });
-    }
-  }
   for (const a of apninger) {
     // Åpenbart feile mål (for eksempel 1 mm høy dør) gir rare felt. Si fra.
     for (const [mal, verdi] of [['Høyden', a.hoyde], ['Bredden', a.bredde]]) {
@@ -269,46 +263,30 @@ function besteKjede(n, kandidater, sett, kost, innlegg) {
 
 // ---------- Lik avstand mellom påbordene (Kenny 2026-11-09) ----------
 // Slik en tømrer gjør det: alle felt sikter mot samme avstand mellom påbordene (G). Hvert felt
-// får det antallet bord som kommer nærmest. Avviker et felt fortsatt mer enn avvikPabord, kløyves
-// påbordene inni feltet (ikke påbordene ytterst, som deles med naboen eller står i hjørnet) så
-// mye som trengs, høyst maksKloyvPabord. Det synes mindre enn at avstanden varierer mye.
+// får det antallet bord som kommer nærmest. Bordene kløyves ikke (Kenny 2026-11-10), så felt
+// som ikke treffer, får stå med det avviket de har.
 //
-// Avstand mellom påbord = senteravstand − påbordets bredde = bu + g − bo + r (r = kløyving).
+// Avstand mellom påbord = senteravstand − påbordets bredde = bu + g − bo.
 // Omlegget blir da (bu − avstand)/2, så felles avstand gir også felles omlegg. Derfor prøves
 // G mellom bu − 2·oMax og bu − 2·oMin, og den G som gir best vegg, velges.
 //
 // Innleggene velges samtidig for hele veggen (kjede, som velgJevnt). For hvert felt huskes valget
-// (antall bord k og kløyving r) i inn.likValg, og lagFelt bruker det.
+// (antall bord k) i inn.likValg, og lagFelt bruker det.
 
-// Det beste valget for ett felt mot målet G: [går ikke opp, mm utenfor avviket, felt kløyvd,
-// mm kløyvd, spikervarsel, over maks, (avstand − G)², 0] og valget { k, r, avstand }.
+// Det beste valget for ett felt mot målet G: [går ikke opp, mm utenfor avviket, spikervarsel,
+// over maks, (avstand − G)², 0] og valget { k, avstand }.
 function feltMotMaal(svar, G, inn) {
-  if (svar.tom) return { kost: nullKost8(), valg: null };
-  if (!svar.ok) return { kost: [1, 0, 0, 0, 0, 0, 0, 0], valg: null };
+  if (svar.tom) return { kost: nullKost(), valg: null };
+  if (!svar.ok) return { kost: [1, 0, 0, 0, 0, 0], valg: null };
   let beste = null;
   for (const l of svar.alle) {
-    const nO = (l.start === 'O' ? 1 : 0) + (l.slutt === 'O' ? 1 : 0);
-    const inni = l.overliggere.length - nO; // påbord som kan kløyves
     const avstand = l.senteravstand - inn.bo;
-    let r = 0;
-    if (avstand < G - inn.avvikPabord - SLINGRING && inni > 0) {
-      // Kløyv akkurat nok til å komme innenfor avviket (hele mm), men ikke under minste omlegg
-      const maks = Math.floor(Math.min(inn.maksKloyvPabord, inn.bo - l.klaring - 2 * inn.oMin) + SLINGRING);
-      r = Math.max(0, Math.min(maks, Math.ceil(G - inn.avvikPabord - avstand - SLINGRING)));
-      // Under 3 mm er det ikke verdt å kløyve (sagsnittet alene er nesten så mye)
-      if (r > 0 && r < 3) r = maks >= 3 ? 3 : 0;
-    }
-    const ny = avstand + r;
-    const omlegg = (inn.bo - r - l.klaring) / 2;
-    const utenfor = Math.max(0, Math.abs(ny - G) - inn.avvikPabord);
-    const kost = [0, utenfor, r > 0 ? 1 : 0, r, l.spikring.ok ? 0 : 1, omlegg > inn.oMax + SLINGRING ? 1 : 0,
-      (ny - G) ** 2, 0];
-    if (!beste || sammenlignKost(kost, beste.kost) < 0) beste = { kost, valg: { k: l.antallUnderliggere, r, avstand: ny } };
+    const utenfor = Math.max(0, Math.abs(avstand - G) - inn.avvikPabord);
+    const kost = [0, utenfor, l.spikring.ok ? 0 : 1, l.omlegg > inn.oMax + SLINGRING ? 1 : 0, (avstand - G) ** 2, 0];
+    if (!beste || sammenlignKost(kost, beste.kost) < 0) beste = { kost, valg: { k: l.antallUnderliggere, avstand } };
   }
   return beste;
 }
-
-const nullKost8 = () => [0, 0, 0, 0, 0, 0, 0, 0];
 
 function velgLikAvstand(apninger, inn, e, kandidater) {
   const n = apninger.length;
@@ -320,7 +298,7 @@ function velgLikAvstand(apninger, inn, e, kandidater) {
     if (!lager.has(nokkel)) lager.set(nokkel, regnLedd(m, e, apninger, inn));
     return lager.get(nokkel);
   };
-  const innlegg = (v) => { const k = nullKost8(); k[7] = Math.abs(v - inn.innleggStandard); return k; };
+  const innlegg = (v) => { const k = nullKost(); k[5] = Math.abs(v - inn.innleggStandard); return k; };
 
   let best = null;
   // Målet holdes så langt inn at hele avviket (±) gir omlegg mellom minimum og maks
@@ -415,12 +393,12 @@ function harOverEllerUnder(a, H) {
 function lagFelt(m, svarInn, e, apninger, inn) {
   const n = apninger.length;
   if (svarInn.tom) return [];
-  // Lik avstand: bruk antallet bord som ble valgt for feltet, og kløyv påbordene inni om valgt
+  // Lik avstand: bruk antallet bord som ble valgt for feltet
   let svar = svarInn;
   const lik = inn.likValg?.[m];
   if (lik && svarInn.ok) {
     const valgt = svarInn.alle.find((l) => l.antallUnderliggere === lik.k) ?? svarInn.valgt;
-    svar = { ...svarInn, valgt, pabordKloyv: lik.r };
+    svar = { ...svarInn, valgt };
   }
 
   if (m % 2 === 0) {
@@ -457,17 +435,8 @@ function byggFelt({ type, navn, x0, x1, deler, svar, innlegg, fjernDelte, karmBo
     return { ok: false, type, navn, x0, x1, deler, innlegg, apning,
       melding: svar.melding ?? 'Feltet går ikke opp.' };
   }
-  let l = svar.valgt;
-  const pabordKloyv = svar.pabordKloyv ?? 0;
-  // Kløyvde underbord (valgt av tømreren for feltet): legg ut feltet på nytt med smalere bord
-  const onsket = inn?.kloyvUnderbord?.[navn];
-  let kloyvUgyldig = false;
-  if (Number.isFinite(onsket)) {
-    const ny = leggUtKloyvd(l, onsket, inn);
-    if (ny) l = ny; else kloyvUgyldig = true;
-  }
-  // Forslag om kløyvde underbord gis ikke ved lik avstand mellom påbordene (det ville flyttet påbordene)
-  const forslag = !inn?.likValg && !l.kloyvdUnderbord && l.omlegg > (inn?.oMax ?? 30) + SLINGRING ? kloyvForslag(l, inn) : null;
+  // Avstanden mellom påbordene er det som synes på veggen
+  const l = { ...svar.valgt, avstandPabord: svar.valgt.senteravstand - (inn?.bo ?? svar.valgt.bo) };
   const tilVegg = (b, bordtype) => ({
     type: bordtype,
     fraEksakt: x0 + b.fraEksakt,
@@ -485,118 +454,11 @@ function byggFelt({ type, navn, x0, x1, deler, svar, innlegg, fjernDelte, karmBo
     else overliggere = overliggere.slice(1, -1);
   }
 
-  // Avstand mellom påbordene (det som synes), og kløyvde påbord inni feltet
-  if (pabordKloyv > 0) {
-    const ende = (b) => Math.abs(b.fraEksakt - x0) < 1e-6 || Math.abs(b.tilEksakt - (x0 + l.L)) < 1e-6;
-    let antall = 0;
-    overliggere = overliggere.map((b) => {
-      if (ende(b)) return b;
-      antall++;
-      const fra = b.fraEksakt + pabordKloyv / 2;
-      const til = b.tilEksakt - pabordKloyv / 2;
-      return { ...b, fraEksakt: fra, tilEksakt: til, fra: Math.round(fra), til: Math.round(til), klyvd: pabordKloyv };
-    });
-    const omlegg = (inn.bo - pabordKloyv - l.klaring) / 2;
-    l = {
-      ...l,
-      omlegg,
-      innenforAnbefalt: omlegg <= inn.oMax + SLINGRING,
-      // Varselet om omlegg gjelder det nye omlegget: det tas bort, eller står igjen med nytt tall
-      varsler: l.varsler.filter((v) => v.type !== 'omlegg-over-maks')
-        .concat(omlegg > inn.oMax + SLINGRING ? [omleggVarsel(omlegg, inn.oMax)] : []),
-      kloyvdPabord: { bredde: inn.bo - pabordKloyv, antall },
-    };
-  }
-  l = { ...l, avstandPabord: l.senteravstand - (inn?.bo ?? l.bo) + pabordKloyv };
-
   return {
     ok: true, type, navn, apning, x0, x1: x0 + l.L, deler, innlegg,
     losning: l,
     underliggere,
     overliggere,
-    kloyvForslag: forslag,
-    kloyvUgyldig,
-  };
-}
-
-// ---------- Kløyvde underbord (Kenny 2026-11-09) ----------
-// Felt med omlegg over anbefalt maks kan få smalere underbord i stedet: da blir mellomrommet
-// (klossen) større og omlegget mindre, med samme antall bord og samme feltlengde. Underbordet
-// er stort sett dekket av påbordene. Underbord ytterst i feltet (ved karm eller hjørne) beholder
-// full bredde, fordi de deles med feltet ved siden av eller er hjørnebord. Bare de inni kløyves.
-//
-// Feltet: L = (bredde på alle underbord) + (antall påbordsender) · bo/2 + d · g,
-// der d = k − 1 + (antall påbordsender)/2 (som i PLAN.md punkt 3, med ulik bredde på bordene).
-
-function kloyvTall(l, bu) {
-  const nF = (l.start === 'U' ? 1 : 0) + (l.slutt === 'U' ? 1 : 0); // underbord med full bredde
-  const nO = 2 - nF;                                                 // påbord i endene
-  const k = l.antallUnderliggere;
-  return { nF, nO, k, nR: k - nF, d: k - 1 + nO / 2, bu };
-}
-
-// Bredden underbordene inni feltet må kløyves til for omlegget o. Null når det ikke går.
-function breddeFor(l, bu, bo, o) {
-  const t = kloyvTall(l, bu);
-  if (t.nR < 1) return null;
-  const g = bo - 2 * o;
-  return (l.L - t.nF * bu - t.nO * bo / 2 - t.d * g) / t.nR;
-}
-
-// Forslag for et felt: kløyv til hele mm som gir omlegg nær 25 (ellers høyst 30).
-function kloyvForslag(l, inn) {
-  const { bu, bo, oIdeal, oMax } = inn;
-  for (const o of [oIdeal, oMax]) {
-    const b = breddeFor(l, bu, bo, o);
-    if (b === null) return null;
-    const bredde = Math.round(b);
-    const ny = leggUtKloyvd(l, bredde, inn);
-    if (ny && ny.innenforAnbefalt) {
-      return { bredde, antall: ny.kloyvdUnderbord.antall, omlegg: ny.omlegg, kloss: ny.klaring, fra: bu };
-    }
-  }
-  return null;
-}
-
-// Legger ut feltet med underbordene inni kløyvd til `bredde`. Null når det ikke er gyldig
-// (ikke smalere enn fullt bord, for smalt, eller omlegget havner under minimum).
-function leggUtKloyvd(l, bredde, inn) {
-  const { bu, bo } = inn;
-  const t = kloyvTall(l, bu);
-  if (t.nR < 1 || !(bredde < bu - 0.5)) return null;
-  const g = (l.L - t.nF * bu - t.nR * bredde - t.nO * bo / 2) / t.d;
-  const o = (bo - g) / 2;
-  // Underbordet må synes mellom påbordene, og ikke kløyves til under halv bredde
-  if (g <= 0 || o < inn.oMin - SLINGRING || bredde - 2 * o < -SLINGRING || bredde < bu / 2) return null;
-
-  const bredder = Array.from({ length: t.k }, (_, i) => (
-    (i === 0 && l.start === 'U') || (i === t.k - 1 && l.slutt === 'U') ? bu : bredde));
-  const underliggere = [];
-  const overliggere = [];
-  let x = l.start === 'O' ? bo - o : 0;
-  if (l.start === 'O') overliggere.push({ fraEksakt: 0, tilEksakt: bo });
-  bredder.forEach((b, i) => {
-    underliggere.push({ fraEksakt: x, tilEksakt: x + b });
-    if (i < t.k - 1) overliggere.push({ fraEksakt: x + b - o, tilEksakt: x + b - o + bo });
-    x += b + g;
-  });
-  if (l.slutt === 'O') overliggere.push({ fraEksakt: x - g - o, tilEksakt: x - g - o + bo });
-  const avrund = (b) => ({ ...b, fra: Math.round(b.fraEksakt), til: Math.round(b.tilEksakt) });
-
-  const spikring = sjekkSpikring(bo, g, inn);
-  const innenforAnbefalt = o <= inn.oMax + SLINGRING;
-  return {
-    ...l,
-    klaring: g,
-    omlegg: o,
-    senteravstand: bredde + g,
-    innenforAnbefalt,
-    spikring,
-    underliggere: underliggere.map(avrund),
-    overliggere: overliggere.map(avrund),
-    varsler: l.varsler.filter((v) => v.type !== 'omlegg-over-maks' && v.type !== 'spikring')
-      .concat(spikring.ok ? [] : [spikerVarsel(g, spikring)]),
-    kloyvdUnderbord: { bredde, antall: t.nR },
   };
 }
 
@@ -706,27 +568,55 @@ function sammenlign(a, b) {
     || (Math.abs(a.overskudd - b.overskudd) < 1e-6 ? 0 : a.overskudd - b.overskudd);
 }
 
+// Varsler om ulikt bord ytterst i et hjørne enn naboveggen har (kommer fra hus.js)
+const ulikeHjornebord = (r) => r.varsler.filter((v) => v.type === 'hjorne-bord').length;
+
+// En nabovegg før og etter et forslag: −1 er bedre, 0 er like bra, 1 er dårligere. Dårligere
+// er den når delingen blir dårligere eller den får et nytt varsel om ulikt bord i hjørnet,
+// uansett om det andre blir bedre.
+function sammenlignNabo(etter, for_) {
+  if (etter.feil || for_.feil) return (etter.feil ? 1 : 0) - (for_.feil ? 1 : 0);
+  const hjorne = ulikeHjornebord(etter) - ulikeHjornebord(for_);
+  const deling = sammenlign(vurderVegg(etter, etter.rytme.maks), vurderVegg(for_, for_.rytme.maks));
+  if (hjorne > 0 || deling > 0) return 1;
+  return hjorne < 0 || deling < 0 ? -1 : 0;
+}
+
 // Prøver andre valg for samme vegg og gir de beste oppsettene som er bedre enn dagens.
 // To grupper: med samme bordbredder (bare karm, hjørner og startvalg endres), og med
 // andre standardbredder. Hvert forslag sier hva som er endret.
-export function foreslaVegg(inndata, { bredder = STANDARD_BREDDER, antall = 3 } = {}) {
+//
+// `regn(vegg)` regner veggen og gir { r, naboer: [{ navn, r }] }. Uten den regnes veggen alene.
+// hus.js (foreslaHus) sender inn en som regner gjennom hele huset, så hjørnene og naboveggene
+// er med (Kenny 2026-11-10). Et forslag tas bare med når
+// - veggen blir bedre,
+// - veggen ikke får et annet bord ytterst i et hjørne enn naboveggen har der, og
+// - ingen nabovegg blir dårligere.
+// Naboveggene som forslaget endrer, står i forslaget som naboer: [{ navn, bedre }].
+export function foreslaVegg(inndata, { bredder = STANDARD_BREDDER, antall = 3,
+  regn = (vegg) => ({ r: losVegg(vegg), naboer: [] }) } = {}) {
   const inn = { ...STANDARD_INNSTILLINGER, ...STANDARD_VEGG, ...inndata };
-  const naa = losVegg(inn);
-  if (naa.feil) return { feil: naa.feil };
-  const naaVurdering = vurderVegg(naa, inn.oMax);
+  const naa = regn(inn);
+  if (naa.r.feil) return { feil: naa.r.feil };
+  const naaVurdering = vurderVegg(naa.r, inn.oMax);
 
   const valg = [];
   const proev = (endring) => {
-    // Kløyvde underbord hører til oppsettet de ble valgt i. Forslagene regnes med fulle bord,
-    // og skjermen nullstiller kløyvingen når et forslag tas i bruk.
-    const forsok = { ...inn, ...endring, kloyvUnderbord: {} };
+    const forsok = { ...inn, ...endring };
     const hva = hvaErEndret(inn, forsok);
     if (!hva.length) return; // dagens oppsett er ikke et forslag
-    const r = losVegg(forsok);
-    if (r.feil) return;
+    const { r, naboer } = regn(forsok);
+    if (r.feil || ulikeHjornebord(r) > ulikeHjornebord(naa.r)) return;
     const vurdering = vurderVegg(r, inn.oMax);
     if (sammenlign(vurdering, naaVurdering) >= 0) return; // bare det som er bedre
-    valg.push({ endring: hva, oppsett: plukk(forsok), vurdering });
+    const endret = [];
+    for (let i = 0; i < naboer.length; i++) {
+      if (naboer[i].r === naa.naboer[i].r) continue; // forslaget rører ikke denne naboveggen
+      const s = sammenlignNabo(naboer[i].r, naa.naboer[i].r);
+      if (s > 0) return;
+      endret.push({ navn: naboer[i].navn, bedre: s < 0 });
+    }
+    valg.push({ endring: hva, oppsett: plukk(forsok), vurdering, naboer: endret });
   };
 
   const hjorner = [['O', 'O'], ['U', 'U'], ['O', 'U'], ['U', 'O']];
@@ -830,11 +720,7 @@ export function lagOppsettliste(r) {
       til: siste.til,
       kloss: f.losning.klaring,
       hjornebord: Object.values(f.hjornebord ?? {}),
-      kloyvForslag: f.kloyvForslag ?? null,
-      kloyvdUnderbord: f.losning.kloyvdUnderbord ?? null,
-      kloyvdPabord: f.losning.kloyvdPabord ?? null,
       avstandPabord: f.losning.avstandPabord,
-      kloyvUgyldig: f.kloyvUgyldig ?? false,
       omlegg: f.losning.omlegg,
       innenforAnbefalt: f.losning.innenforAnbefalt,
     };

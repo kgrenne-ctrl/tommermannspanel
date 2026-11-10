@@ -118,26 +118,30 @@ Alle skal kunne endres i innstillinger.
   gjennomprøving av alle kombinasjoner. Målt på 300 tilfeldige vegger: bedre på 78, men liten
   gevinst (verste avvik i snitt 12,47 → 12,39 mm), fordi innlegget bare kan variere 10 mm.
   Selve kjeden ligger i `besteKjede` og er felles for `jevnt` og `lik`.
-- Kløyvde underbord (Kenny 2026-11-09): felt med omlegg over 30 mm får forslag om å kløyve
-  underbordene inni feltet (ikke de ytterst, som deles med naboen eller er hjørnebord), så
-  omlegget blir 25 (ellers høyst 30), med samme antall bord og feltlengde. Tømreren velger det med
-  en knapp. Valget lagres per vegg som `kloyvUnderbord: { feltnavn: bredde }` og legges ut på nytt
-  i `leggUtKloyvd`. Passer det ikke lenger (målene er endret), brukes det ikke, og appen varsler.
-  Valget nullstilles på skjermen når bordbredden byttes, når startvalget byttes til `lik`, og når
-  et forslag fra «Finn bedre oppsett» tas i bruk. «Tilbake til utgangspunktet» henter det igjen.
-- **Lik avstand mellom påbordene** (startvalg `lik`, `velgLikAvstand`, standard for nye vegger på
-  skjermen, Kenny 2026-11-09): det viktigste er at avstanden mellom påbordene er mest mulig lik.
-  Alle felt sikter mot samme avstand G (prøves i hele mm slik at G ± avvik gir omlegg 20–30).
-  Hvert felt velger antall bord nærmest G. Er avviket større enn `avvikPabord` (±5 mm), kløyves
-  påbordene inni feltet (ikke de ytterst) akkurat nok, minst 3 og høyst `maksKloyvPabord` (20 mm).
-  Innleggene velges samtidig for hele veggen. Kennys vegg: spenn 16,3 → 9,2 mm. 300 tilfeldige
-  vegger: spenn 28,5 → 12,8 mm i snitt, ca. 2 felt med kløyvde påbord per vegg.
-  Avstand mellom påbord = senteravstand − påbordbredde (+ kløyving); omlegg = (bu − avstand)/2.
-  Forslag om kløyvde underbord vises ikke ved `lik` (det ville flyttet påbordene).
-- «Finn bedre oppsett» (`foreslaVegg`) prøver karm, hjørner, startvalg og standardbredder.
-  Omlegg innenfor 20–30 mm regnes som like bra. Forslagene regnes med fulle underbord (uten
-  `kloyvUnderbord`), utgangspunktet slik veggen står. Knappen viser «Regner …» mens den regner
-  (utregningen startes med `setTimeout`, så nettleseren rekker å tegne teksten først).
+- **Lik avstand mellom påbordene** (startvalg `lik`, `velgLikAvstand`, Kenny 2026-11-09): det
+  viktigste er at avstanden mellom påbordene er mest mulig lik. Alle felt sikter mot samme
+  avstand G (prøves i hele mm slik at G ± `avvikPabord` gir omlegg 20–30). Hvert felt velger
+  antall bord nærmest G. Innleggene velges samtidig for hele veggen.
+  Avstand mellom påbord = senteravstand − påbordbredde; omlegg = (bu − avstand)/2.
+  `lik` er standard startvalg, satt ett sted: `STANDARD_VEGG.startvalg` i `fagverdier.js`.
+- **Ingen kløyving for å få det til å gå opp (Kenny 2026-11-10).** Kløyvde påbord (i `lik`) og
+  kløyvde underbord (forslag per felt) ble lagt inn 2026-11-09 og tatt ut igjen. Koden ligger i
+  git til og med commit b34b40e hvis de skal inn igjen. Uten kløyving gir `lik` lite: Kennys
+  vegg (6650 mm, 98 mm bord) har spenn 16,3 mm fra venstre og 15,8 mm med `lik`, og 574
+  tilfeldige vegger 33,5 → 31,0 mm i snitt. Med kløyving var spennet reelt 12,3 mm på Kennys
+  vegg (appen viste 9,2, fordi avstanden mot hele endebord ikke var med).
+  Hjørnebordet kløyves fortsatt mot naboveggen (se Hjørner og hus). Lagrede vegger kan ha
+  `kloyvUnderbord` og `maksKloyvPabord` fra før. De leses ikke lenger.
+- «Finn bedre oppsett» prøver karm, hjørner, startvalg og standardbredder. Omlegg innenfor
+  20–30 mm regnes som like bra. Skjermen bruker `foreslaHus` (hus.js), som regner hvert forsøk
+  gjennom huset (Kenny 2026-11-10): veggen med hjørnene slik huset gir dem, og naboveggene (regnes
+  én gang per hjørnevalg og huskes). Et forslag tas med når veggen blir bedre, veggen ikke får
+  et annet bord ytterst i et hjørne enn naboveggen har, og ingen nabovegg blir dårligere.
+  Naboveggene som endres, står i forslaget (`naboer: [{ navn, bedre }]`). `foreslaVegg` (vegg.js)
+  gjør selve prøvingen og regner veggen alene når den ikke får `regn` fra huset. I en fri ende
+  regnes naboen som lik veggen selv, så der endrer et byttet hjørnebord også feltlengden.
+  Knappen viser «Regner …» mens den regner (utregningen startes med `setTimeout`, så nettleseren
+  rekker å tegne teksten først).
 - Påbord er standard både i hjørnene og inn på karmen (Kenny 2026-11-08).
 - `solver.js` har `losFeltFleksibel` for felt med slingringsmonn i lengden. `losFelt` er det
   samme med fast lengde.

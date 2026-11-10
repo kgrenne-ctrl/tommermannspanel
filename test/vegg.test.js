@@ -44,8 +44,9 @@ const naer = (faktisk, forventet, presisjon = 1e-6) =>
 const starter = (bord) => bord.map((b) => b.fra);
 const felt = (r, navn) => r.felt.find((f) => f.navn === navn);
 
+// Håndregningen går fra venstre hjørne, så startvalget står her og ikke som standard
 const GARASJE = {
-  lengde: 6000, hoyde: 2400, bu: 148, bo: 148,
+  lengde: 6000, hoyde: 2400, bu: 148, bo: 148, startvalg: 'venstre',
   apninger: [
     { type: 'vindu', x: 600, bredde: 1000, hoyde: 600, bunn: 1200 },
     { type: 'port', x: 2000, bredde: 2400, hoyde: 2100, bunn: 0 },
@@ -113,7 +114,7 @@ test('Påbord inn på karmen trenger ikke kloss, men påbord i hjørnet trenger 
 test('Innlegget brukes først: treffer ideelt omlegg når det går', () => {
   // Dør i full høyde (ingen felt over eller under), så bare feltet til venstre avgjør innlegget.
   // 625 fra hjørnet. O–O, k = 2: ideelt L = 640 = 625 + 15. Innlegget blir 15, omlegg 25.
-  const dor = (x) => losVegg({ lengde: 3000, hoyde: 2400, bu: 148, bo: 148,
+  const dor = (x) => losVegg({ lengde: 3000, hoyde: 2400, bu: 148, bo: 148, startvalg: 'venstre',
     apninger: [{ type: 'dor', x, bredde: 1000, hoyde: 2400, bunn: 0 }] });
   const r = dor(625);
   naer(r.apninger[0].innlegg.venstre, 15);
@@ -232,24 +233,6 @@ test('Forslag: en vegg som allerede er perfekt, får ingen forslag', () => {
   assert.equal(f.sammeBord.length + f.andreBord.length, 0);
 });
 
-test('Forslag: regnes med fulle underbord, også når veggen har kløyvde underbord fra før', () => {
-  // Venstre felt har omlegg 42,7 mm og er kløyvd til 89 mm. Før ble kløyvingen med inn i
-  // forslagene, så «lik avstand» lovet 29,7 mm. Uten kløyvingen (som skjermen nullstiller når
-  // et forslag tas i bruk) ga det 42,7 mm.
-  const vegg = { lengde: 4300, hoyde: 2400, bu: 148, bo: 148, startvalg: 'venstre',
-    apninger: [{ type: 'vindu', x: 700, bredde: 1000, hoyde: 1200, bunn: 900 }] };
-  const felt = losVegg(vegg).felt[0];
-  assert.deepEqual([felt.navn, felt.kloyvForslag.bredde], ['Venstre hjørne \u2013 Vindu', 89]);
-  const medKloyv = { ...vegg, kloyvUnderbord: { [felt.navn]: 89 } };
-  const f = foreslaVegg(medKloyv);
-  // Utgangspunktet er veggen slik den står, med kløyvingen
-  assert.deepEqual(f.naa, vurderVegg(losVegg(medKloyv)));
-  for (const v of [...f.sammeBord, ...f.andreBord]) {
-    assert.deepEqual(vurderVegg(losVegg({ ...vegg, ...v.oppsett })), v.vurdering, v.endring.join(', '));
-    assert.ok(v.endring.length > 0, 'dagens oppsett uten kløyving er ikke et forslag');
-  }
-});
-
 test('Merkeliste: alle underbord i rekkefølge, med mål fra hjørnet og fra karmkanten', () => {
   const r = losVegg(GARASJE);
   const liste = lagMerkeliste(r);
@@ -358,42 +341,7 @@ test('Jevnest over hele veggen: finner den beste kombinasjonen av innlegg (sjekk
   }
 });
 
-test('Kløyvde underbord: forslag og ny utlegging for felt over 30 mm (håndregnet)', () => {
-  const r = losVegg(GARASJE);
-  const f = r.felt.find((x) => x.navn === 'Over og under vindu 1');
-  // Påbord i begge ender, 5 underbord, L = 1256. For omlegg 25 må klossen bli 148 − 50 = 98.
-  // Underbord: (1256 − 148 − 5 · 98) / 5 = 123,6, rundet til 124. Da blir klossen
-  // (1256 − 5 · 124 − 148) / 5 = 97,6 og omlegget (148 − 97,6) / 2 = 25,2.
-  assert.deepEqual([f.kloyvForslag.bredde, f.kloyvForslag.antall, f.kloyvForslag.fra], [124, 5, 148]);
-  assert.ok(Math.abs(f.kloyvForslag.kloss - 97.6) < 1e-9);
-  assert.ok(Math.abs(f.kloyvForslag.omlegg - 25.2) < 1e-9);
-  // Felt innenfor anbefalt får ikke forslag
-  assert.equal(r.felt.find((x) => x.navn === 'Over port').kloyvForslag, null);
-
-  const r2 = losVegg({ ...GARASJE, kloyvUnderbord: { 'Over og under vindu 1': 124 } });
-  const f2 = r2.felt.find((x) => x.navn === 'Over og under vindu 1');
-  assert.ok(f2.losning.innenforAnbefalt);
-  assert.equal(f2.kloyvForslag, null);
-  assert.deepEqual(f2.losning.kloyvdUnderbord, { bredde: 124, antall: 5 });
-  // Feltet starter og slutter der det gjorde, og underbordene står med lik kloss
-  assert.ok(Math.abs(f2.x0 - f.x0) < 1e-9 && Math.abs(f2.x1 - f.x1) < 1e-9);
-  const U = f2.underliggere;
-  for (const b of U) assert.ok(Math.abs(b.tilEksakt - b.fraEksakt - 124) < 1e-9);
-  for (let i = 1; i < U.length; i++) assert.ok(Math.abs(U[i].fraEksakt - U[i - 1].tilEksakt - 97.6) < 1e-9);
-  // Påbordene ligger 25,2 mm inn over underbordet på hver side
-  for (const o of f2.overliggere) {
-    const v = U.find((u) => u.fraEksakt < o.fraEksakt && u.tilEksakt > o.fraEksakt);
-    const h = U.find((u) => u.tilEksakt > o.tilEksakt && u.fraEksakt < o.tilEksakt);
-    assert.ok(Math.abs(v.tilEksakt - o.fraEksakt - 25.2) < 1e-9);
-    assert.ok(Math.abs(o.tilEksakt - h.fraEksakt - 25.2) < 1e-9);
-  }
-  // Ugyldig kløyving (bredere enn fullt bord) brukes ikke, og appen sier fra
-  const r3 = losVegg({ ...GARASJE, kloyvUnderbord: { 'Over og under vindu 1': 160 } });
-  assert.ok(r3.varsler.some((v) => v.type === 'kloyv-ugyldig' && v.felt === 'Over og under vindu 1'));
-});
-
-
-test('Lik avstand mellom påbordene: Kennys vegg (6650 mm, 98 mm bord) går fra 16,3 til 9,2 mm spenn', async () => {
+test('Lik avstand mellom påbordene: ingen bord kløyves, og Kennys vegg (6650 mm, 98 mm bord) går fra 16,3 til 15,8 mm spenn', async () => {
   const { losHus } = await import('../src/tommermann/hus.js');
   const v = { navn: 'Vegg 1', lengde: 6650, hoyde: 2400, bu: 98, bo: 98, karmBord: 'O', hjorneVenstre: 'O', hjorneHoyre: 'O',
     hjorner: { venstre: { type: 'mot' }, hoyre: { type: 'mot' } }, apninger: [
@@ -403,42 +351,22 @@ test('Lik avstand mellom påbordene: Kennys vegg (6650 mm, 98 mm bord) går fra 
   const spenn = (r) => { const a = r.felt.map((f) => f.losning.avstandPabord); return Math.max(...a) - Math.min(...a); };
   const gammel = losHus({ vegger: [{ ...v, startvalg: 'venstre' }] }).vegger[0];
   const ny = losHus({ vegger: [{ ...v, startvalg: 'lik' }] }).vegger[0];
-  assert.ok(Math.abs(spenn(gammel) - 16.3) < 0.05);
-  assert.ok(spenn(ny) <= 10, `spenn ${spenn(ny)}`);
-  // Felt 7 får 9 bord i stedet for 10 (avstand 57,6 mm, nær felt 6)
-  const f7 = ny.felt.find((f) => f.navn === 'Vindu 2 – Høyre hjørne');
+  assert.ok(Math.abs(spenn(gammel) - 16.3) < 0.05, `spenn ${spenn(gammel)}`);
+  assert.ok(Math.abs(spenn(ny) - 15.8) < 0.05, `spenn ${spenn(ny)}`);
+  assert.ok(ny.felt.every((f) => f.ok && f.losning.omlegg >= 20 - 1e-9));
+  // Felt 7 får 9 bord i stedet for 10 (avstand 57,5 mm, nær felt 6)
+  const f7 = ny.felt.find((f) => f.navn === 'Vindu 2 \u2013 Høyre hjørne');
   assert.equal(f7.losning.antallUnderliggere, 9);
-  // Over døra: avstanden er 41,7 mm med fulle bord. Påbordene inni kløyves 7 mm, til 91 mm.
-  const over = ny.felt.find((f) => f.navn === 'Over dør');
-  assert.deepEqual(over.losning.kloyvdPabord, { bredde: 91, antall: 6 });
-  assert.ok(ny.felt.every((f) => f.losning.omlegg >= 20 - 1e-9));
-  // Kløyvde påbord står midt over mellomrommet: likt omlegg på begge sider
-  for (const o of over.overliggere.filter((b) => b.klyvd)) {
-    assert.ok(Math.abs(o.tilEksakt - o.fraEksakt - 91) < 1e-9);
-    const v1 = over.underliggere.find((u) => u.fraEksakt < o.fraEksakt && u.tilEksakt > o.fraEksakt);
-    const h1 = over.underliggere.find((u) => u.tilEksakt > o.tilEksakt && u.fraEksakt < o.tilEksakt);
-    assert.ok(Math.abs((v1.tilEksakt - o.fraEksakt) - (o.tilEksakt - h1.fraEksakt)) < 1e-9);
-  }
-});
-
-test('Kløyvde påbord: varselet om stort omlegg blir stående med nytt tall når omlegget fortsatt er over anbefalt', () => {
-  const r = losVegg({ lengde: 6233, hoyde: 2400, bu: 173, bo: 148, startvalg: 'lik', apninger: [
-    { type: 'vindu', x: 768, bredde: 1353, hoyde: 1200, bunn: 900 },
-    { type: 'vindu', x: 3019, bredde: 737, hoyde: 1200, bunn: 900 }] });
-  const kloyvde = r.felt.filter((f) => f.ok && f.losning.kloyvdPabord);
-  assert.ok(kloyvde.length > 0, 'veggen skal ha minst ett felt med kløyvde påbord');
-  for (const f of r.felt.filter((x) => x.ok)) {
-    const varsel = r.varsler.find((v) => v.felt === f.navn && v.type === 'omlegg-over-maks');
-    if (f.losning.omlegg > 30 + 1e-6) {
-      // Tallet i varselet er omlegget slik feltet faktisk blir, med komma som desimaltegn
-      assert.ok(varsel, `${f.navn} mangler varsel (omlegg ${f.losning.omlegg})`);
-      assert.ok(varsel.tekst.includes(`${String(Math.round(f.losning.omlegg * 10) / 10).replace('.', ',')} mm`), varsel.tekst);
-    } else {
-      assert.equal(varsel, undefined, `${f.navn} har varsel uten grunn`);
+  // Bordene kløyves ikke for å få det til å gå opp (Kenny 2026-11-10). Alle har full bredde,
+  // unntatt de to hjørnebordene, som kløyves fordi kledningen slutter mot naboveggen.
+  const bord = ny.felt.flatMap((f) => [...f.underliggere, ...f.overliggere]);
+  assert.equal(bord.filter((b) => b.klyvd).length, 2);
+  for (const b of bord.filter((x) => !x.klyvd)) assert.ok(Math.abs(b.tilEksakt - b.fraEksakt - 98) < 1e-9);
+  // Avstanden som vises for feltet, er den som faktisk står mellom påbordene
+  for (const f of ny.felt) {
+    const O = [...f.overliggere].sort((p, q) => p.fraEksakt - q.fraEksakt);
+    for (let i = 1; i < O.length; i++) {
+      assert.ok(Math.abs(O[i].fraEksakt - O[i - 1].tilEksakt - f.losning.avstandPabord) < 1e-9, f.navn);
     }
   }
-  // Kløyvingen er alltid i hele millimeter
-  for (const f of kloyvde) assert.ok(Number.isInteger(f.losning.kloyvdPabord.bredde));
-  const forste = r.felt.find((f) => f.navn === 'Venstre hjørne – Vindu 1');
-  assert.ok(forste.losning.kloyvdPabord && forste.losning.omlegg > 30);
 });
