@@ -4,7 +4,8 @@
 import { losTrapp, trinnFraBord, lagTrinnliste } from '../trapp/solver.js';
 import { lagVange } from '../trapp/vange.js';
 import { STANDARD_TRAPP } from '../trapp/fagverdier.js';
-import { tegnTrapp, tegnVangeFlatt, tegnHakk, tegnBunn, tegnTopp } from './trapp-tegning.js';
+import { tegnTrapp, tegnVangeFlatt, tegnHakk, tegnBunn, tegnTopp, tegnMerkesteg } from './trapp-tegning.js';
+import { lagMerkesteg } from './trapp-merking.js';
 import { lesTall, mm } from './format.js';
 import { kort, boks, zoomBoks, kobleZoom } from './biter.js';
 import { EKSEMPELTRAPP } from './eksempel.js';
@@ -21,6 +22,12 @@ const VANGE = ['trinnTykkelse', 'vangeBredde', 'beleggNede'];
 // Hvilken av løsningene som vises (0 = den beste). Nullstilles når inndata endres.
 let valgtIndeks = 0;
 let sisteSvar = null;
+
+// «Se det steg for steg»: stegene for vangen som vises, hvilket steg man står på, og
+// avspillingen. Steget huskes når appen regner på nytt, så man ikke hopper tilbake til start.
+let merking = null;     // { steg, vange, l, valg }
+let merkeIndeks = 0;
+let avspilling = null;
 
 // ---------- Oppstart ----------
 
@@ -47,6 +54,15 @@ finn('t-eksempel').addEventListener('click', () => {
 resultat.addEventListener('click', (hendelse) => {
   const knapp = hendelse.target.closest('button');
   if (!knapp) return;
+  if (knapp.dataset.merkesteg) {
+    if (knapp.dataset.merkesteg === 'spill') {
+      if (avspilling) stoppAvspilling(); else startAvspilling();
+      return;
+    }
+    stoppAvspilling();
+    visMerkesteg(merkeIndeks + (knapp.dataset.merkesteg === 'neste' ? 1 : -1));
+    return;
+  }
   if (knapp.dataset.losning !== undefined) {
     valgtIndeks = Number(knapp.dataset.losning);
     oppdater();
@@ -58,7 +74,48 @@ resultat.addEventListener('click', (hendelse) => {
   }
 });
 
+// Glideren for stegene
+resultat.addEventListener('input', (hendelse) => {
+  if (!hendelse.target.classList.contains('merke-glider')) return;
+  stoppAvspilling();
+  visMerkesteg(Number(hendelse.target.value));
+});
+
 oppdater();
+
+// ---------- Se det steg for steg ----------
+
+function visMerkesteg(i) {
+  const boksen = finn('merkevisning');
+  if (!merking || !boksen) return;
+  const { steg, vange, l, valg } = merking;
+  merkeIndeks = Math.max(0, Math.min(i, steg.length - 1));
+  const st = steg[merkeIndeks];
+  boksen.querySelector('.merke-tegning').innerHTML = tegnMerkesteg(vange, l, st, valg);
+  boksen.querySelector('.merke-tekst').innerHTML = `<strong>${st.tittel}</strong> ${st.tekst}`;
+  boksen.querySelector('.merke-teller').textContent = `${merkeIndeks + 1} av ${steg.length}`;
+  boksen.querySelector('.merke-glider').value = String(merkeIndeks);
+  boksen.querySelector('[data-merkesteg="forrige"]').disabled = merkeIndeks === 0;
+  boksen.querySelector('[data-merkesteg="neste"]').disabled = merkeIndeks === steg.length - 1;
+}
+
+function startAvspilling() {
+  if (!merking) return;
+  if (merkeIndeks >= merking.steg.length - 1) visMerkesteg(0);
+  const knapp = resultat.querySelector('[data-merkesteg="spill"]');
+  if (knapp) knapp.textContent = 'Stopp';
+  avspilling = setInterval(() => {
+    if (!merking || merkeIndeks >= merking.steg.length - 1) { stoppAvspilling(); return; }
+    visMerkesteg(merkeIndeks + 1);
+  }, 1600);
+}
+
+function stoppAvspilling() {
+  if (avspilling) clearInterval(avspilling);
+  avspilling = null;
+  const knapp = resultat.querySelector('[data-merkesteg="spill"]');
+  if (knapp) knapp.textContent = 'Spill av';
+}
 
 // ---------- Lese og skrive skjemaet ----------
 
@@ -129,6 +186,8 @@ function vangeValg(inndata) {
 // ---------- Vise resultatet ----------
 
 function oppdater() {
+  stoppAvspilling();
+  merking = null;
   lagre('trapp', lesTilstand());
   const inndata = lesSkjema();
 
@@ -170,7 +229,12 @@ function oppdater() {
   const indeks = Math.min(valgtIndeks, svar.alle.length - 1);
   const l = svar.alle[indeks];
   const valg = vangeValg(inndata);
-  resultat.innerHTML = visTrapp(l, svar, indeks, inndata, lagVange(l, valg), valg);
+  const vange = lagVange(l, valg);
+  resultat.innerHTML = visTrapp(l, svar, indeks, inndata, vange, valg);
+  if (vange.ok) {
+    merking = { steg: lagMerkesteg(vange, l, valg), vange, l, valg };
+    visMerkesteg(merkeIndeks);
+  }
 }
 
 function statusMerke(varsler) {
@@ -260,7 +324,7 @@ function visVange(l, v, valg) {
   const bunnGrunn = B > 0
     ? `${h} minus ${t} mm trinntykkelse, pluss ${mm(B)} mm belegg som legges senere`
     : `${h} minus ${t} mm, fordi trinnet ligger oppå`;
-  const rader = v.merker.map((m) => `<tr><td>${m.hakk}</td><td>${mm(m.avstand)}</td></tr>`).join('');
+  const rader = v.merker.map((m, i) => `<tr><td>${i}</td><td>${m.hjelp ? '<small>hjelpespiss, kappes bort</small> ' : ''}${mm(m.avstand)}</td></tr>`).join('');
   const steg = (tittel, tekst, tegning = '') => `<li><strong>${tittel}</strong> ${tekst}${tegning}</li>`;
 
   return `
@@ -274,7 +338,21 @@ function visVange(l, v, valg) {
     </div>
 
     <h3>Slik merker du vangen</h3>
-    <p class="hjelp">Legg vangen på bukkene med overkanten mot deg. Nederste ende av trappa er til venstre.</p>
+    <div id="merkevisning" class="merkevisning">
+      <p class="merke-overskrift">Se det steg for steg</p>
+      <div class="merke-tegning"></div>
+      <p class="merke-tekst"></p>
+      <div class="merke-kontroll">
+        <button type="button" class="knapp" data-merkesteg="forrige" aria-label="Forrige steg">‹ Forrige</button>
+        <span class="merke-teller" aria-live="polite"></span>
+        <button type="button" class="knapp primar" data-merkesteg="neste" aria-label="Neste steg">Neste ›</button>
+      </div>
+      <input type="range" class="merke-glider" min="0" max="${lagMerkesteg(v, l, valg).length - 1}" value="0" aria-label="Velg steg">
+      <button type="button" class="knapp lenkeknapp" data-merkesteg="spill">Spill av</button>
+    </div>
+
+    <p class="hjelp">Alle stegene med mål og skisser. Legg vangen på bukkene med overkanten mot deg. Nederste
+      ende av trappa er til venstre.</p>
     <ol class="steg">
       ${steg('Merk spissene.', `Mål ${mm(v.spissFraEnden)} mm fra enden av bordet langs overkanten. Det er
         nederste spiss (0). Merk resten av spissene med målene under. Alle mål er fra 0, ikke fra
@@ -282,7 +360,7 @@ function visVange(l, v, valg) {
         ${zoomBoks('vange', tegnVangeFlatt(v, valg))}
         <table class="maltabell">
           <caption>Spisser langs overkanten</caption>
-          <thead><tr><th>Spiss</th><th>Fra 0 (mm)</th></tr></thead>
+          <thead><tr><th>Spiss</th><th>Fra spiss 0 (mm)</th></tr></thead>
           <tbody>${rader}</tbody>
         </table>`)}
       ${steg('Tegn hakkene.', `Sett av <strong>${b} mm</strong> (inntrinn) på den ene armen av vinkelen

@@ -125,13 +125,15 @@ export function tegnVangeFlatt(vange, { vangeBredde = 223 } = {}) {
 
   const deler = [emneOgVange(vange, W, strek, skrift * 0.4)];
   for (const merke of vange.merker) {
-    const farge = merke.hakk === 1 ? 'var(--bakoy-oransje)' : 'var(--tekst)';
+    // Spiss 0 oransje, hjelpespissen for øverste hakk grå og stiplet (den kappes bort)
+    const farge = merke.hakk === 1 ? 'var(--bakoy-oransje)' : merke.hjelp ? 'var(--tekst-gra)' : 'var(--tekst)';
     const u = merke.eksakt;
-    deler.push(`<line class="v-merke" x1="${u}" y1="${merkeTopp}" x2="${u}" y2="${skrift * 0.4}" stroke="${farge}" stroke-width="${strek * 2}"/>`);
+    deler.push(`<line class="v-merke" x1="${u}" y1="${merkeTopp}" x2="${u}" y2="${skrift * 0.4}" stroke="${farge}" stroke-width="${strek * 2}"`
+      + `${merke.hjelp ? ` stroke-dasharray="${skrift * 0.2}"` : ''}/>`);
     const x = u + skrift * 0.35;
     const y = merkeTopp - skrift * 0.3;
-    deler.push(`<text class="v-tall" x="${x}" y="${y}" font-size="${skrift}" text-anchor="start" fill="var(--tekst)" `
-      + `font-weight="600" transform="rotate(-90 ${x} ${y})">${mm(merke.avstand)}</text>`);
+    deler.push(`<text class="v-tall" x="${x}" y="${y}" font-size="${skrift}" text-anchor="start" `
+      + `fill="${merke.hjelp ? 'var(--tekst-gra)' : 'var(--tekst)'}" font-weight="600" transform="rotate(-90 ${x} ${y})">${mm(merke.avstand)}</text>`);
   }
   const pil = skrift * 0.35;
   deler.push(`<g stroke="var(--tekst)" stroke-width="${strek}">`
@@ -252,7 +254,7 @@ export function tegnTopp(vange, { vangeBredde = 223 } = {}) {
   const sete = vange.flatt[n - 4];                // starten av setet i øverste hakk (= øverste spiss)
   const kuttTopp = vange.flatt[n - 3];            // der toppkuttet starter, på setet
   const kuttBunn = vange.flatt[n - 2];            // der toppkuttet treffer underkanten
-  const sisteSpiss = vange.merker.at(-1);
+  const sisteSpiss = vange.merker.filter((m) => !m.hjelp).at(-1);
   const uFra = Math.min(sisteSpiss.eksakt, sete.u) - 0.3 * vange.s;
   const uTil = Math.max(kuttTopp.u, kuttBunn.u) + 0.25 * vange.s;
   const f = (uTil - uFra) * 0.045;
@@ -274,4 +276,157 @@ export function tegnTopp(vange, { vangeBredde = 223 } = {}) {
     deler.push(`<text x="${kuttTopp.u}" y="${kuttTopp.v - f * 0.5}" font-size="${f * 0.8}" text-anchor="middle" fill="var(--tekst-gra)" ${STYRK} stroke-width="${f * 0.2}">${mm(vange.toppkutt.foranBakkant)} foran hjørnet</text>`);
   }
   return svg(uFra, vFra, uTil - uFra, vTil - vFra, 'Toppen av vangen', deler.join(''));
+}
+
+// Ett steg i «Se det steg for steg» (stegene lages av lagMerkesteg i trapp-merking.js).
+// Før kapping vises hele bordet med det som er merket og tegnet så langt. Tegningen viser
+// utsnittet der det skjer: venstre ende, spissen som merkes, hakket med vinkelen, bunnen eller
+// toppen. Kapp viser hele vangen, og «reis» viser vangen bli reist opp i trappa med trinnene.
+export function tegnMerkesteg(vange, l, steg, { vangeBredde = 223, nese = 20, trinnTykkelse = 28 } = {}) {
+  const W = vangeBredde;
+  const { s } = vange;
+  const m = vange.hakk.length;
+  const fra = -vange.spissFraEnden;
+  const til = fra + vange.emnelengde;
+  const rekkefolge = ['bord', 'spiss', 'hakk', 'bunn', 'topp', 'kapp', 'reis'];
+  const forbi = (type) => rekkefolge.indexOf(steg.type) > rekkefolge.indexOf(type);
+  const her = (type) => steg.type === type;
+
+  if (her('reis')) return tegnReis(vange, l, { W, nese, trinnTykkelse, fra, til });
+
+  // Utsnittet
+  let uFra;
+  let uTil;
+  if (her('bord')) { uFra = fra - 0.25 * s; uTil = 1.5 * s; }
+  else if (her('spiss')) { uFra = steg.nr * s - 1.45 * s; uTil = steg.nr * s + 0.55 * s; }
+  else if (her('hakk')) { uFra = (steg.nr - 1) * s - 0.4 * s; uTil = steg.nr * s + 0.6 * s; }
+  else if (her('bunn')) { uFra = fra - 0.25 * s; uTil = Math.max(vange.flatt.at(-1).u, s) + 0.45 * s; }
+  else if (her('topp')) { uFra = (m - 1) * s - 0.3 * s; uTil = til + 0.3 * s; }
+  else { uFra = fra - 0.1 * s; uTil = til + 0.1 * s; }
+  const hele = her('kapp');
+  const bredde = uTil - uFra;
+  const f = hele ? Math.min(0.5 * s, 0.5 * W, 0.045 * bredde) : bredde * 0.042;
+  const strek = f * 0.06;
+  const vFra = -f * 4.3;
+  const vTil = W + f * 1.8;
+
+  const deler = [];
+  if (hele) {
+    deler.push(emneOgVange(vange, W, strek, f * 0.35));
+  } else {
+    // Bordet før kapping
+    deler.push(`<rect class="m-bord" x="${fra}" y="0" width="${vange.emnelengde}" height="${W}" fill="var(--vange)" `
+      + `stroke="var(--bord-kant)" stroke-width="${strek * 1.5}"/>`);
+  }
+
+  // Spissene som er merket så langt
+  const antallSpisser = her('bord') ? 1 : her('spiss') ? steg.nr + 1 : vange.merker.length;
+  vange.merker.slice(0, antallSpisser).forEach((merke, i) => {
+    const naa = (her('spiss') && i === steg.nr) || (her('bord') && i === 0);
+    const farge = i === 0 || naa ? 'var(--bakoy-oransje)' : merke.hjelp ? 'var(--tekst-gra)' : 'var(--tekst)';
+    deler.push(`<line class="m-spiss" x1="${merke.eksakt}" y1="${-f * 0.9}" x2="${merke.eksakt}" y2="${f * 0.35}" `
+      + `stroke="${farge}" stroke-width="${strek * (naa ? 5 : 3)}"${merke.hjelp ? ` stroke-dasharray="${f * 0.25}"` : ''}/>`);
+    if (!hele) {
+      deler.push(tekst(merke.eksakt, -f * 1.15, f * (naa ? 1.1 : 0.85), mm(merke.avstand),
+        { vekt: naa ? '700' : '600', farge: merke.hjelp ? 'var(--tekst-gra)' : 'var(--tekst)' }));
+    }
+  });
+
+  // Målet som tas akkurat nå: fra enden av bordet til spiss 0, eller fra spiss 0 til spissen
+  const malLinje = (u1, u2, etikett) => {
+    const y = -f * 2.6;
+    deler.push(`<g class="m-mal" stroke="var(--tekst)" stroke-width="${strek * 1.5}">`
+      + `<line x1="${u1}" y1="${y}" x2="${u2}" y2="${y}"/>`
+      + `<line x1="${u1}" y1="${y - f * 0.3}" x2="${u1}" y2="${y + f * 0.3}"/>`
+      + `<line x1="${u2}" y1="${y - f * 0.3}" x2="${u2}" y2="${y + f * 0.3}"/></g>`);
+    const midt = Math.max((u1 + u2) / 2, uFra + f * 4);
+    deler.push(`<text x="${midt}" y="${y - f * 0.35}" font-size="${f}" text-anchor="middle" fill="var(--tekst)" font-weight="600" ${STYRK} stroke-width="${f * 0.25}">${etikett}</text>`);
+  };
+  if (her('bord')) malLinje(fra, 0, `${mm(vange.spissFraEnden)} mm`);
+  if (her('spiss')) malLinje(0, vange.merker[steg.nr].eksakt, `${mm(vange.merker[steg.nr].avstand)} mm fra spiss 0`);
+
+  // Hakkene som er tegnet så langt
+  const antallHakk = her('hakk') ? steg.nr : forbi('hakk') ? m : 0;
+  for (const hk of vange.hakk.slice(0, antallHakk)) {
+    deler.push(`<polyline class="m-hakk" points="${hk.spiss.u},0 ${hk.hjorne.u},${hk.hjorne.v} ${hk.nesteSpiss.u},0" fill="none" `
+      + `stroke="var(--bord-kant)" stroke-width="${strek * (her('hakk') && hk.nr === steg.nr ? 4 : 2.5)}" stroke-linejoin="round"/>`);
+  }
+  // Vinkelen på hakket som tegnes nå
+  if (her('hakk')) {
+    const hk = vange.hakk[steg.nr - 1];
+    const lengre = (p, ekstra) => {
+      const du = p.u - hk.hjorne.u;
+      const dv = p.v - hk.hjorne.v;
+      const lengde = Math.hypot(du, dv);
+      return { u: hk.hjorne.u + (du * (lengde + ekstra)) / lengde, v: hk.hjorne.v + (dv * (lengde + ekstra)) / lengde };
+    };
+    const a1 = lengre(hk.spiss, 0.18 * s);
+    const a2 = lengre(hk.nesteSpiss, 0.18 * s);
+    deler.push(`<polyline class="m-vinkel" points="${a1.u},${a1.v} ${hk.hjorne.u},${hk.hjorne.v} ${a2.u},${a2.v}" fill="none" `
+      + `stroke="var(--bakoy-oransje)" stroke-opacity="0.5" stroke-width="${f * 0.7}" stroke-linejoin="miter"/>`);
+    const m1 = { u: (hk.spiss.u + hk.hjorne.u) / 2, v: (hk.spiss.v + hk.hjorne.v) / 2 };
+    const m2 = { u: (hk.nesteSpiss.u + hk.hjorne.u) / 2, v: (hk.nesteSpiss.v + hk.hjorne.v) / 2 };
+    deler.push(`<text x="${m1.u - f * 0.3}" y="${m1.v + f * 1.6}" font-size="${f}" text-anchor="middle" fill="var(--tekst)" font-weight="600" ${STYRK} stroke-width="${f * 0.25}">${mm(l.inntrinn, 1)}</text>`);
+    deler.push(`<text x="${m2.u + f * 0.7}" y="${m2.v + f * 0.4}" font-size="${f}" text-anchor="start" fill="var(--tekst)" font-weight="600" ${STYRK} stroke-width="${f * 0.25}">${mm(l.opptrinn, 1)}</text>`);
+  }
+
+  // Bunn og topp
+  const [foran, spiss0] = vange.flatt;
+  const fot = vange.flatt.at(-1);
+  const kuttTopp = vange.flatt.at(-3);
+  const kuttBunn = vange.flatt.at(-2);
+  if (her('bunn') || (forbi('bunn') && !hele)) {
+    deler.push(`<polyline class="m-bunn" points="${spiss0.u},${spiss0.v} ${foran.u},${foran.v} ${fot.u},${fot.v}" fill="none" `
+      + `stroke="var(--bord-kant)" stroke-width="${strek * (her('bunn') ? 4 : 2.5)}"/>`);
+  }
+  if (her('bunn')) {
+    const mb = { u: (spiss0.u + foran.u) / 2, v: (spiss0.v + foran.v) / 2 };
+    deler.push(`<text x="${mb.u - f * 0.4}" y="${mb.v + f * 0.3}" font-size="${f}" text-anchor="end" fill="var(--tekst)" font-weight="600" ${STYRK} stroke-width="${f * 0.25}">${mm(vange.nedersteOpptrinn, 1)}</text>`);
+    deler.push(`<text x="${(foran.u + fot.u) / 2}" y="${Math.max(foran.v, fot.v) + f * 1.3}" font-size="${f}" text-anchor="middle" fill="var(--tekst)" font-weight="600" ${STYRK} stroke-width="${f * 0.25}">${mm(vange.fot)}</text>`);
+  }
+  if (her('topp') || (forbi('topp') && !hele)) {
+    deler.push(`<line class="m-topp" x1="${kuttTopp.u}" y1="${kuttTopp.v}" x2="${kuttBunn.u}" y2="${kuttBunn.v}" `
+      + `stroke="var(--bord-kant)" stroke-width="${strek * (her('topp') ? 4 : 2.5)}"/>`);
+  }
+  if (her('topp')) {
+    deler.push(`<circle cx="${kuttTopp.u}" cy="${kuttTopp.v}" r="${f * 0.25}" fill="var(--bakoy-oransje)"/>`);
+    deler.push(`<text x="${(kuttTopp.u + kuttBunn.u) / 2 - f * 0.5}" y="${(kuttTopp.v + kuttBunn.v) / 2 + f * 0.3}" font-size="${f}" text-anchor="end" fill="var(--tekst)" font-weight="600" ${STYRK} stroke-width="${f * 0.25}">${mm(vange.toppkutt.lengde)}</text>`);
+  }
+
+  return svg(uFra, vFra, bredde, vTil - vFra, `Merking av vangen: ${steg.type} ${steg.nr || ''}`.trim(), deler.join(''));
+}
+
+// Vangen reises: tegnes lagt flatt og dreies til den står som i trappa (CSS-animasjon med
+// matrisen fra vange.reis). Trinnene og underlaget kommer fram når den står.
+function tegnReis(vange, l, { W, nese, trinnTykkelse, fra, til }) {
+  const { a, b, c, d, e, f: ff } = vange.reis;
+  const h = l.opptrinn;
+  const bi = l.inntrinn;
+  const m = l.antallInntrinn;
+  const eget = m === l.antallOpptrinn;
+  const t = trinnTykkelse;
+
+  // Plassen tegningen trenger: vangen lagt flatt, og vangen og trinnene der de står
+  const xs = [fra, til, ...vange.omriss.map((p) => p.x), 0, (m - 1) * bi + bi + nese];
+  const ys = [0, W, ...vange.omriss.map((p) => -p.y), -m * h];
+  const storst = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+  const kant = storst * 0.05;
+  const xMin = Math.min(...xs) - kant;
+  const yMin = Math.min(...ys) - kant;
+  const strek = storst * 0.002;
+
+  const deler = [];
+  deler.push(`<g class="reis" style="--reis: matrix(${a}, ${b}, ${c}, ${d}, ${e}, ${ff})">`
+    + `<polygon points="${vange.flatt.map(({ u, v }) => `${u},${v}`).join(' ')}" fill="var(--vange)" `
+    + `stroke="var(--bord-kant)" stroke-width="${strek * 1.5}" stroke-linejoin="round"/></g>`);
+  const trinn = [];
+  for (let k = 1; k <= m; k++) {
+    const dybde = eget && k === m ? bi : bi + nese;
+    trinn.push(`<rect x="${(k - 1) * bi}" y="${-k * h}" width="${dybde}" height="${t}" fill="var(--trinn)" `
+      + `stroke="var(--bord-kant)" stroke-width="${strek}"/>`);
+  }
+  deler.push(`<g class="reis-trinn">${trinn.join('')}`
+    + `<line x1="${xMin}" y1="0" x2="${Math.max(...xs) + kant}" y2="0" stroke="var(--tekst-gra)" stroke-width="${strek * 2.5}"/></g>`);
+
+  return svg(xMin, yMin, Math.max(...xs) + kant - xMin, Math.max(...ys) + kant - yMin, 'Vangen reist i trappa med trinnene', deler.join(''));
 }

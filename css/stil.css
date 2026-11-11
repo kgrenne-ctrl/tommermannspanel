@@ -461,6 +461,48 @@ summary:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; bo
 .steg li > strong:first-child { display: block; color: var(--bla-mork); }
 .steg .zoom, .steg .maltabell { margin-top: 8px; }
 
+/* «Se det steg for steg»: merking av vangen, ett grep om gangen */
+.merkevisning {
+  background: var(--flate);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin: 0 0 16px;
+}
+.merke-overskrift { margin: 0 0 8px; font-weight: 700; color: var(--bla-mork); }
+.merke-tegning svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: var(--hvit);
+  border-radius: var(--radius-liten);
+  aspect-ratio: 16 / 9;
+}
+.merke-tekst { min-height: 4.4em; margin: 10px 2px; }
+.merke-kontroll {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.merke-teller { font-variant-numeric: tabular-nums; color: var(--tekst-gra); text-align: center; white-space: nowrap; }
+.merke-kontroll .knapp { white-space: nowrap; padding-left: 10px; padding-right: 10px; }
+.merke-glider { width: 100%; margin: 12px 0; accent-color: var(--bakoy-bla); }
+.merkevisning .lenkeknapp { margin-bottom: 0; background: var(--hvit); }
+
+/* Vangen reises: dreies fra flatt til slik den står, så kommer trinnene fram */
+.reis {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  transform: var(--reis);
+  animation: reis 1.4s ease-in-out both;
+}
+@keyframes reis { from { transform: none; } to { transform: var(--reis); } }
+.reis-trinn { animation: kom-fram 0.5s ease-out 1.3s both; }
+@keyframes kom-fram { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .reis, .reis-trinn { animation: none; }
+}
+
 /* Meldinger: grønn, oransje, rød og blå, med et lite tegn foran */
 .boks {
   position: relative;

@@ -80,9 +80,9 @@ test('Vangen lagt flatt: ett merke per hakk, emnelengde og 0 i oransje', () => {
   const v = lagVange(l, { nese: 20, trinnTykkelse: 28, vangeBredde: 223 });
   const svg = tegnVangeFlatt(v, { vangeBredde: 223 });
   assert.equal(tell(svg, 'class="v-vange"'), 1);
-  assert.equal(tell(svg, 'class="v-merke"'), 4); // ett per hakk
+  assert.equal(tell(svg, 'class="v-merke"'), 5); // ett per hakk, pluss hjelpespissen for øverste hakk
   for (const tall of ['>0<', '>323<', '>647<', '>970<']) assert.ok(svg.includes(tall), `mangler ${tall}`);
-  assert.ok(svg.includes('Emne minst 1\u00a0279 mm') || svg.includes('Emne minst 1 279 mm'));
+  assert.ok(svg.includes('Emne minst 1\u00a0368 mm') || svg.includes('Emne minst 1 368 mm'));
   assert.ok(svg.includes('var(--bakoy-oransje)'));
   assert.ok(!svg.includes('NaN'));
 });

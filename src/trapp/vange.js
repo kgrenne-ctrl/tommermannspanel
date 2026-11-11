@@ -83,8 +83,23 @@ export function lagVange(l, {
   const uMin = Math.min(...flatt.map((p) => p.u));
   const uMaks = Math.max(...flatt.map((p) => p.u));
 
-  // Merkene langs overkanten: spissen på hvert hakk, hvert mål regnet fra 0 og avrundet for seg
-  const merker = Array.from({ length: m }, (_, i) => ({ hakk: i + 1, avstand: Math.round(i * s), eksakt: i * s }));
+  // Merkene langs overkanten: spissen på hvert hakk, hvert mål regnet fra 0 og avrundet for seg.
+  // Én spiss ekstra øverst (hjelp: true): vinkelen trenger to spisser for å tegne øverste hakk.
+  // Den ligger utenfor vangen og kappes bort, men bordet må være langt nok til å merke den
+  // (rettet 2026-11-11: emnet var oppgitt for kort til å merke øverste hakk).
+  const merker = Array.from({ length: m + 1 }, (_, i) => ({
+    hakk: i + 1, avstand: Math.round(i * s), eksakt: i * s, hjelp: i === m,
+  }));
+  const uMerking = Math.max(uMaks, m * s);
+
+  // Hvert hakk lagt flatt: spissen der inntrinnet starter, innerste hjørne (der vinkelen har
+  // hjørnet sitt) og neste spiss, der opptrinnet slutter.
+  const hakk = Array.from({ length: m }, (_, i) => ({
+    nr: i + 1,
+    spiss: { u: i * s, v: 0 },
+    hjorne: { u: i * s + (b * b) / s, v: hakkDybde },
+    nesteSpiss: { u: (i + 1) * s, v: 0 },
+  }));
 
   const r = {
     ok: true,
@@ -102,10 +117,15 @@ export function lagVange(l, {
       foranBakkant: ovreTrinn === 'eget' ? nese : 0,
     },
     merker,
-    emnelengde: Math.ceil(uMaks - uMin - SLINGRING),
+    hakk,
+    // Minste lengde på bordet: nok til å merke alle spissene og få plass til hele vangen
+    emnelengde: Math.ceil(uMerking - uMin - SLINGRING),
     spissFraEnden: -uMin,
     omriss,
     flatt,
+    // Fra vangen lagt flatt (u, v med v nedover) til vangen reist i trappa (x, −y i SVG):
+    // x = a·u + c·v + e og −y = b·u + d·v + f. Brukes til å vise vangen bli reist.
+    reis: { a: b / s, b: -h / s, c: h / s, d: b / s, e: xk(1), f: -yk(1) },
     varsler: [],
   };
 
