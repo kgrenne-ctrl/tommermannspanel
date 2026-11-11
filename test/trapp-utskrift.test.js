@@ -24,8 +24,8 @@ function utskrift() {
 
 test('Utskriften har trappa, vangen med skisser, materialene og dataene', () => {
   const html = utskrift();
-  for (const t of ['<strong>Trapp</strong>', 'Utskrift 11.11.2026', '<h2>Trappa</h2>', 'Trinn for trinn',
-    '<h2>Vangen</h2>', 'Slik merker du vangen', 'Merk spissene.', 'Tegn toppen.', '<h2>Materialer</h2>',
+  for (const t of ['<h1>Trapp</h1>', '11.11.2026', '<h2>Inndata</h2>', '<h2>Kontroll</h2>', 'Trappa sett fra siden',
+    '<h2>Merking av vangen</h2>', 'Merk spissene', 'Tegn toppen', '<h2>Materialer</h2>', 'class="tu-nr">5<',
     'Kappliste', '3 stk, hver minst 1 418 mm', 'Data for å gjenskape eksempelet']) {
     assert.ok(html.includes(t) || html.includes(t.replace(' ', ' ')), `mangler ${t}`);
   }

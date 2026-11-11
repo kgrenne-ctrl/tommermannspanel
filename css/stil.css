@@ -965,8 +965,83 @@ footer p { margin: 4px 0; }
 /* Trappa og vangen i utskriften: lave nok til at tegning og tekst får plass på samme side */
 .u-tegning.u-lav svg { width: auto; max-width: 100%; max-height: 85mm; display: block; margin: 0 auto; }
 
+/* ---------- Utskrift av trapp (tu-), etter Bakøys maler (Kenny 2026-11-11) ---------- */
+
+.tu { font-family: var(--font); color: var(--tekst); font-size: 9.5pt; line-height: 1.35; }
+.tu h2 {
+  font-size: 10.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--bakoy-bla); margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1.5px solid var(--bakoy-bla);
+}
+.tu h3 { font-size: 10pt; font-weight: 700; color: var(--bakoy-bla); margin: 0 0 3px; }
+.tu p { margin: 0 0 4px; }
+.tu-topp {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--bakoy-bla); color: var(--hvit); padding: 10px 16px; border-bottom: 3px solid var(--bakoy-oransje);
+}
+.tu-topp img { height: 30px; width: auto; }
+.tu-tittel { text-align: right; }
+.tu-tittel h1 { margin: 0; font-size: 18pt; line-height: 1.1; }
+.tu-tittel p { margin: 2px 0 0; font-size: 9pt; color: var(--bla-lys); }
+
+.tu-tall { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0 4px; }
+.tu-kort { background: var(--flate); border-radius: 6px; padding: 6px 9px; display: flex; flex-direction: column; }
+.tu-etikett { font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tekst-gra); }
+.tu-verdi { font-size: 15pt; font-weight: 700; color: var(--bakoy-bla); line-height: 1.2; white-space: nowrap; }
+.tu-under { font-size: 7.5pt; color: var(--tekst-gra); }
+
+.tu-to { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+
+.tu-nv { width: 100%; border-collapse: collapse; }
+.tu-nv th, .tu-nv td { padding: 2.5px 6px; border-bottom: 1px solid var(--linje); text-align: left; vertical-align: top; }
+.tu-nv th { background: var(--flate); font-weight: 600; width: 44%; }
+
+.tu-melding { border-radius: 6px; padding: 5px 9px; margin: 0 0 5px; display: flex; flex-direction: column; gap: 1px; }
+.tu-melding strong { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.04em; }
+.tu-melding em { font-style: normal; color: var(--tekst-gra); }
+.tu-ok { background: var(--ok-flate); color: var(--ok-tekst); }
+.tu-ma { background: var(--feil-flate); color: var(--feil-tekst); }
+.tu-bor { background: var(--varsel-flate); color: var(--varsel-tekst); }
+.tu-vite { background: var(--flate); }
+
+.tu-tabell { width: 100%; border-collapse: collapse; font-size: 9pt; }
+.tu-tabell thead th {
+  color: var(--bakoy-bla); font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.04em;
+  text-align: left; border-bottom: 1.5px solid var(--bakoy-bla); padding: 3px 6px;
+}
+.tu-tabell td, .tu-tabell tbody th { padding: 2.5px 6px; border-bottom: 1px solid var(--linje); text-align: left; }
+.tu-tabell tbody tr:nth-child(even) td { background: var(--stripe); }
+.tu-tabell .tu-hoyre { text-align: right; }
+
+.tu-tegning-rad { display: grid; grid-template-columns: 1fr 52mm; gap: 12px; align-items: start; margin-bottom: 8px; }
+.tu-figur svg { width: 100%; height: auto; display: block; }
+.tu-tegning-rad .tu-figur svg { max-height: 82mm; }
+
+.tu-stegliste { list-style: none; padding: 0; margin: 6px 0 0; }
+.tu-steg { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--linje); }
+.tu-steg.tu-med-figur { grid-template-columns: 20px 1fr 72mm; }
+.tu-nr {
+  width: 20px; height: 20px; border-radius: 50%; background: var(--bakoy-bla); color: var(--hvit);
+  font-weight: 700; font-size: 9pt; display: flex; align-items: center; justify-content: center;
+}
+.tu-steg .tu-figur { border: 1px solid var(--linje); border-radius: 6px; padding: 3px; }
+.tu-steg .tu-figur svg { max-height: 38mm; width: auto; max-width: 100%; margin: 0 auto; }
+.tu-vangen { margin: 6px 0; }
+.tu-vangen svg { max-height: 50mm; width: auto; max-width: 100%; margin: 0 auto; }
+.tu-spisser { margin-top: 4px; table-layout: fixed; }
+.tu-spisser th { width: 22mm; background: var(--flate); font-weight: 600; }
+.tu-spisser td { text-align: center; }
+.tu-liten { font-size: 8.5pt; color: var(--tekst-gra); }
+.tu-fotnote { font-size: 7.5pt; color: var(--tekst-gra); margin-top: 4px; }
+.tu-data pre { white-space: pre-wrap; word-break: break-all; font-size: 6.5pt; background: var(--stripe); padding: 6px; margin: 0; }
+
 @media print {
   @page { size: A4; margin: 12mm; }
+  @page trapp {
+    size: A4;
+    margin: 11mm 12mm 14mm;
+    @bottom-left { content: "Bakøy Entreprenør AS  ·  Trapp"; font-family: var(--font); font-size: 7pt; color: var(--tekst-gra); }
+    @bottom-right { content: "Side " counter(page) " av " counter(pages); font-family: var(--font); font-size: 7pt; color: var(--tekst-gra); }
+  }
   body { background: var(--hvit); }
   body.skriver-ut > *:not(#utskrift) { display: none !important; }
   body.skriver-ut #utskrift { display: block !important; }
@@ -974,6 +1049,11 @@ footer p { margin: 4px 0; }
   .u-vegg { break-before: page; }
   .u-vegg:first-of-type { break-before: auto; }
   .u-vegg.u-samme-side { break-before: auto; }
+  /* Trapp: egen sidetype med sidetall nederst */
+  .tu { page: trapp; }
+  .tu-ny-side { break-before: page; }
+  .tu-kort, .tu-melding, .tu-steg, .tu-tegning-rad, .tu-to, .tu-tabell tr, .tu-materialer { break-inside: avoid; }
+  .tu h2, .tu h3 { break-after: avoid; }
   .u-tabell tr, .u-tegning, .u-hjorner, .u-hus, .u-blokk, .u-skisser, .u-steg { break-inside: avoid; }
   #utskrift h2, #utskrift h3, #utskrift h4 { break-after: avoid; }
 }

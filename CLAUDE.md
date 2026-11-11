@@ -374,9 +374,16 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - Materiallista krever bredden på trappa. Uten bredde står det hva som mangler.
 - Utskrift: «Skriv ut / PDF» i Resultat. `src/skjerm/trapp-utskrift.js` (`lagTrappUtskrift`):
   trappa (inndata, resultat, varsler, tegning, trinn for trinn), vangen (stegene fra
-  `lagVangeSteg`, vangen lagt flatt, skissene, spissene), materialer og dataene. Samme `u-`-stil
-  som kledningen. PDF-fila heter «Trapp ÅÅÅÅ-MM-DD». Tegningene er høyst 85 mm høye i
-  utskriften (`.u-lav`), så tegning og tekst får plass på samme side.
+  `lagVangeSteg`, vangen lagt flatt, skissene, spissene), materialer og dataene. PDF-fila heter
+  «Trapp ÅÅÅÅ-MM-DD».
+- Utskriften av trapp har eget oppsett (`tu-`, Kenny 2026-11-11: «design/layout på utskrift kan gjøres
+  bedre»), etter Bakøys Word-maler: blått bånd med tittel og undertittel, nøkkeltall som kort,
+  blå overskrifter i versaler med blå strek, «Bakøy tabell» og nøkkel/verdi, meldinger i farget
+  boks. Side 1: nøkkeltall, inndata og kontroll ved siden av hverandre, trappa sett fra siden med
+  trinnlista ved siden av. Side 2: merking av vangen, hvert steg med nummer og skissen ved siden av
+  (skissene høyst 38 mm). Materialer og data følger uten egen side. Egen sidetype (`page: trapp`,
+  `@page trapp`) med «Bakøy Entreprenør AS · Trapp» og «Side X av Y» nederst. Kledningsutskriften
+  (`u-`) er uendret. Eksempeltrappa og en trapp med 15 hakk gir tre sider hver.
 - «Data for eksempler» i skjemaet for trapp: `{ app: 'tommermannspanel', verktoy: 'trapp', versjon,
   trapp }`, der trapp er det som lagres på telefonen. `lesTrappdata` avviser data for kledning.
 - `lagVangeSteg` (trapp-merking.js) har teksten i de fem stegene for vangen, felles for skjerm og
