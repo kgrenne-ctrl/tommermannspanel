@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GRUPPER, KALKULATORER, finnKalkulator, startverdier, lesInndata, tekstFor, erSynlig } from '../src/skjerm/matte-liste.js';
 import {
-  tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnBord,
+  tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnSpilerUtsetting, tegnBord,
 } from '../src/skjerm/matte-tegning.js';
 import { fordelLikt, fordelSpiler, fordelBord } from '../src/matte/inndeling.js';
 import { regnFall, regnTrekant, regnOppforing } from '../src/matte/tak.js';
@@ -245,4 +245,25 @@ test('Skissene i M2: mål og ingen NaN', () => {
   const b = rens(tegnBord(fordelBord({ bredde: 3000, bordbredde: 120, spalte: 5 })));
   for (const ord of ['24 bord, spalte 5,2 mm', 'Bredde 3 000 mm']) assert.ok(b.includes(ord), ord);
   for (const svgTekst of [lik, fast, mange, sp, ingen, b]) assert.ok(!/NaN|undefined|Infinity/.test(svgTekst));
+});
+
+test('Utsetting av spiler: merkene er de samme som i lista, og forkanten står på merket', () => {
+  // Kennys rekkverk 2026-11-11: 1200 mm, 48 mm spiler, maks 100 gir 8 spiler, åpning 90,7, merker 91, 229, 368
+  const r = fordelSpiler({ lysapning: 1200, bredde: 48, maks: 100 });
+  const u = rens(tegnSpilerUtsetting(r));
+  for (const ord of ['Slik setter du ut målene', '>91<', '>229<', '>368<', '>90,7<', '>48<', 'Stolpe', '…']) assert.ok(u.includes(ord), ord);
+  assert.equal((u.match(/var\(--bakoy-oransje\)" stroke-width="2.5"/g) ?? []).length, 3, 'tre merker');
+  assert.ok(!/NaN|undefined|Infinity/.test(u));
+  // Få spiler: alle vises, med stolpen i andre enden og siste åpning målsatt
+  const to = rens(tegnSpilerUtsetting(fordelSpiler({ lysapning: 300, bredde: 48, maks: 100 })));
+  assert.ok(!to.includes('…'));
+  // 300 mm med to spiler: tre åpninger på 68 og første merke på 68
+  assert.equal((to.match(/>68</g) ?? []).length, 4, 'tre åpninger og første merke');
+  assert.ok(to.includes('>184<'));
+  // Ingen spiler: ingen utsetting
+  assert.equal(tegnSpilerUtsetting(fordelSpiler({ lysapning: 90, bredde: 21, maks: 100 })), '');
+  // Trinnene står over skissen, og kontrollmålet er åpningen
+  const { forklaring } = nokkel('spiler', { lysapning: '1200', bredde: '48', maks: '100' });
+  assert.equal(forklaring.length, 4);
+  assert.ok(forklaring[3].includes('90,7 mm'));
 });

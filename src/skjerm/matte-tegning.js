@@ -282,6 +282,63 @@ export function tegnSpiler(r) {
   return svg(B, bunn + 70, deler.join(''), `${r.antall} spiler i ${mm(r.lysapning)} mm, åpning ${mm(r.apning, 1)} mm`);
 }
 
+// Utsetting av spiler: starten av rekkverket forstørret. Båndet holdes mot innsiden av stolpen,
+// merkene står ved målene i lista, og forkanten av hver spile settes på merket med spilen bort fra
+// stolpen. Viser de tre første spilene. Er det flere, fortsetter rekkverket til høyre (…).
+const SPILER_I_UTSETTING = 3;
+
+export function tegnSpilerUtsetting(r) {
+  if (!r.antall) return '';
+  const B = 400;
+  const x0 = 58;            // innsiden av stolpen, 0 på båndet
+  const vist = Math.min(r.antall, SPILER_I_UTSETTING);
+  const flere = r.antall > vist;
+  const plass = flere ? 300 : 314;
+  const spenn = vist * (r.apning + r.bredde) + (flere ? r.apning * 0.5 : r.apning);
+  const s = plass / spenn;
+  const yBand = 62;         // båndet
+  const ySpile = 98;        // toppen av spilene
+  const yBunn = 196;
+  const yMal = 212;
+  const H = 268;
+  const x = (mm0) => x0 + mm0 * s;
+
+  const deler = [
+    tekst(16, 22, 'Slik setter du ut målene', { anker: 'start', vekt: 700, farge: 'var(--bla-mork)' }),
+    // Stolpen til venstre
+    `<rect x="${x0 - 24}" y="40" width="24" height="${yBunn - 40 + 10}" fill="var(--skisse-strek)"/>`,
+    tekst(x0 - 12, H - 8, 'Stolpe', { storrelse: 13 }), // under målene, så det ikke kolliderer med første åpning
+    // Båndet fra innsiden av stolpen
+    `<rect x="${x0}" y="${yBand}" width="${(flere ? 334 : plass) + 2}" height="12" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="1.5"/>`,
+    tekst(x0 + 3, yBand + 30, '0', { anker: 'start', storrelse: 13, farge: 'var(--tekst-gra)' }),
+  ];
+  if (!flere) {
+    deler.push(`<rect x="${x(r.lysapning)}" y="40" width="24" height="${yBunn - 40 + 10}" fill="var(--skisse-strek)"/>`);
+  }
+  for (let i = 0; i < vist; i += 1) {
+    const xf = x(r.forkant[i]);
+    const xb = xf + r.bredde * s;
+    // Spilen
+    deler.push(`<rect x="${xf}" y="${ySpile}" width="${r.bredde * s}" height="${yBunn - ySpile}" fill="var(--skisse-flate)" `
+      + 'stroke="var(--skisse-strek)" stroke-width="2"/>');
+    // Merket på båndet og ned til forkanten av spilen
+    deler.push(`<polygon points="${xf - 6},${yBand - 10} ${xf + 6},${yBand - 10} ${xf},${yBand}" fill="var(--bakoy-oransje)"/>`);
+    deler.push(`<line x1="${xf}" y1="${yBand}" x2="${xf}" y2="${ySpile}" stroke="var(--bakoy-oransje)" stroke-width="2.5" stroke-dasharray="5 3"/>`);
+    deler.push(tekst(xf, yBand - 15, mm(r.forkant[i]), { vekt: 700, farge: 'var(--bla-mork)' }));
+    // Åpningen før spilen og bredden på spilen
+    const xForrige = i === 0 ? x0 : x(r.forkant[i - 1]) + r.bredde * s;
+    deler.push(malelinje(xForrige, xf, yMal, mm(r.apning, 1)));
+    deler.push(malelinje(xf, xb, yMal, mm(r.bredde)));
+  }
+  if (flere) {
+    deler.push(tekst(B - 14, (ySpile + yBunn) / 2 + 6, '…', { anker: 'end', storrelse: 24, farge: 'var(--tekst-gra)' }));
+  } else {
+    const xSiste = x(r.forkant[vist - 1]) + r.bredde * s;
+    deler.push(malelinje(xSiste, x(r.lysapning), yMal, mm(r.apning, 1)));
+  }
+  return svg(B, H, deler.join(''), `Utsetting: forkant av spile 1 på ${mm(r.forkant[0])} mm fra innsiden av stolpen`);
+}
+
 // Terrassebord og spaltekledning sett ovenfra: bordene side om side over bredden, i riktig forhold.
 export function tegnBord(r) {
   const B = 400;

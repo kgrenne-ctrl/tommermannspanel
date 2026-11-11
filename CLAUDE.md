@@ -485,6 +485,12 @@ Claude-mappe. Ved uenighet gjelder den fila.
   forkanten av spilen målt fra innsiden av stolpen. Spilebredde har ingen standard.
 - Terrassebord: bord helt ut i begge kanter, antall som gir spalten nærmest ønsket, med ett færre og
   ett mer som alternativ. Lekter har ingen standardverdier (leggeanvisningen er ikke slått opp).
+- **Utsetting av spiler (Kenny 2026-11-11, etter skjermbilde av 1200 mm med 48 mm spiler):** under
+  oversikten tegnes «Slik setter du ut målene» (`tegnSpilerUtsetting`): stolpen, båndet fra innsiden
+  av stolpen (0), oransje merker med målene fra lista, stiplet ned til forkanten av spilen, og
+  åpning og spilebredde målsatt under. De tre første spilene vises forstørret, «…» når det er flere.
+  Over skissene står fire nummererte trinn i `forklaring`, med åpningen mot den andre stolpen som
+  kontrollmål. Kan gjøres likt for Lik avstand og Terrassebord hvis Kenny vil.
 - «Sist brukt» vises nå i menyen (sju utregninger etter M2).
 - Tester: `test/matte-tak.test.js`, `test/matte-vinkel.test.js` og `test/matte-inndeling.test.js` (kontrolleksemplene i planen punkt 4 først, skal aldri slettes)
   og `test/matte-skjerm.test.js` (hver oppføring er fullstendig, eksempelet går opp uten NaN eller

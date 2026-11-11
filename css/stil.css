@@ -944,6 +944,8 @@ footer p { margin: 4px 0; }
 }
 
 .matte-tegning .tegning { max-width: 520px; margin: 0 auto; }
+/* To skisser i samme utregning (spiler: oversikt og utsetting) skilles med en strek */
+.matte-tegning .tegning + .tegning { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--linje); }
 
 .matte-utregning p { font-size: 15px; margin: 6px 0; font-variant-numeric: tabular-nums; }
 /* Tallene i Matte kan være lange («10 000 mm»), så de er litt mindre enn i Kledning og Trapp og

@@ -22,7 +22,7 @@ import { regnDiagonal } from '../matte/vinkel.js';
 import { fordelLikt, fordelSpiler, fordelBord } from '../matte/inndeling.js';
 import { lesTall, mm, grader } from './format.js';
 import {
-  tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnBord,
+  tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnSpilerUtsetting, tegnBord,
 } from './matte-tegning.js';
 
 // Rekkefølgen på gruppene i menyen. Grupper uten utregninger vises ikke.
@@ -494,8 +494,10 @@ const spiler = {
     return {
       nokkeltall,
       forklaring: r.antall ? [
-        'Mål fra innsiden av den ene stolpen. Merket er forkanten av spilen, siden nærmest stolpen du måler fra. '
-          + 'Første spile står én åpning fra stolpen.',
+        '1. Hold enden av båndet mot innsiden av den ene stolpen, og mål langs håndlista eller bunnlista.',
+        '2. Sett et merke ved hvert mål i lista under.',
+        '3. Sett forkanten av spilen på merket, med spilen på siden bort fra stolpen.',
+        `4. Kontroller til slutt: åpningen mot den andre stolpen skal være ${mm(r.apning, 1)} mm.`,
       ] : ['Lysåpningen er ikke større enn største åpning, så det trengs ingen spiler.'],
       liste: r.antall ? {
         tittel: 'Forkant av hver spile',
@@ -505,7 +507,7 @@ const spiler = {
       utregning,
     };
   },
-  tegn: (r) => tegnSpiler(r),
+  tegn: (r) => tegnSpiler(r) + tegnSpilerUtsetting(r),
   eksempel: { lysapning: '1800', bredde: '21', maks: '100' },
 };
 
