@@ -2,7 +2,7 @@
 
 Plan 2026-11-11, oppdatert samme dag etter Kennys svar (punkt 10). Skrevet da appen sto på commit cdb69f1 (Kledning og Trapp til og med fase T3). Planen er skrevet for Opus 5.5 i Claude Code og bygges én fase om gangen, rett på `main`.
 
-Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 publisert samme dag (commit 8c89330, 181 tester). M2 bygget samme dag (194 tester), med `fordelSpiler` i `src/matte/inndeling.js` klar for T7. T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
+Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 publisert samme dag (commit 8c89330, 181 tester). M2 publisert samme dag (commit 4257cfd), med `fordelSpiler` i `src/matte/inndeling.js` klar for T7. Utsettingsskisse for spiler publisert (commit 216f0c6). M3 bygget samme dag (205 tester). T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
 
 ## 1. Mål
 
@@ -64,11 +64,11 @@ Modulen skal se ut og oppføre seg som Kledning og Trapp: samme toppbånd, kort,
 - Kilsperre har samme lengde og vinkler som grad.
 - Kontroll: løp 4000, 30°. Vannrett 5656,9, gradvinkel 22,2°, lengde 6110,1, fasing 20,7°. Skiftesperrer ved c/c 600: 692,8 kortere for hver. Kjent verdi til testen: takvinkel 26,57° (1:2) gir gradvinkel 19,47° og fasing 18,43°.
 
-**Stendere i gavl og skråvegg.** Inn: takvinkel, c/c, stendertykkelse, lengden på første stender.
+**Stendere i gavl og skråvegg.** Inn: takvinkel, c/c, stendertykkelse, lengden på første stender, og (lagt til i M3) lengden fra første til siste stender, så appen kan gi hele lista. Lengdene gjelder kort side, siden mot den lave enden.
 - Økning per stender = cc × tan(v). Kappes med saga på v. Forskjell mellom lang og kort side = tykkelse × tan(v). Appen sier hvilken side målet gjelder.
 - Kontroll: c/c 600 og 30° gir 346,4 per stender, løpende 346, 693, 1039, 1386. Lang og kort side skiller 27,7 mm på 48 mm stender.
 
-**Nytt: Takflate.** Grunnflate / cos(v), til takstein, undertak og lekter. Kontroll: 8,0 × 4,0 m ved 30° = 36,95 m².
+**Nytt: Takflate.** Grunnflate / cos(v), til takstein, undertak og lekter. Kontroll: 8,0 × 4,0 m ved 30° = 36,95 m². Grunnflaten skrives i mm som resten av appen. Valg mellom saltak og pulttak gir per side og mål langs taket.
 
 ### Vinkler og gjæring
 

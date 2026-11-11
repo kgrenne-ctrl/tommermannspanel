@@ -6,6 +6,10 @@
 //           tan(v) = prosent / 100 = 1 / x = mm per meter / 1000.
 // regnTrekant:   rettvinklet trekant, to kjente gir de andre, med vinkel på saga (fase M1).
 // regnOppforing: høyden på kiler og oppforing for hver c/c bortover et fall (fase M1).
+// regnSperre:    lengde, emne, snitt og fuglemunn for en sperre (fase M3).
+// regnGavlstendere: lengden på stenderne under en skrå svill, kort og lang side (fase M3).
+// regnTakflate:  grunnflate regnet om til flate langs taket (fase M3).
+// Appen regner geometri, ikke bæreevne.
 
 const RAD = Math.PI / 180;
 
@@ -235,5 +239,187 @@ export function regnOppforing(inndata) {
     punkter,
     hoydeEnde: start + lengde * fall.tan,
     okningPerCc: cc * fall.tan,
+  };
+}
+
+// ---------- Felles for tak (fase M3) ----------
+
+// Gir feil når takvinkelen ikke er mellom 0° og 90° (0 er bare lov der det står).
+function sjekkVinkel(vinkel, feil, { nullLov = false } = {}) {
+  if (!erTall(vinkel)) feil.push('Skriv inn takvinkelen.');
+  else if (vinkel < 0 || vinkel >= 90 || (!nullLov && vinkel === 0)) {
+    feil.push(nullLov ? 'Takvinkelen må være fra 0° og under 90°.' : 'Takvinkelen må være over 0° og under 90°.');
+  }
+}
+
+// «Greit å vite» når et kapp er over 45° på saga, som i trekanten
+function sagVarsel(grader, hva) {
+  if (grader <= SAG_SIKKER_GRADER) return [];
+  return [{
+    niva: 'vite',
+    type: 'sag-vinkel',
+    tekst: `${hva} er over ${SAG_SIKKER_GRADER}° på saga. Går ikke saga di så langt, merk snittet med vinkel `
+      + 'og kapp etter streken.',
+    kilde: '',
+  }];
+}
+
+const BAEREEVNE = {
+  niva: 'vite',
+  type: 'geometri',
+  tekst: 'Appen regner geometri, ikke bæreevne. Dimensjon på sperra og hvor mye som kan tas ut i fuglemunnen, '
+    + 'står i prosjekteringen.',
+  kilde: '',
+};
+
+// ---------- Sperre (fase M3) ----------
+
+// inndata: { lop, vinkel, utstikk, hoyde, sete, monebord }
+//   lop:      vannrett fra utsiden av svilla til midt møne (mm)
+//   vinkel:   takvinkel (grader)
+//   utstikk:  vannrett utenfor svilla (mm), 0 når tomt
+//   hoyde:    sperrehøyden, målt vinkelrett på kanten (mm)
+//   sete:     setet i fuglemunnen, vannrett (mm). Tomt gir ingen fuglemunn.
+//   monebord: tykkelsen på mønebordet (mm), 0 når tomt
+// Lengden langs overkant er mellom loddsnittene. Emnet er lengre fordi loddsnittene står skrått:
+// det lange punktet er på overkanten ved mønet og på underkanten ved utstikket.
+export function regnSperre(inndata) {
+  const { lop, vinkel, hoyde } = inndata;
+  const utstikk = erTall(inndata.utstikk) ? inndata.utstikk : 0;
+  const monebord = erTall(inndata.monebord) ? inndata.monebord : 0;
+  const sete = erTall(inndata.sete) ? inndata.sete : null;
+  const feil = [];
+  if (!erTall(lop) || lop <= 0) feil.push('Løpet må være større enn 0.');
+  sjekkVinkel(vinkel, feil);
+  if (!erTall(hoyde) || hoyde <= 0) feil.push('Sperrehøyden må være større enn 0.');
+  if (utstikk < 0) feil.push('Utstikket kan ikke være under 0.');
+  if (monebord < 0) feil.push('Mønebordet kan ikke være under 0.');
+  if (sete !== null && sete < 0) feil.push('Setet kan ikke være under 0.');
+  if (feil.length) return { ok: false, feil };
+  if (monebord / 2 >= lop) return { ok: false, feil: ['Halve mønebordet er lengre enn løpet.'] };
+
+  const v = vinkel * RAD;
+  const cos = Math.cos(v);
+  const tan = Math.tan(v);
+  const lopTilBord = lop - monebord / 2;
+  const lengdeMoneTilHakk = lopTilBord / cos;
+  const lengdeUtstikk = utstikk / cos;
+  const lengde = lengdeMoneTilHakk + lengdeUtstikk;
+  const emne = lengde + hoyde * tan;
+
+  let fuglemunn = null;
+  if (sete !== null && sete > 0) {
+    const dybde = sete * Math.sin(v);
+    if (dybde >= hoyde) return { ok: false, feil: ['Fuglemunnen tar hele sperra. Sjekk setet og sperrehøyden.'] };
+    fuglemunn = {
+      sete,
+      loddrett: sete * tan,
+      dybde,
+      rest: hoyde - dybde,
+      langsUnderkant: sete / cos,
+    };
+  }
+
+  return {
+    ok: true,
+    lop,
+    vinkel,
+    utstikk,
+    hoyde,
+    monebord,
+    lengde,
+    lengdeMoneTilHakk,
+    lengdeUtstikk,
+    emne,
+    stigning: lop * tan,
+    sagLoddsnitt: vinkel,
+    sagVannrett: 90 - vinkel,
+    fuglemunn,
+    varsler: [...sagVarsel(90 - vinkel, 'Det vannrette snittet'), ...sagVarsel(vinkel, 'Loddsnittet'), BAEREEVNE],
+  };
+}
+
+// ---------- Stendere i gavl og skråvegg (fase M3) ----------
+
+// inndata: { vinkel, cc, tykkelse, forste, lengde }
+//   vinkel:   takvinkel, altså vinkelen på den skrå svilla (grader)
+//   cc:       c/c mellom stenderne (mm)
+//   tykkelse: stendertykkelse langs veggen (mm)
+//   forste:   lengden på første stender, kort side (mm)
+//   lengde:   fra første stender til siste, langs bunnsvilla (mm). Siste stender står i enden.
+// Kort side er siden mot den lave enden. Lang side er tykkelse × tan(v) lengre.
+export function regnGavlstendere(inndata) {
+  const { vinkel, cc, tykkelse, forste, lengde } = inndata;
+  const feil = [];
+  sjekkVinkel(vinkel, feil);
+  if (!erTall(cc) || cc <= 0) feil.push('C/c må være større enn 0.');
+  if (!erTall(tykkelse) || tykkelse <= 0) feil.push('Stendertykkelsen må være større enn 0.');
+  if (!erTall(forste) || forste <= 0) feil.push('Første stender må være lengre enn 0.');
+  if (!erTall(lengde) || lengde < 0) feil.push('Lengden kan ikke være under 0.');
+  if (feil.length) return { ok: false, feil };
+  if (Math.ceil(lengde / cc - 1e-9) + 1 > MAKS_PUNKTER) {
+    return { ok: false, feil: [`Det blir over ${MAKS_PUNKTER} stendere. Sjekk at målene er i mm.`] };
+  }
+
+  const tan = Math.tan(vinkel * RAD);
+  const forskjell = tykkelse * tan;
+  const stender = (avstand, nr) => ({ nr, avstand, kort: forste + avstand * tan, lang: forste + avstand * tan + forskjell });
+  const stendere = [];
+  for (let i = 0; i * cc < lengde - 1e-9; i += 1) stendere.push(stender(i * cc, i + 1));
+  stendere.push(stender(lengde, stendere.length + 1));
+
+  return {
+    ok: true,
+    vinkel,
+    cc,
+    tykkelse,
+    forste,
+    lengde,
+    okning: cc * tan,
+    forskjell,
+    stendere,
+    sag: vinkel,
+    vinkelEmne: 90 - vinkel,
+    varsler: sagVarsel(vinkel, 'Kappet'),
+  };
+}
+
+// ---------- Takflate (fase M3) ----------
+
+// inndata: { lengde, bredde, vinkel, taktype }
+//   lengde, bredde: grunnflaten målt vannrett, med utstikk (mm)
+//   vinkel:         takvinkel (grader), lik på alle takflatene
+//   taktype:        'saltak' (to flater, mønet midt på bredden) eller 'pulttak' (én flate)
+// Takflate = grunnflate / cos(v). Areal i m².
+export const TAKTYPER = Object.freeze(['saltak', 'pulttak']);
+
+export function regnTakflate(inndata) {
+  const { lengde, bredde, vinkel, taktype } = inndata;
+  const feil = [];
+  if (!TAKTYPER.includes(taktype)) feil.push(`Ukjent taktype: ${taktype}`);
+  if (!erTall(lengde) || lengde <= 0) feil.push('Lengden må være større enn 0.');
+  if (!erTall(bredde) || bredde <= 0) feil.push('Bredden må være større enn 0.');
+  sjekkVinkel(vinkel, feil, { nullLov: true });
+  if (feil.length) return { ok: false, feil };
+
+  const cos = Math.cos(vinkel * RAD);
+  const grunnflate = (lengde * bredde) / 1e6;
+  const takflate = grunnflate / cos;
+  const flater = taktype === 'saltak' ? 2 : 1;
+  const vannrettPerFlate = bredde / flater;
+  return {
+    ok: true,
+    lengde,
+    bredde,
+    vinkel,
+    taktype,
+    grunnflate,
+    takflate,
+    flater,
+    perFlate: takflate / flater,
+    vannrettPerFlate,
+    langsTaket: vannrettPerFlate / cos,
+    tillegg: 1 / cos - 1,
+    varsler: [],
   };
 }

@@ -3,7 +3,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { regnFall, KJENT_FALL, regnTrekant, KJENT_TREKANT, regnOppforing } from '../src/matte/tak.js';
+import {
+  regnFall, KJENT_FALL, regnTrekant, KJENT_TREKANT, regnOppforing, regnSperre, regnGavlstendere, regnTakflate,
+} from '../src/matte/tak.js';
 
 const naer = (faktisk, ventet, toleranse, tekst) =>
   assert.ok(Math.abs(faktisk - ventet) <= toleranse, `${tekst}: fikk ${faktisk}, ventet ${ventet}`);
@@ -166,5 +168,100 @@ test('Oppforing: umulige mål gir beskjed og aldri NaN', () => {
     const r = regnOppforing(inn);
     assert.equal(r.ok, false, JSON.stringify(inn));
     assert.ok(r.feil.length > 0 && r.feil.every((t) => !t.includes('NaN')));
+  }
+});
+
+// ---------- Sperre (fase M3) ----------
+
+test('Kontrolleksempel sperre (PLAN-matte.md punkt 4): løp 4000, 30°, utstikk 600, 48 × 198, sete 98', () => {
+  const r = regnSperre({ lop: 4000, vinkel: 30, utstikk: 600, hoyde: 198, sete: 98 });
+  assert.equal(r.ok, true);
+  naer(r.lengde, 5311.6, 0.05, 'lengde langs overkant');
+  naer(r.lengdeUtstikk, 692.8, 0.05, 'herav utstikk');
+  naer(r.lengdeMoneTilHakk, 4618.8, 0.05, 'møne til hakk');
+  assert.equal(Math.round(r.emne), 5426);
+  naer(r.stigning, 2309.4, 0.05, 'stigning');
+  naer(r.fuglemunn.loddrett, 56.6, 0.05, 'hakk loddrett');
+  naer(r.fuglemunn.dybde, 49.0, 0.05, 'hakk vinkelrett');
+  naer(r.fuglemunn.rest, 149.0, 0.05, 'resthøyde');
+  assert.equal(r.sagLoddsnitt, 30);
+  assert.equal(r.sagVannrett, 60);
+});
+
+test('Sperre: mønebord, uten utstikk og uten fuglemunn', () => {
+  const med = regnSperre({ lop: 4000, vinkel: 30, utstikk: 600, hoyde: 198, monebord: 48 });
+  naer(med.lengde, 5311.62 - 24 / Math.cos(Math.PI / 6), 0.01, 'halve mønebordet trukket fra');
+  assert.equal(med.fuglemunn, null);
+  const uten = regnSperre({ lop: 3000, vinkel: 45, hoyde: 148 });
+  naer(uten.lengde, 3000 * Math.SQRT2, 1e-9, 'uten utstikk');
+  naer(uten.emne - uten.lengde, 148, 1e-9, 'emnet er sperrehøyde × tan(v) lengre');
+  // Vannrett snitt på 60° er over 45°: «greit å vite»; bæreevne står alltid
+  const typer = regnSperre({ lop: 4000, vinkel: 30, hoyde: 198 }).varsler.map((v) => v.type);
+  assert.deepEqual(typer, ['sag-vinkel', 'geometri']);
+  assert.ok(regnSperre({ lop: 4000, vinkel: 30, hoyde: 198 }).varsler.every((v) => !v.tekst.includes('\u2014')));
+});
+
+test('Sperre: umulige mål gir beskjed og aldri NaN', () => {
+  const feil = [
+    { lop: 0, vinkel: 30, hoyde: 198 },
+    { lop: 4000, vinkel: 90, hoyde: 198 },
+    { lop: 4000, vinkel: 0, hoyde: 198 },
+    { lop: 4000, vinkel: 30, hoyde: null },
+    { lop: 4000, vinkel: 30, hoyde: 198, utstikk: -1 },
+    { lop: 4000, vinkel: 30, hoyde: 198, sete: 500 },
+    { lop: 40, vinkel: 30, hoyde: 198, monebord: 100 },
+  ];
+  for (const inn of feil) {
+    const r = regnSperre(inn);
+    assert.equal(r.ok, false, JSON.stringify(inn));
+    assert.ok(r.feil.length > 0 && r.feil.every((t) => !t.includes('NaN')));
+  }
+});
+
+// ---------- Stendere i gavl (fase M3) ----------
+
+test('Kontrolleksempel gavlstendere (PLAN-matte.md punkt 4): c/c 600 og 30° gir 346,4 per stender', () => {
+  const r = regnGavlstendere({ vinkel: 30, cc: 600, tykkelse: 48, forste: 2400, lengde: 2400 });
+  assert.equal(r.ok, true);
+  naer(r.okning, 346.4, 0.05, 'økning');
+  assert.deepEqual(r.stendere.slice(1).map((st) => Math.round(st.kort - r.forste)), [346, 693, 1039, 1386]);
+  naer(r.forskjell, 27.7, 0.05, 'lang og kort side');
+  naer(r.stendere[0].lang - r.stendere[0].kort, r.forskjell, 1e-9, 'lang side');
+  assert.equal(r.sag, 30);
+  assert.equal(r.vinkelEmne, 60);
+});
+
+test('Gavlstendere: siste stender står i enden, og hver lengde regnes fra første', () => {
+  const r = regnGavlstendere({ vinkel: 22, cc: 600, tykkelse: 48, forste: 1000, lengde: 2000 });
+  assert.deepEqual(r.stendere.map((st) => st.avstand), [0, 600, 1200, 1800, 2000]);
+  naer(r.stendere.at(-1).kort, 1000 + 2000 * Math.tan(22 * Math.PI / 180), 1e-9, 'siste');
+  assert.equal(regnGavlstendere({ vinkel: 22, cc: 600, tykkelse: 48, forste: 1000, lengde: 0 }).stendere.length, 1);
+  for (const inn of [{ vinkel: 22, cc: 0, tykkelse: 48, forste: 1000, lengde: 2000 },
+    { vinkel: 95, cc: 600, tykkelse: 48, forste: 1000, lengde: 2000 },
+    { vinkel: 22, cc: 600, tykkelse: 48, forste: 0, lengde: 2000 },
+    { vinkel: 22, cc: 0.5, tykkelse: 48, forste: 1000, lengde: 2000 }]) {
+    const f = regnGavlstendere(inn);
+    assert.equal(f.ok, false, JSON.stringify(inn));
+    assert.ok(f.feil.every((t) => !t.includes('NaN')));
+  }
+});
+
+// ---------- Takflate (fase M3) ----------
+
+test('Kontrolleksempel takflate (PLAN-matte.md punkt 4): 8,0 × 4,0 m ved 30° gir 36,95 m²', () => {
+  const r = regnTakflate({ lengde: 8000, bredde: 4000, vinkel: 30, taktype: 'saltak' });
+  assert.equal(r.ok, true);
+  naer(r.grunnflate, 32, 1e-9, 'grunnflate');
+  naer(r.takflate, 36.95, 0.005, 'takflate');
+  naer(r.perFlate, 18.475, 0.001, 'per flate');
+  naer(r.langsTaket, 2309.4, 0.05, 'langs taket per flate');
+  const pult = regnTakflate({ lengde: 8000, bredde: 4000, vinkel: 30, taktype: 'pulttak' });
+  naer(pult.takflate, r.takflate, 1e-9, 'samme flate');
+  naer(pult.langsTaket, 4618.8, 0.05, 'langs taket pulttak');
+  assert.equal(regnTakflate({ lengde: 8000, bredde: 4000, vinkel: 0, taktype: 'pulttak' }).takflate, 32);
+  for (const inn of [{ lengde: 0, bredde: 4000, vinkel: 30, taktype: 'saltak' },
+    { lengde: 8000, bredde: 4000, vinkel: 90, taktype: 'saltak' },
+    { lengde: 8000, bredde: 4000, vinkel: 30, taktype: 'valmtak' }]) {
+    assert.equal(regnTakflate(inn).ok, false, JSON.stringify(inn));
   }
 });

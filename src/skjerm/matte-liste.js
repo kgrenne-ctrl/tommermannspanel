@@ -17,12 +17,15 @@
 // d er det som er fylt inn: tall for tallfelt (null når tomt eller skjult), tekst for valg.
 // Ingen kobling til nettleseren her, så alt kan testes med node --test.
 
-import { regnFall, regnTrekant, regnOppforing } from '../matte/tak.js';
+import {
+  regnFall, regnTrekant, regnOppforing, regnSperre, regnGavlstendere, regnTakflate,
+} from '../matte/tak.js';
 import { regnDiagonal } from '../matte/vinkel.js';
 import { fordelLikt, fordelSpiler, fordelBord } from '../matte/inndeling.js';
 import { lesTall, mm, grader } from './format.js';
 import {
   tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnSpilerUtsetting, tegnBord,
+  tegnSperre, tegnFuglemunn, tegnGavlstendere, tegnStenderTopp, tegnTakflate,
 } from './matte-tegning.js';
 
 // Rekkefølgen på gruppene i menyen. Grupper uten utregninger vises ikke.
@@ -553,8 +556,229 @@ const bord = {
   eksempel: { bredde: '3000', bordbredde: '120', spalte: '5' },
 };
 
+// ---------- Sperre (fase M3) ----------
+
+const vinkelFelt = { id: 'vinkel', type: 'tall', ledetekst: 'Takvinkel (grader)', plassholder: 'f.eks. 30' };
+
+const sperre = {
+  id: 'sperre',
+  gruppe: 'fall',
+  tittel: 'Sperre',
+  beskrivelse: 'Lengde, emne, loddsnitt og fuglemunn fra løp, takvinkel og utstikk',
+  felt: [
+    { id: 'lop', type: 'tall', ledetekst: 'Løp (mm)', plassholder: 'f.eks. 4000', hjelp: 'Vannrett fra utsiden av svilla til midt møne.' },
+    vinkelFelt,
+    { id: 'utstikk', type: 'tall', ledetekst: 'Utstikk (mm), kan stå tomt', plassholder: 'f.eks. 600', hjelp: 'Vannrett utenfor svilla.' },
+    {
+      id: 'hoyde',
+      type: 'tall',
+      ledetekst: 'Sperrehøyde (mm)',
+      plassholder: 'f.eks. 198',
+      hjelp: 'Målt vinkelrett på kanten, 198 på en 48 × 198.',
+    },
+    {
+      id: 'sete',
+      type: 'tall',
+      ledetekst: 'Sete i fuglemunnen (mm), kan stå tomt',
+      plassholder: 'f.eks. 98',
+      hjelp: 'Vannrett, som regel bredden på svilla.',
+    },
+    {
+      id: 'monebord',
+      type: 'tall',
+      ledetekst: 'Mønebord (mm), kan stå tomt',
+      plassholder: 'f.eks. 48',
+      hjelp: 'Tykkelsen. Halvparten trekkes fra løpet.',
+    },
+  ],
+  mangler: (d) => {
+    if (d.lop === null) return 'Skriv inn løpet.';
+    if (d.vinkel === null) return 'Skriv inn takvinkelen.';
+    if (d.hoyde === null) return 'Skriv inn sperrehøyden.';
+    return null;
+  },
+  regn: (d) => regnSperre(d),
+  vis: (r) => {
+    const fm = r.fuglemunn;
+    const nokkeltall = [
+      ['Emne', `${mm(r.emne)} mm`, 'Minste lengde å kappe fra'],
+      ['Overkant', `${mm(r.lengde, 1)} mm`, 'Mellom loddsnittene'],
+      ['Møne til hakk', `${mm(r.lengdeMoneTilHakk, 1)} mm`, 'Langs kanten'],
+    ];
+    if (r.utstikk > 0) nokkeltall.push(['Utstikk', `${mm(r.lengdeUtstikk, 1)} mm`, 'Langs kanten']);
+    nokkeltall.push(
+      ['Stigning', `${mm(r.stigning, 1)} mm`, 'Fra hakket til midt møne'],
+      ['Loddsnitt', grader(r.sagLoddsnitt), `Saga. På emnet ${grader(90 - r.vinkel)}`],
+      ['Vannrett snitt', grader(r.sagVannrett), `Saga. På emnet ${grader(r.vinkel)}`],
+    );
+    if (fm) {
+      nokkeltall.push(
+        ['Fuglemunn loddrett', `${mm(fm.loddrett, 1)} mm`, `Sete ${mm(fm.sete)} mm vannrett`],
+        ['Resthøyde', `${mm(fm.rest, 1)} mm`, `Dybde ${mm(fm.dybde, 1)} mm`],
+      );
+    }
+    const forklaring = [
+      `Merk loddsnittene ved mønet og ved enden av utstikket med saga på ${grader(r.sagLoddsnitt)}. `
+        + `Lengden langs overkant mellom dem er ${mm(r.lengde, 1)} mm.`,
+    ];
+    if (r.utstikk > 0 && fm) {
+      forklaring.push(`Hakket står ${mm(r.lengdeUtstikk, 1)} mm fra enden av utstikket, målt langs underkanten.`);
+    }
+    if (fm) {
+      forklaring.push(`Fuglemunnen: merk et loddsnitt ved hakket, mål ${mm(fm.loddrett, 1)} mm opp langs det fra underkanten, `
+        + `og merk setet vannrett derfra, ${mm(fm.sete)} mm. Langs underkanten blir det ${mm(fm.langsUnderkant, 1)} mm.`);
+    }
+    const c = mm(Math.cos(r.vinkel * Math.PI / 180), 4);
+    const t = mm(Math.tan(r.vinkel * Math.PI / 180), 4);
+    const utregning = [
+      `cos(${grader(r.vinkel)}) = ${c} og tan(${grader(r.vinkel)}) = ${t}.`,
+      r.monebord > 0
+        ? `Møne til hakk: (løp − mønebord / 2) / cos = (${mm(r.lop)} − ${mm(r.monebord / 2, 1)}) / ${c} = ${mm(r.lengdeMoneTilHakk, 1)} mm.`
+        : `Møne til hakk: løp / cos = ${mm(r.lop)} / ${c} = ${mm(r.lengdeMoneTilHakk, 1)} mm.`,
+    ];
+    if (r.utstikk > 0) utregning.push(`Utstikk: ${mm(r.utstikk)} / ${c} = ${mm(r.lengdeUtstikk, 1)} mm.`);
+    utregning.push(
+      `Overkant: ${mm(r.lengdeMoneTilHakk, 1)}${r.utstikk > 0 ? ` + ${mm(r.lengdeUtstikk, 1)}` : ''} = ${mm(r.lengde, 1)} mm.`,
+      `Emne: overkant + sperrehøyde × tan = ${mm(r.lengde, 1)} + ${mm(r.hoyde)} × ${t} = ${mm(r.emne, 1)} mm. `
+        + 'Loddsnittene står skrått, så det lange punktet er på overkanten ved mønet og på underkanten ved utstikket.',
+      `Stigning: løp × tan = ${mm(r.lop)} × ${t} = ${mm(r.stigning, 1)} mm.`,
+      `Saga: 0° er rett kapp. Loddsnitt ${grader(r.sagLoddsnitt)}, vannrett snitt 90° − ${grader(r.vinkel)} = ${grader(r.sagVannrett)}.`,
+    );
+    if (fm) {
+      utregning.push(
+        `Fuglemunn loddrett: sete × tan = ${mm(fm.sete)} × ${t} = ${mm(fm.loddrett, 1)} mm.`,
+        `Dybde vinkelrett på kanten: sete × sin = ${mm(fm.sete)} × ${mm(Math.sin(r.vinkel * Math.PI / 180), 4)} = ${mm(fm.dybde, 1)} mm.`,
+        `Resthøyde: ${mm(r.hoyde)} − ${mm(fm.dybde, 1)} = ${mm(fm.rest, 1)} mm.`,
+      );
+    }
+    return { nokkeltall, forklaring, utregning };
+  },
+  tegn: (r) => tegnSperre(r) + tegnFuglemunn(r),
+  eksempel: { lop: '4000', vinkel: '30', utstikk: '600', hoyde: '198', sete: '98' },
+};
+
+// ---------- Stendere i gavl og skråvegg (fase M3) ----------
+
+const gavlstendere = {
+  id: 'gavl',
+  gruppe: 'fall',
+  tittel: 'Stendere i gavl og skråvegg',
+  beskrivelse: 'Lengden på hver stender under en skrå svill, kort og lang side, og vinkel på saga',
+  felt: [
+    vinkelFelt,
+    { id: 'cc', type: 'tall', ledetekst: 'C/c (mm)', plassholder: 'f.eks. 600' },
+    { id: 'tykkelse', type: 'tall', ledetekst: 'Stendertykkelse (mm)', plassholder: 'f.eks. 48' },
+    {
+      id: 'forste',
+      type: 'tall',
+      ledetekst: 'Første stender, kort side (mm)',
+      plassholder: 'f.eks. 2400',
+      hjelp: 'Kort side er siden mot den lave enden.',
+    },
+    {
+      id: 'lengde',
+      type: 'tall',
+      ledetekst: 'Fra første til siste stender (mm)',
+      plassholder: 'f.eks. 2400',
+      hjelp: 'Langs bunnsvilla. Siste stender står i enden.',
+    },
+  ],
+  mangler: (d) => {
+    if (d.vinkel === null) return 'Skriv inn takvinkelen.';
+    if (d.cc === null) return 'Skriv inn c/c.';
+    if (d.tykkelse === null) return 'Skriv inn stendertykkelsen.';
+    if (d.forste === null) return 'Skriv inn lengden på første stender.';
+    if (d.lengde === null) return 'Skriv inn lengden fra første til siste stender.';
+    return null;
+  },
+  regn: (d) => regnGavlstendere(d),
+  vis: (r) => ({
+    nokkeltall: [
+      ['Per stender', `${mm(r.okning, 1)} mm`, `Lengre for hver ${mm(r.cc)} mm`],
+      ['Lang side', `+${mm(r.forskjell, 1)} mm`, 'Mot kort side'],
+      ['Saga', grader(r.sag), `På emnet ${grader(r.vinkelEmne)}`],
+      ['Stendere', String(r.stendere.length), `Siste ${mm(r.stendere.at(-1).kort)} mm`],
+    ],
+    forklaring: [
+      `Lengdene i lista gjelder kort side, den siden som vender mot den lave enden. Lang side er ${mm(r.forskjell, 1)} mm lengre.`,
+      `Kapp toppen med saga på ${grader(r.sag)}. Hver lengde er regnet fra første stender og rundet for seg.`,
+    ],
+    liste: {
+      tittel: 'Lengde på hver stender',
+      kolonner: ['Nr', 'Fra første (mm)', 'Kort side', 'Lang side'],
+      rader: r.stendere.map((st) => [String(st.nr), mm(st.avstand), mm(st.kort), mm(st.lang)]),
+    },
+    utregning: [
+      `tan(${grader(r.vinkel)}) = ${mm(Math.tan(r.vinkel * Math.PI / 180), 4)}.`,
+      `Per stender: c/c × tan = ${mm(r.cc)} × ${mm(Math.tan(r.vinkel * Math.PI / 180), 4)} = ${mm(r.okning, 1)} mm.`,
+      `Stender n, kort side: første + avstand fra første × tan. Stender 2: ${mm(r.forste)} + ${mm(r.stendere[1]?.avstand ?? 0)} × `
+        + `${mm(Math.tan(r.vinkel * Math.PI / 180), 4)} = ${mm(r.stendere[1]?.kort ?? r.forste, 1)} mm.`,
+      `Lang side: tykkelse × tan = ${mm(r.tykkelse)} × ${mm(Math.tan(r.vinkel * Math.PI / 180), 4)} = ${mm(r.forskjell, 1)} mm lengre.`,
+      `Saga: ${grader(r.sag)}. Vinkelen på emnet, mellom kanten og snittet, er 90° − ${grader(r.vinkel)} = ${grader(r.vinkelEmne)}.`,
+    ],
+  }),
+  tegn: (r) => tegnGavlstendere(r) + tegnStenderTopp(r),
+  eksempel: { vinkel: '30', cc: '600', tykkelse: '48', forste: '2400', lengde: '2400' },
+};
+
+// ---------- Takflate (fase M3) ----------
+
+const takflate = {
+  id: 'takflate',
+  gruppe: 'fall',
+  tittel: 'Takflate',
+  beskrivelse: 'Grunnflate regnet om til flaten langs taket, til takstein, undertak og lekter',
+  felt: [
+    {
+      id: 'taktype',
+      type: 'valg',
+      ledetekst: 'Taktype',
+      standard: 'saltak',
+      valg: [{ verdi: 'saltak', tekst: 'Saltak, to like flater' }, { verdi: 'pulttak', tekst: 'Pulttak, én flate' }],
+    },
+    { id: 'lengde', type: 'tall', ledetekst: 'Lengde (mm)', plassholder: 'f.eks. 8000', hjelp: 'Grunnflaten målt vannrett, med utstikk.' },
+    {
+      id: 'bredde',
+      type: 'tall',
+      ledetekst: 'Bredde (mm)',
+      plassholder: 'f.eks. 4000',
+      hjelp: (v) => (v.taktype === 'pulttak' ? 'Fra lav til høy raft, vannrett.' : 'På tvers av mønet, fra raft til raft, vannrett.'),
+    },
+    { ...vinkelFelt },
+  ],
+  mangler: (d) => {
+    if (d.lengde === null) return 'Skriv inn lengden.';
+    if (d.bredde === null) return 'Skriv inn bredden.';
+    if (d.vinkel === null) return 'Skriv inn takvinkelen.';
+    return null;
+  },
+  regn: (d) => regnTakflate(d),
+  vis: (r) => {
+    const nokkeltall = [['Takflate', `${mm(r.takflate, 2)} m²`, `Grunnflate ${mm(r.grunnflate, 2)} m²`]];
+    if (r.flater === 2) nokkeltall.push(['Per side', `${mm(r.perFlate, 2)} m²`, 'To like flater']);
+    nokkeltall.push(
+      ['Langs taket', `${mm(r.langsTaket)} mm`, r.flater === 2 ? 'Fra raft til møne' : 'Fra raft til raft'],
+      ['Tillegg', `${mm(r.tillegg * 100, 1)} %`, 'Mer enn grunnflaten'],
+    );
+    const c = mm(Math.cos(r.vinkel * Math.PI / 180), 4);
+    return {
+      nokkeltall,
+      forklaring: ['Gjelder når alle takflatene har samme vinkel. Svinn og omlegg er ikke med.'],
+      utregning: [
+        `Grunnflate: ${mm(r.lengde)} × ${mm(r.bredde)} mm = ${mm(r.grunnflate, 2)} m².`,
+        `Takflate: grunnflate / cos(${grader(r.vinkel)}) = ${mm(r.grunnflate, 2)} / ${c} = ${mm(r.takflate, 2)} m².`,
+        `Langs taket: ${mm(r.vannrettPerFlate)} / ${c} = ${mm(r.langsTaket, 1)} mm${r.flater === 2 ? ' per side' : ''}.`,
+      ],
+    };
+  },
+  tegn: (r) => tegnTakflate(r),
+  eksempel: { taktype: 'saltak', lengde: '8000', bredde: '4000', vinkel: '30' },
+};
+
 // Alle utregningene, i den rekkefølgen de står i menyen innenfor hver gruppe.
-export const KALKULATORER = Object.freeze([fallOgTakvinkel, trekanten, oppforing, diagonal, likAvstand, spiler, bord]);
+export const KALKULATORER = Object.freeze([
+  fallOgTakvinkel, trekanten, oppforing, sperre, gavlstendere, takflate, diagonal, likAvstand, spiler, bord,
+]);
 
 export function finnKalkulator(id) {
   return KALKULATORER.find((k) => k.id === id) ?? null;

@@ -355,3 +355,234 @@ export function tegnBord(r) {
   deler.push(malelinje(x0, x0 + bredde, topp + hoyde + 16, `Bredde ${mm(r.bredde)} mm`));
   return svg(B, topp + hoyde + 46, deler.join(''), `${r.antall} bord à ${mm(r.bordbredde)} mm over ${mm(r.bredde)} mm`);
 }
+
+// Tekst som følger en skrå linje (dreid vinkel grader mot klokka)
+function skraTekst(x, y, vinkel, innhold, { farge = 'var(--tekst)', vekt = 400 } = {}) {
+  return `<text x="${x}" y="${y}" font-size="${SKRIFT}" font-weight="${vekt}" text-anchor="middle" fill="${farge}" `
+    + `paint-order="stroke" stroke="var(--hvit)" stroke-width="3" transform="rotate(${-vinkel} ${x} ${y})">${innhold}</text>`;
+}
+
+// Vinkelbue fra vannrett (mot høyre) og opp til vinkelen, med tekst
+function vinkelbue(x, y, vinkel, radius, innhold) {
+  const bx = x + radius * Math.cos(vinkel * RAD);
+  const by = y - radius * Math.sin(vinkel * RAD);
+  const tx = x + (radius + 10) * Math.cos((vinkel / 2) * RAD);
+  const ty = y - (radius + 10) * Math.sin((vinkel / 2) * RAD) + 5;
+  return `<path d="M ${x + radius} ${y} A ${radius} ${radius} 0 0 0 ${bx} ${by}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="3"/>`
+    + tekst(tx, ty, innhold, { anker: 'start', vekt: 700, farge: 'var(--bla-mork)' });
+}
+
+// Sperre sett fra siden: utstikket til venstre, mønet til høyre. I riktig forhold.
+export function tegnSperre(r) {
+  const B = 400;
+  const tan = Math.tan(r.vinkel * RAD);
+  const cos = Math.cos(r.vinkel * RAD);
+  const horisontalt = r.utstikk + r.lop;
+  const s = Math.min(270 / horisontalt, 170 / (horisontalt * tan + r.hoyde / cos));
+  const xe = 34;
+  const xh = xe + r.utstikk * s;
+  const xr = xe + horisontalt * s;
+  const xBord = xr - (r.monebord / 2) * s;
+  const fm = r.fuglemunn;
+  const L = fm ? fm.loddrett * s : 0;
+  const d = (r.hoyde / cos) * s;
+  const yS = 40 + d + r.lop * tan * s - L;
+  const yb = (x) => yS + L - (x - xh) * tan;
+  const deler = [];
+
+  // Vegg og svill under hakket
+  const svillB = Math.max(8, (fm ? fm.sete : 98) * s);
+  deler.push(`<rect x="${xh}" y="${yS}" width="${svillB}" height="12" fill="var(--skisse-strek)"/>`);
+  deler.push(`<rect x="${xh}" y="${yS + 12}" width="${svillB}" height="34" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="1"/>`);
+
+  // Sperra
+  const punkter = [[xe, yb(xe)]];
+  if (fm) punkter.push([xh, yb(xh)], [xh, yS], [xh + fm.sete * s, yS]);
+  punkter.push([xBord, yb(xBord)], [xBord, yb(xBord) - d], [xe, yb(xe) - d]);
+  deler.push(`<polygon points="${punkter.map((p) => p.join(',')).join(' ')}" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" `
+    + 'stroke-width="2" stroke-linejoin="round"/>');
+
+  // Midt møne
+  deler.push(`<line x1="${xr}" y1="22" x2="${xr}" y2="${yS + 46}" stroke="var(--tekst-gra)" stroke-width="1" stroke-dasharray="6 4"/>`);
+  deler.push(tekst(xr, 16, 'Midt møne', { storrelse: 12, farge: 'var(--tekst-gra)' }));
+
+  // Takvinkelen der underkanten går fra setet
+  const xv = xh + (fm ? fm.sete * s : 0);
+  deler.push(`<line x1="${xv}" y1="${yS}" x2="${xv + 70}" y2="${yS}" stroke="var(--tekst-gra)" stroke-width="1" stroke-dasharray="4 3"/>`);
+  deler.push(vinkelbue(xv, yS, r.vinkel, 44, grader(r.vinkel)));
+
+  // Lengde langs overkant, skrevet langs sperra
+  const xm = (xe + xBord) / 2;
+  const ym = yb(xm) - d - 10;
+  deler.push(skraTekst(xm, ym, r.vinkel, `Overkant ${mm(r.lengde, 1)} mm`, { vekt: 700, farge: 'var(--bla-mork)' }));
+
+  // Stigning til høyre for mønet
+  const yTopp = yb(xr);
+  const yBunn = yb(xh);
+  deler.push(`<line x1="${xr + 12}" y1="${yBunn}" x2="${xr + 12}" y2="${yTopp}" stroke="var(--tekst-gra)" stroke-width="1"/>`);
+  deler.push(tekst(xr + 18, (yBunn + yTopp) / 2 - 4, 'Stigning', { anker: 'start', storrelse: 13 }));
+  deler.push(tekst(xr + 18, (yBunn + yTopp) / 2 + 13, mm(r.stigning, 1), { anker: 'start', storrelse: 13 }));
+
+  // Utstikk og løp, vannrett under
+  const yMal = Math.max(yb(xe), yS + 46) + 18;
+  deler.push(malelinje(xh, xr, yMal, `Løp ${mm(r.lop)}`));
+  let H = yMal + 32;
+  if (r.utstikk > 0) {
+    if (xh - xe >= mm(r.utstikk).length * 8 + 8) { // tallet får plass mellom endestrekene
+      deler.push(malelinje(xe, xh, yMal, mm(r.utstikk)));
+    } else {
+      // Smalt utstikk: målet skrives på egen linje under, så det ikke går i løpet
+      deler.push(`<line x1="${xe}" y1="${yMal}" x2="${xh}" y2="${yMal}" stroke="var(--tekst-gra)" stroke-width="1"/>`
+        + `<line x1="${xe}" y1="${yMal - 6}" x2="${xe}" y2="${yMal + 6}" stroke="var(--tekst-gra)" stroke-width="1"/>`);
+      deler.push(tekst(xe, yMal + 40, `Utstikk ${mm(r.utstikk)}`, { anker: 'start' }));
+      H += 22;
+    }
+  }
+  return svg(B, H, deler.join(''), `Sperre ${grader(r.vinkel)}, ${mm(r.lengde, 1)} mm langs overkant`);
+}
+
+// Fuglemunnen forstørret: setet på svilla, loddsnittet og hvor mye som står igjen av sperra.
+export function tegnFuglemunn(r) {
+  const fm = r.fuglemunn;
+  if (!fm) return '';
+  const B = 400;
+  const tan = Math.tan(r.vinkel * RAD);
+  const sin = Math.sin(r.vinkel * RAD);
+  const cos = Math.cos(r.vinkel * RAD);
+  const s = Math.min(110 / fm.sete, 140 / r.hoyde);
+  const xh = 150;
+  const yS = 186;
+  const L = fm.loddrett * s;
+  const d = (r.hoyde / cos) * s;
+  const xSete = xh + fm.sete * s;
+  const yb = (x) => yS + L - (x - xh) * tan;
+  const venstre = -400;
+  const hoyre = 800;
+  const hS = Math.max(60, L + 20);   // svill og vegg, minst så dypt som hakket går
+  const H = yS + hS + 56;
+  const sperre = [[venstre, yb(venstre)], [xh, yb(xh)], [xh, yS], [xSete, yS], [hoyre, yb(hoyre)],
+    [hoyre, yb(hoyre) - d], [venstre, yb(venstre) - d]];
+  const deler = [
+    tekst(16, 22, 'Fuglemunnen', { anker: 'start', vekt: 700, farge: 'var(--bla-mork)' }),
+    `<defs><clipPath id="fuglemunn-klipp"><rect x="0" y="32" width="${B}" height="${yS + hS - 32}"/></clipPath></defs>`,
+    // Svilla, med setet på toppen
+    `<rect x="${xh}" y="${yS}" width="${xSete - xh}" height="${hS}" fill="var(--hvit)" stroke="var(--skisse-strek)" stroke-width="2"/>`,
+    tekst((xh + xSete) / 2, yS + hS - 8, 'Svill', { storrelse: 13, farge: 'var(--tekst-gra)' }),
+    `<g clip-path="url(#fuglemunn-klipp)"><polygon points="${sperre.map((p) => p.join(',')).join(' ')}" fill="var(--skisse-flate)" `
+      + 'stroke="var(--skisse-strek)" stroke-width="2" stroke-linejoin="round"/></g>',
+    // Det som tas ut, stiplet oransje
+    `<polygon points="${xh},${yS} ${xh},${yS + L} ${xSete},${yS}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="2.5" stroke-dasharray="5 3"/>`,
+  ];
+  // Loddrett del av hakket, til venstre for loddsnittet
+  deler.push(`<line x1="${xh - 10}" y1="${yS}" x2="${xh - 10}" y2="${yS + L}" stroke="var(--tekst-gra)" stroke-width="1"/>`);
+  deler.push(tekst(xh - 16, yS + L / 2 + 5, `Loddrett ${mm(fm.loddrett, 1)}`, { anker: 'end', vekt: 700, farge: 'var(--bla-mork)' }));
+  // Resthøyden: vinkelrett fra hjørnet i hakket opp til overkanten
+  const rx = xh - sin * fm.rest * s;
+  const ry = yS - cos * fm.rest * s;
+  deler.push(`<line x1="${xh}" y1="${yS}" x2="${rx}" y2="${ry}" stroke="var(--bla-mork)" stroke-width="1.5"/>`);
+  // Teksten står ved siden av streken, ned og til venstre for midten, så den ikke ligger oppå
+  deler.push(tekst((xh + rx) / 2 - cos * 10, (yS + ry) / 2 + sin * 10 + 5, `Rest ${mm(fm.rest, 1)}`,
+    { anker: 'end', vekt: 700, farge: 'var(--bla-mork)' }));
+  // Dybden: fra hjørnet i hakket, vinkelrett ned på linja der underkanten gikk
+  const dx = xh + sin * fm.dybde * s;
+  const dy = yS + cos * fm.dybde * s;
+  deler.push(`<line x1="${xh}" y1="${yS}" x2="${dx}" y2="${dy}" stroke="var(--bla-mork)" stroke-width="1.5"/>`);
+  deler.push(`<line x1="${dx}" y1="${dy}" x2="${xSete + 10}" y2="${yS + 30}" stroke="var(--tekst-gra)" stroke-width="1"/>`);
+  deler.push(tekst(xSete + 14, yS + 35, `Dybde ${mm(fm.dybde, 1)}`, { anker: 'start', storrelse: 13 }));
+  // Navn på sperra, inne i den
+  const xn = xSete + 110;
+  deler.push(tekst(xn, yb(xn) - 30, 'Sperre', { storrelse: 13, farge: 'var(--tekst-gra)' }));
+  deler.push(malelinje(xh, xSete, yS + hS + 16, `Sete ${mm(fm.sete)}`));
+  return svg(B, H, deler.join(''), `Fuglemunn: sete ${mm(fm.sete)} mm, loddrett ${mm(fm.loddrett, 1)} mm, rest ${mm(fm.rest, 1)} mm`);
+}
+
+// Stendere i gavl sett forfra: den skrå svilla øverst, stenderne under i riktig forhold.
+// Stenderne er brutt nederst, for de er mye lengre enn forskjellen mellom dem.
+export function tegnGavlstendere(r) {
+  const B = 400;
+  const tan = Math.tan(r.vinkel * RAD);
+  const x0 = 40;
+  const s = Math.min(300 / (r.lengde + r.tykkelse), 150 / (r.lengde * tan + r.forskjell));
+  const w = Math.max(3, r.tykkelse * s);
+  const yForste = 40 + (r.lengde * tan + r.forskjell) * s;
+  const yBrudd = yForste + 50;
+  const yTopp = (x) => yForste - (x - x0) * tan;
+  const xEnde = x0 + r.lengde * s + w;
+  const deler = [
+    `<polygon points="${x0 - 10},${yTopp(x0 - 10)} ${xEnde + 10},${yTopp(xEnde + 10)} ${xEnde + 10},${yTopp(xEnde + 10) - 12} ${x0 - 10},${yTopp(x0 - 10) - 12}" `
+      + 'fill="var(--skisse-strek)"/>',
+  ];
+  const xer = r.stendere.map((st) => x0 + st.avstand * s);
+  const medMal = new Set(punkterMedMal(xer, 44));
+  r.stendere.forEach((st, i) => {
+    const x = xer[i];
+    deler.push(`<polygon points="${x},${yBrudd} ${x},${yTopp(x)} ${x + w},${yTopp(x + w)} ${x + w},${yBrudd}" `
+      + 'fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="1.5"/>');
+    if (medMal.has(i)) deler.push(tekst(x + w / 2, yBrudd + 20, mm(st.kort), { storrelse: 14, vekt: 700, farge: 'var(--bla-mork)' }));
+  });
+  // Bruddlinje
+  deler.push(`<path d="M ${x0 - 12} ${yBrudd - 4} l 8 8 l 8 -8 L ${xEnde + 12} ${yBrudd - 4}" fill="none" stroke="var(--tekst-gra)" stroke-width="1.5"/>`);
+  deler.push(tekst(B / 2, yBrudd + 42, 'Kort side. Stenderne er brutt, lengdene står i lista.', { storrelse: 12, farge: 'var(--tekst-gra)' }));
+  return svg(B, yBrudd + 52, deler.join(''), `${r.stendere.length} stendere, ${mm(r.okning, 1)} mm lengre for hver`);
+}
+
+// Toppen av én stender forstørret: kort og lang side, og vinkelen på emnet.
+export function tegnStenderTopp(r) {
+  const B = 400;
+  const tan = Math.tan(r.vinkel * RAD);
+  const s = Math.min(80 / r.tykkelse, 110 / (r.tykkelse * tan));
+  const w = r.tykkelse * s;
+  const xv = 160;
+  const xh = xv + w;
+  const yH = 52;
+  const yV = yH + w * tan;
+  const yBunn = yV + 90;
+  const deler = [
+    tekst(16, 22, 'Toppen av stenderen', { anker: 'start', vekt: 700, farge: 'var(--bla-mork)' }),
+    // Svilla over, i samme vinkel
+    `<polygon points="${xv - 60},${yV + 60 * tan} ${xh + 60},${yH - 60 * tan} ${xh + 60},${yH - 60 * tan - 14} ${xv - 60},${yV + 60 * tan - 14}" `
+      + 'fill="var(--skisse-strek)"/>',
+    `<polygon points="${xv},${yBunn} ${xv},${yV} ${xh},${yH} ${xh},${yBunn}" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="2"/>`,
+    `<path d="M ${xv - 6} ${yBunn - 6} l 6 6 l 6 -6 L ${xh + 6} ${yBunn - 6}" fill="none" stroke="var(--tekst-gra)" stroke-width="1.5"/>`,
+    tekst(xv - 10, (yV + yBunn) / 2, 'Kort side', { anker: 'end' }),
+    tekst(xh + 10, (yH + yBunn) / 2 - 8, 'Lang side', { anker: 'start' }),
+    tekst(xh + 10, (yH + yBunn) / 2 + 12, `+${mm(r.forskjell, 1)} mm`, { anker: 'start', vekt: 700, farge: 'var(--bla-mork)' }),
+  ];
+  // Vinkelen på emnet ved lang side, mellom kanten og snittet
+  const rb = Math.min(28, w * 0.6);
+  const ax = xh - rb * Math.cos(r.vinkel * RAD);
+  const ay = yH + rb * Math.sin(r.vinkel * RAD);
+  deler.push(`<path d="M ${xh} ${yH + rb} A ${rb} ${rb} 0 0 1 ${ax} ${ay}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="3"/>`);
+  deler.push(tekst(xh - rb - 4, yH + rb + 18, grader(r.vinkelEmne), { anker: 'end', vekt: 700, farge: 'var(--bla-mork)' }));
+  deler.push(tekst(B / 2, yBunn + 24, `Saga på ${grader(r.sag)}. Vinkelen på emnet er ${grader(r.vinkelEmne)}.`, { storrelse: 13 }));
+  return svg(B, yBunn + 34, deler.join(''), `Stendertopp: lang side ${mm(r.forskjell, 1)} mm lengre enn kort side`);
+}
+
+// Takflate i snitt: saltak med mønet midt på, eller pulttak med én flate.
+export function tegnTakflate(r) {
+  const B = 400;
+  const tan = Math.tan(r.vinkel * RAD);
+  const x0 = 50;
+  const flate = r.vannrettPerFlate;
+  const hoydeMm = flate * tan;
+  const s = hoydeMm > 0 ? Math.min(300 / r.bredde, 140 / hoydeMm) : 300 / r.bredde;
+  const bredde = r.bredde * s;
+  const h = hoydeMm * s;
+  const yBunn = 50 + h;
+  const xTopp = r.taktype === 'saltak' ? x0 + bredde / 2 : x0 + bredde;
+  const punkter = r.taktype === 'saltak'
+    ? `${x0},${yBunn} ${xTopp},${yBunn - h} ${x0 + bredde},${yBunn}`
+    : `${x0},${yBunn} ${x0 + bredde},${yBunn - h} ${x0 + bredde},${yBunn}`;
+  const deler = [
+    tekst(B / 2, 20, `Takflate ${mm(r.takflate, 2)} m²`, { vekt: 700, farge: 'var(--bla-mork)' }),
+    `<polygon points="${punkter}" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="2.5" stroke-linejoin="round"/>`,
+  ];
+  if (r.vinkel > 0) {
+    deler.push(vinkelbue(x0, yBunn, r.vinkel, 36, grader(r.vinkel)));
+    const xm = (x0 + xTopp) / 2 - 8;
+    const ym = yBunn - h / 2 - 12;
+    deler.push(skraTekst(xm, ym, r.vinkel, `Langs taket ${mm(r.langsTaket)} mm`, { vekt: 700, farge: 'var(--bla-mork)' }));
+  }
+  deler.push(malelinje(x0, x0 + bredde, yBunn + 18, `Bredde ${mm(r.bredde)} mm, vannrett`));
+  return svg(B, yBunn + 48, deler.join(''), `${r.taktype === 'saltak' ? 'Saltak' : 'Pulttak'} ${grader(r.vinkel)}, takflate ${mm(r.takflate, 2)} m²`);
+}

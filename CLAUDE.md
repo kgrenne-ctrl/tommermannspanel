@@ -492,6 +492,20 @@ Claude-mappe. Ved uenighet gjelder den fila.
   Over skissene står fire nummererte trinn i `forklaring`, med åpningen mot den andre stolpen som
   kontrollmål. Kan gjøres likt for Lik avstand og Terrassebord hvis Kenny vil.
 - «Sist brukt» vises nå i menyen (sju utregninger etter M2).
+- **Fase M3 (2026-11-11):** «Sperre» (`regnSperre`), «Stendere i gavl og skråvegg»
+  (`regnGavlstendere`) og «Takflate» (`regnTakflate`) i `src/matte/tak.js`, alle under «Fall og tak».
+  Sperre: lengde langs overkant mellom loddsnittene, emne = overkant + sperrehøyde × tan(v),
+  halve mønebordet trukket fra løpet, loddsnitt på v og vannrett snitt på 90 − v på saga.
+  Fuglemunn bare når sete er fylt inn: loddrett = sete × tan, dybde = sete × sin, rest = høyde − dybde,
+  langs underkant = sete / cos. Ingen grense for hvor mye som kan tas ut (står i prosjekteringen), og
+  «greit å vite» om at appen regner geometri, ikke bæreevne, står alltid.
+- Gavlstendere: lengdene gjelder kort side (mot lav ende), lang side er tykkelse × tan(v) lengre.
+  Siste stender står i enden, som i oppforing. Saga på v, vinkel på emnet 90 − v.
+- Takflate: mm inn, m² ut med to desimaler. Saltak gir per side og mål fra raft til møne.
+- Kapp over 45° på saga gir samme «greit å vite» i trekant, sperre og gavl (`sagVarsel` i tak.js).
+- Skissene for sperre og gavl er to per utregning: oversikt i riktig forhold og en forstørret
+  detalj (fuglemunnen, toppen av stenderen). Fuglemunnen bruker clipPath `fuglemunn-klipp`, og svilla
+  tegnes minst så dyp som hakket (bratt tak gir dypt hakk). Smalt utstikk får målet på egen linje.
 - Tester: `test/matte-tak.test.js`, `test/matte-vinkel.test.js` og `test/matte-inndeling.test.js` (kontrolleksemplene i planen punkt 4 først, skal aldri slettes)
   og `test/matte-skjerm.test.js` (hver oppføring er fullstendig, eksempelet går opp uten NaN eller
   tankestrek, skissen). Nye utregninger fanges opp av de felles testene automatisk.

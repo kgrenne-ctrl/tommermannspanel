@@ -6,9 +6,10 @@ import assert from 'node:assert/strict';
 import { GRUPPER, KALKULATORER, finnKalkulator, startverdier, lesInndata, tekstFor, erSynlig } from '../src/skjerm/matte-liste.js';
 import {
   tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnSpilerUtsetting, tegnBord,
+  tegnSperre, tegnFuglemunn, tegnGavlstendere, tegnStenderTopp, tegnTakflate,
 } from '../src/skjerm/matte-tegning.js';
 import { fordelLikt, fordelSpiler, fordelBord } from '../src/matte/inndeling.js';
-import { regnFall, regnTrekant, regnOppforing } from '../src/matte/tak.js';
+import { regnFall, regnTrekant, regnOppforing, regnSperre, regnGavlstendere, regnTakflate } from '../src/matte/tak.js';
 import { regnDiagonal } from '../src/matte/vinkel.js';
 import { grader } from '../src/skjerm/format.js';
 
@@ -266,4 +267,66 @@ test('Utsetting av spiler: merkene er de samme som i lista, og forkanten står p
   const { forklaring } = nokkel('spiler', { lysapning: '1200', bredde: '48', maks: '100' });
   assert.equal(forklaring.length, 4);
   assert.ok(forklaring[3].includes('90,7 mm'));
+});
+
+// ---------- Fase M3 ----------
+
+test('Sperre: eksempelet er kontrolleksempelet, med saga og fuglemunn', () => {
+  const { verdi, forklaring, svar } = nokkel('sperre', finnKalkulator('sperre').eksempel);
+  assert.equal(verdi('Emne'), '5 426 mm');
+  assert.equal(verdi('Overkant'), '5 311,6 mm');
+  assert.equal(verdi('Møne til hakk'), '4 618,8 mm');
+  assert.equal(verdi('Utstikk'), '692,8 mm');
+  assert.equal(verdi('Stigning'), '2 309,4 mm');
+  assert.equal(verdi('Loddsnitt'), '30°');
+  assert.equal(verdi('Vannrett snitt'), '60°');
+  assert.equal(verdi('Fuglemunn loddrett'), '56,6 mm');
+  assert.equal(verdi('Resthøyde'), '149 mm');
+  assert.ok(forklaring.some((t) => t.includes('Langs underkanten blir det 113,2 mm')));
+  assert.ok(svar.varsler.some((v) => v.type === 'geometri'));
+  // Uten sete og utstikk: ingen fuglemunn og ingen utstikk i nøkkeltallene
+  const enkel = nokkel('sperre', { lop: '3000', vinkel: '45', hoyde: '148' });
+  assert.equal(enkel.verdi('Fuglemunn loddrett'), undefined);
+  assert.equal(enkel.verdi('Utstikk'), undefined);
+});
+
+test('Stendere i gavl: eksempelet gir 346,4 per stender og lang side 27,7', () => {
+  const { verdi, liste } = nokkel('gavl', finnKalkulator('gavl').eksempel);
+  assert.equal(verdi('Per stender'), '346,4 mm');
+  assert.equal(verdi('Lang side'), '+27,7 mm');
+  assert.equal(verdi('Saga'), '30°');
+  assert.deepEqual(liste.rader.map((r) => rens(r[2])), ['2 400', '2 746', '3 093', '3 439', '3 786']);
+  assert.deepEqual(liste.rader.map((r) => rens(r[3])), ['2 428', '2 774', '3 121', '3 467', '3 813']);
+});
+
+test('Takflate: eksempelet gir 36,95 m², og pulttak har én flate', () => {
+  const { verdi } = nokkel('takflate', finnKalkulator('takflate').eksempel);
+  assert.equal(verdi('Takflate'), '36,95 m²');
+  assert.equal(verdi('Per side'), '18,48 m²');
+  assert.equal(verdi('Langs taket'), '2 309 mm');
+  const pult = nokkel('takflate', { taktype: 'pulttak', lengde: '8000', bredde: '4000', vinkel: '30' });
+  assert.equal(pult.verdi('Per side'), undefined);
+  assert.equal(pult.verdi('Langs taket'), '4 619 mm');
+});
+
+test('Skissene i M3: mål, ingen NaN, og ingen fuglemunn uten sete', () => {
+  const sp = regnSperre({ lop: 4000, vinkel: 30, utstikk: 600, hoyde: 198, sete: 98 });
+  const o = rens(tegnSperre(sp));
+  for (const ord of ['Overkant 5 311,6 mm', 'Løp 4 000', '>600<', '2 309,4', 'Midt møne', '30°']) assert.ok(o.includes(ord), ord);
+  const f = rens(tegnFuglemunn(sp));
+  for (const ord of ['Loddrett 56,6', 'Rest 149', 'Dybde 49', 'Sete 98', 'Svill']) assert.ok(f.includes(ord), ord);
+  assert.equal(tegnFuglemunn(regnSperre({ lop: 4000, vinkel: 30, hoyde: 198 })), '');
+  const bratt = rens(tegnSperre(regnSperre({ lop: 2000, vinkel: 60, hoyde: 198, monebord: 48 })));
+
+  const g = regnGavlstendere({ vinkel: 30, cc: 600, tykkelse: 48, forste: 2400, lengde: 2400 });
+  const gs = rens(tegnGavlstendere(g));
+  for (const ord of ['>2 400<', '>3 786<', 'Kort side']) assert.ok(gs.includes(ord), ord);
+  const topp = rens(tegnStenderTopp(g));
+  for (const ord of ['Kort side', 'Lang side', '+27,7 mm', '60°', 'Saga på 30°']) assert.ok(topp.includes(ord), ord);
+  const enStender = rens(tegnGavlstendere(regnGavlstendere({ vinkel: 30, cc: 600, tykkelse: 48, forste: 2400, lengde: 0 })));
+
+  const t = rens(tegnTakflate(regnTakflate({ lengde: 8000, bredde: 4000, vinkel: 30, taktype: 'saltak' })));
+  for (const ord of ['Takflate 36,95 m²', 'Langs taket 2 309 mm', 'Bredde 4 000 mm']) assert.ok(t.includes(ord), ord);
+  const flatt = rens(tegnTakflate(regnTakflate({ lengde: 8000, bredde: 4000, vinkel: 0, taktype: 'pulttak' })));
+  for (const svgTekst of [o, f, bratt, gs, topp, enStender, t, flatt]) assert.ok(!/NaN|undefined|Infinity/.test(svgTekst));
 });
