@@ -38,6 +38,7 @@ function kontrollerInndata(d) {
   if (!TRAPPETYPER[d.type]) feil.push(`Ukjent type trapp: ${d.type}.`);
   if (!(Number.isFinite(d.nese) && d.nese >= 0)) feil.push('Nesa må være 0 eller mer.');
   if (d.bredde !== null && !positiv(d.bredde)) feil.push('Bredden må være et tall større enn 0.');
+  if (!(Number.isFinite(d.utstikk) && d.utstikk >= 0)) feil.push('Utstikket må være 0 eller mer.');
   if (d.lengdevalg === 'trinn') {
     if (d.trinnbord) {
       const { antall, bredde, spalte = 0 } = d.trinnbord;
@@ -62,9 +63,12 @@ function varslerFor(l, d, inn) {
     varsler.push({ niva: 'ma', type: 'repos', kilde: 'TEK17 § 12-14',
       tekst: `Høyden er ${en(d.hoyde)} mm. Over ${en(inn.reposOver)} mm må trappa ha repos.` });
   }
-  if (d.bredde !== null && d.bredde < type.breddeMin - SLINGRING) {
+  // Kravet gjelder bredden man går på: trinnene, altså bredden over vangene pluss utstikket
+  const trinnBredde = d.bredde === null ? null : d.bredde + 2 * d.utstikk;
+  if (trinnBredde !== null && trinnBredde < type.breddeMin - SLINGRING) {
     varsler.push({ niva: 'ma', type: 'bredde', kilde: 'TEK17 § 12-14',
-      tekst: `Trappa er ${en(d.bredde)} mm bred. ${type.navn} med rett løp skal være minst ${en(type.breddeMin)} mm.` });
+      tekst: `Trappa er ${en(trinnBredde)} mm bred${d.utstikk > 0 ? ' målt over trinnene' : ''}. `
+        + `${type.navn} med rett løp skal være minst ${en(type.breddeMin)} mm.` });
   }
   if (!l.innenforFormel) {
     varsler.push({ niva: 'bor', type: 'formel', kilde: 'TEK17 § 12-14, veiledning',
@@ -171,16 +175,17 @@ export function lagTrinnliste(l) {
 // Hovedfunksjonen. Regner ut ett rett trappeløp.
 //
 // Inn: { hoyde, lengdevalg, inntrinn, trinnbord: { antall, bredde, spalte }, lengde, nese,
-//        ovreTrinn, type, bredde } pluss eventuelle innstillinger (se STANDARD_TRAPP).
+//        ovreTrinn, type, bredde, utstikk } pluss eventuelle innstillinger (se STANDARD_TRAPP).
+//      bredde er over ytterkant av vangene. Trinnene er bredde + 2 × utstikk.
 // Ut:  { ok: true, valgt, alle, trinn } der trinn er { dybde, inntrinn } når bordene er oppgitt
 //      eller { ok: false, melding, forslag } når ingen løsning gir lovlig inntrinn
 //      eller { ok: false, feil: [...] } når inndata er feil.
 export function losTrapp(inndata) {
   const { hoyde, lengdevalg = 'trinn', inntrinn = null, trinnbord = null, lengde = null,
     nese = STANDARD_TRAPP.nese, ovreTrinn = 'dekke', type = 'utvendig', bredde = null,
-    ...resten } = inndata;
+    utstikk = STANDARD_TRAPP.utstikk, ...resten } = inndata;
   const inn = { ...STANDARD_TRAPP, ...resten };
-  const d = { hoyde, lengdevalg, inntrinn, trinnbord, lengde, nese, ovreTrinn, type, bredde };
+  const d = { hoyde, lengdevalg, inntrinn, trinnbord, lengde, nese, ovreTrinn, type, bredde, utstikk };
 
   const feil = kontrollerInndata(d);
   if (feil.length > 0) return { ok: false, feil };

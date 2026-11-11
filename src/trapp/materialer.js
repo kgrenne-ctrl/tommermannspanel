@@ -3,7 +3,8 @@
 //
 // - Vangene må være hele: de bestilles som antall stykk med minste lengde (emnet + kapptillegg).
 // - Trinnbord bestilles i løpemeter per dimensjon, med svinn, rundet opp til hel meter.
-// - Trinnene går over hele bredden på trappa. De ytterste vangene står innenfor utstikket.
+// - Bredden på trappa måles over ytterkant av vangene (Kenny 2026-11-11). Trinnene er bredden
+//   pluss utstikket på hver side.
 // - Antall vanger: appen foreslår ut fra største avstand mellom vangene (Bakøys praksis, se
 //   fagverdier.js). Tømreren kan velge et annet antall, og får varsel om avstanden blir større.
 
@@ -39,10 +40,10 @@ export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTy
   if (antallVanger !== null && !(Number.isInteger(antallVanger) && antallVanger >= 2)) feil.push('Antall vanger må være minst 2.');
   if (feil.length) return { ok: false, feil };
 
-  // Vangene: senter til senter mellom de ytterste
-  const spenn = bredde - 2 * utstikk - vangeTykkelse;
+  // Vangene: senter til senter mellom de ytterste. Bredden er over ytterkant av vangene.
+  const spenn = bredde - vangeTykkelse;
   if (spenn <= SLINGRING) {
-    return { ok: false, feil: [`Trappa på ${en(bredde)} mm er for smal for to vanger på ${en(vangeTykkelse)} mm med ${en(utstikk)} mm utstikk.`] };
+    return { ok: false, feil: [`Trappa på ${en(bredde)} mm er for smal for to vanger på ${en(vangeTykkelse)} mm.`] };
   }
   const maks = maksAvstandVanger(trinnTykkelse, inn);
   const anbefalt = Math.max(2, Math.ceil(spenn / maks - SLINGRING) + 1);
@@ -62,7 +63,8 @@ export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTy
   const biter = [];
   const vangeDim = dimensjon(vangeTykkelse, vangeBredde);
   biter.push({ del: 'Vange', dim: vangeDim, antall, lengde: vange.emnelengde + kapptillegg, hel: true });
-  const trinnLengde = bredde + kapptillegg;
+  const trinnBredde = bredde + 2 * utstikk;   // lengden på trinnene
+  const trinnLengde = trinnBredde + kapptillegg;
   if (trinnbord) {
     biter.push({ del: 'Trinnbord', dim: dimensjon(trinnTykkelse, trinnbord.bredde), antall: m * trinnbord.antall, lengde: trinnLengde, hel: false });
   } else {
@@ -85,7 +87,7 @@ export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTy
       + `under ${en(inn.tykkeTrinnFra)} mm og ${en(inn.maksAvstandVangerTykk)} mm med tykkere trinn. Appen regner ikke bæreevne.` });
 
   return { ok: true, anbefaltVanger: anbefalt, antallVanger: antall, avstandVanger: avstand, maksAvstand: maks,
-    trinnLengde: bredde, linjer, varsler, kapptillegg, svinn };
+    trinnLengde: trinnBredde, linjer, varsler, kapptillegg, svinn };
 }
 
 // Lista som ren tekst, til å kopiere eller dele (SMS, e-post) med trelast

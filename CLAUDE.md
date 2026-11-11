@@ -360,13 +360,16 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - `src/trapp/materialer.js` (`lagTrappMaterialer`, `trappMaterialTekst`): vanger, trinn, kappliste og
   bestilling. Vangene må være hele og bestilles i stykk med minste lengde (emnet + kapptillegg).
   Trinnbord bestilles i løpemeter med svinn, rundet opp til hel meter. Trinnene går over hele
-  bredden på trappa. Trinn som ikke er gitt av bord: ett trinn per inntrinn, inntrinn + nese dypt
+  bredden over vangene pluss utstikket. Trinn som ikke er gitt av bord: ett trinn per inntrinn, inntrinn + nese dypt
   (øverste trinn med eget trinn: bare inntrinnet).
 - Antall vanger: appen foreslår ut fra største avstand mellom vangene, senter til senter. Kennys
   praksis, ikke beregnet: 600 mm med trinn under 48 mm (28 mm terrassebord), 1000 mm fra 48 mm.
   Trinn mellom 28 og 48 mm får 600 (ingen gjetning midt imellom). Tømreren kan velge antall selv
   og får «bør sjekkes» når avstanden blir større. Alt kan endres under Innstillinger.
-- De ytterste vangene står innenfor utstikket («Trinnene stikker ut på hver side», valgfritt, 0).
+- «Bredde over vangene» måles over ytterkant av vangene (Kenny 2026-11-11, endret samme dag: først
+  var bredden lengden på trinnene). Trinnene er bredde + 2 × utstikk («Trinnene stikker ut forbi
+  vangene på hver side», valgfritt, 0). Utstikket endrer altså lengden på trinnene i kapplista, ikke
+  plasseringen av vangene. Kravet til bredde i TEK17 sjekkes mot trinnene (`losTrapp` får `utstikk`).
 - Kapptillegg 50 mm og svinn 10 % som i kledningsdelen, kan endres under Innstillinger.
 - Materiallista krever bredden på trappa. Uten bredde står det hva som mangler.
 - Utskrift: «Skriv ut / PDF» i Resultat. `src/skjerm/trapp-utskrift.js` (`lagTrappUtskrift`):

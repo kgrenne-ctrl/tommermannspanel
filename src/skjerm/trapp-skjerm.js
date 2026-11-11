@@ -242,6 +242,7 @@ function lesSkjema() {
     hoyde: lesTall(t.hoyde),
     ovreTrinn: t.ovre,
     bredde: lesTall(t.bredde),
+    utstikk: lesTall(t.innstillinger.utstikk) ?? STANDARD_TRAPP.utstikk,
     lengdevalg: t.lengdevalg,
     nese: lesTall(t.nese) ?? 0,
   };
@@ -274,7 +275,7 @@ function materialer(inndata, l, vange, valg) {
   return lagTrappMaterialer({ l, vange, bredde: inndata.bredde,
     trinnbord: inndata.lengdevalg === 'trinn' ? inndata.trinnbord : null,
     trinnTykkelse: valg.trinnTykkelse, nese: valg.nese, vangeTykkelse: valg.vangeTykkelse, vangeBredde: valg.vangeBredde,
-    utstikk: tall('t-utstikk', STANDARD_TRAPP.utstikk), antallVanger: antall ? Number(antall) : null,
+    utstikk: inndata.utstikk, antallVanger: antall ? Number(antall) : null,
     kapptillegg: tall('t-kapptillegg', STANDARD_TRAPP.kapptillegg), svinn: tall('t-svinn', STANDARD_TRAPP.svinn),
     maksAvstandVangerTynn: tall('t-maksAvstandVangerTynn', STANDARD_TRAPP.maksAvstandVangerTynn),
     maksAvstandVangerTykk: tall('t-maksAvstandVangerTykk', STANDARD_TRAPP.maksAvstandVangerTykk) });

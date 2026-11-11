@@ -46,10 +46,14 @@ test('48 mm trinn: høyst 1000 mm mellom vangene, så 2 vanger holder', () => {
   assert.equal(maksAvstandVanger(36), 600); // mellom 28 og 48: 600, ikke noe midt imellom
 });
 
-test('Utstikk på sidene flytter de ytterste vangene inn, trinnene er like lange', () => {
-  const { liste } = lag(28, { utstikk: 30 });
-  omtrent(liste.avstandVanger, (1000 - 60 - 48) / 2);
-  assert.equal(liste.linjer[1].lengde, 1050);
+test('Bredden er over vangene: utstikk gjør trinnene lengre, vangene står der de står', () => {
+  // Kenny 2026-11-11: 1000 mm over vangene og 50 mm utstikk gir trinn på 1100 mm
+  const { liste } = lag(28, { utstikk: 50 });
+  omtrent(liste.avstandVanger, 476);
+  assert.equal(liste.trinnLengde, 1100);
+  assert.equal(liste.linjer[1].lengde, 1150);   // med 50 mm kapptillegg
+  omtrent(liste.linjer[1].netto, 9.2);          // 8 × 1,15
+  assert.equal(liste.linjer[1].bestill, 11);    // 9,2 × 1,1 = 10,12, rundet opp
 });
 
 test('Færre vanger enn anbefalt gir varsel, flere går fint', () => {
@@ -83,7 +87,7 @@ test('Trinn som ikke er gitt av bord: ett trinn per inntrinn, inntrinn + nese dy
 test('Uten bredde, eller for smal trappa: tydelig melding', () => {
   const { l, vange } = lag();
   assert.match(lagTrappMaterialer({ l, vange, bredde: null, trinnTykkelse: 28 }).feil[0], /bredden på trappa/);
-  assert.match(lagTrappMaterialer({ l, vange, bredde: 90, trinnTykkelse: 28, utstikk: 30 }).feil[0], /for smal/);
+  assert.match(lagTrappMaterialer({ l, vange, bredde: 40, trinnTykkelse: 28 }).feil[0], /for smal/);
 });
 
 test('Lista som tekst har bestilling og kappliste', () => {

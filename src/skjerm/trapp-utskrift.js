@@ -19,7 +19,8 @@ function inndataTabell(d, valg) {
     ['Type trapp', vask(TRAPPETYPER[d.type]?.navn ?? d.type)],
     ['Høyde', `${tall(d.hoyde)} mm`],
     ['Øverste trinn', d.ovreTrinn === 'eget' ? 'Eget trinn i samme høyde som dekket' : 'Dekket er øverste trinn'],
-    ['Bredde på trappa', d.bredde ? `${tall(d.bredde)} mm` : 'Ikke oppgitt'],
+    ['Bredde over vangene', d.bredde ? `${tall(d.bredde)} mm` : 'Ikke oppgitt'],
+    ['Trinnene stikker ut på hver side', `${tall(d.utstikk ?? 0)} mm`],
     ['Inntrinnet bestemmes av', LENGDEVALG[d.lengdevalg] ?? d.lengdevalg],
   ];
   if (d.trinnbord) par.push(['Trinn av bord', `${d.trinnbord.antall} stk ${tall(d.trinnbord.bredde)} mm, spalte ${tall(d.trinnbord.spalte)} mm`]);

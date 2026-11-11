@@ -164,6 +164,12 @@ test('Bredde kontrolleres mot typen trapp', () => {
   assert.equal(bredde('utvendig', 850).varsler.find((v) => v.type === 'bredde').niva, 'ma');
   assert.equal(harVarsel(bredde('flere', 1000), 'bredde'), true);
   assert.equal(harVarsel(bredde('flere', 1100), 'bredde'), false);
+  // Kravet gjelder trinnene: 850 mm over vangene med 30 mm utstikk er 910 mm å gå på
+  const medUtstikk = losTrapp({ hoyde: 2700, lengdevalg: 'fri', type: 'utvendig', bredde: 850, utstikk: 30 }).valgt;
+  assert.equal(harVarsel(medUtstikk, 'bredde'), false);
+  const forSmal = losTrapp({ hoyde: 2700, lengdevalg: 'fri', type: 'utvendig', bredde: 820, utstikk: 30 }).valgt;
+  assert.match(forSmal.varsler.find((v) => v.type === 'bredde').tekst, /880 mm bred målt over trinnene/);
+  assert.ok(losTrapp({ hoyde: 850, lengdevalg: 'fri', utstikk: -5 }).feil.some((f) => /Utstikket/.test(f)));
   // Uten bredde: ingen kontroll
   assert.equal(harVarsel(losTrapp({ hoyde: 2700, lengdevalg: 'fri', type: 'flere' }).valgt, 'bredde'), false);
 });
