@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { regnFall, KJENT_FALL } from '../src/matte/tak.js';
+import { regnFall, KJENT_FALL, regnTrekant, KJENT_TREKANT, regnOppforing } from '../src/matte/tak.js';
 
 const naer = (faktisk, ventet, toleranse, tekst) =>
   assert.ok(Math.abs(faktisk - ventet) <= toleranse, `${tekst}: fikk ${faktisk}, ventet ${ventet}`);
@@ -82,4 +82,89 @@ test('Fall til sluk: «greit å vite» med kilde på slakt fall, ikke på tak', 
 
 test('Alle valg for hva som er kjent, er med', () => {
   assert.deepEqual([...KJENT_FALL], ['grader', 'prosent', 'forhold', 'mmPerMeter', 'malt']);
+});
+
+// ---------- Trekanten (fase M1) ----------
+
+test('Kontrolleksempel trekant (PLAN-matte.md punkt 4): 3000 og 4000 gir skrå 5000 og 53,13°', () => {
+  const r = regnTrekant({ kjent: 'liggendeStaende', liggende: 3000, staende: 4000 });
+  assert.equal(r.ok, true);
+  naer(r.skra, 5000, 1e-9, 'skrå');
+  naer(r.vinkel, 53.1301, 0.0001, 'vinkel');
+  naer(r.vinkelTopp, 36.8699, 0.0001, 'vinkel oppe');
+  // Stag mot liggende: saga på 90 − v. Mot stående: saga på v.
+  naer(r.sagMotLiggende, 36.8699, 0.0001, 'saga mot liggende');
+  naer(r.sagMotStaende, 53.1301, 0.0001, 'saga mot stående');
+});
+
+test('Trekanten går opp fra alle seks kombinasjoner av to kjente', () => {
+  const fasit = { liggende: 3000, staende: 4000, skra: 5000, vinkel: Math.atan2(4000, 3000) * 180 / Math.PI };
+  for (const kjent of KJENT_TREKANT) {
+    const r = regnTrekant({ kjent, ...fasit });
+    assert.equal(r.ok, true, kjent);
+    for (const navn of ['liggende', 'staende', 'skra', 'vinkel']) naer(r[navn], fasit[navn], 1e-6, `${kjent}.${navn}`);
+  }
+  // 3-4-5 har 53,1° på saga mot stående, over 45°: «greit å vite» om at saga kanskje ikke går så langt
+  assert.equal(regnTrekant({ kjent: 'liggendeStaende', liggende: 3000, staende: 4000 }).varsler[0].type, 'sag-vinkel');
+  assert.deepEqual(regnTrekant({ kjent: 'liggendeVinkel', liggende: 3000, vinkel: 45 }).varsler, []);
+  const tretti = regnTrekant({ kjent: 'skraVinkel', skra: 2000, vinkel: 30 });
+  naer(tretti.staende, 1000, 1e-9, 'stående ved 30°');
+  naer(tretti.liggende, 1732.05, 0.01, 'liggende ved 30°');
+});
+
+test('Trekanten: umulige mål gir beskjed og aldri NaN', () => {
+  const feil = [
+    { kjent: 'liggendeSkra', liggende: 3000, skra: 3000 },
+    { kjent: 'staendeSkra', staende: 5000, skra: 4000 },
+    { kjent: 'liggendeVinkel', liggende: 3000, vinkel: 90 },
+    { kjent: 'skraVinkel', skra: 3000, vinkel: 0 },
+    { kjent: 'liggendeStaende', liggende: 0, staende: 4000 },
+    { kjent: 'liggendeStaende', liggende: 3000, staende: null },
+    { kjent: 'ukjent', liggende: 3000, staende: 4000 },
+  ];
+  for (const inn of feil) {
+    const r = regnTrekant(inn);
+    assert.equal(r.ok, false, JSON.stringify(inn));
+    assert.ok(r.feil.length > 0 && r.feil.every((t) => !t.includes('NaN')));
+  }
+});
+
+// ---------- Kiler og oppforing (fase M1) ----------
+
+test('Kontrolleksempel oppforing (PLAN-matte.md punkt 4): 2 % over 3000, c/c 600, 10 mm i lav ende', () => {
+  const r = regnOppforing({ kjent: 'prosent', verdi: 2, lengde: 3000, cc: 600, start: 10 });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.punkter.map((p) => p.avstand), [0, 600, 1200, 1800, 2400, 3000]);
+  r.punkter.forEach((p, i) => naer(p.hoyde, [10, 22, 34, 46, 58, 70][i], 1e-9, `punkt ${i + 1}`));
+  naer(r.hoydeEnde, 70, 1e-9, 'høy ende');
+  naer(r.okningPerCc, 12, 1e-9, 'økning per c/c');
+});
+
+test('Oppforing: siste punkt er alltid enden, og hver høyde regnes fra starten', () => {
+  const r = regnOppforing({ kjent: 'forhold', verdi: 60, lengde: 2000, cc: 600 });
+  assert.deepEqual(r.punkter.map((p) => p.avstand), [0, 600, 1200, 1800, 2000]);
+  naer(r.punkter.at(-1).hoyde, 2000 / 60, 1e-9, 'enden');
+  assert.equal(r.start, 0);
+  // Lengden går opp i c/c: ingen dobbel ende
+  assert.equal(regnOppforing({ kjent: 'prosent', verdi: 1, lengde: 1800, cc: 600 }).punkter.length, 4);
+  // C/c lengre enn lengden: bare start og ende
+  assert.equal(regnOppforing({ kjent: 'prosent', verdi: 1, lengde: 500, cc: 600 }).punkter.length, 2);
+  // Desimaler i c/c skal ikke gi et ekstra punkt like før enden
+  assert.equal(regnOppforing({ kjent: 'prosent', verdi: 1, lengde: 1000, cc: 100 / 3 }).punkter.length, 31);
+});
+
+test('Oppforing: umulige mål gir beskjed og aldri NaN', () => {
+  const feil = [
+    { kjent: 'prosent', verdi: 2, lengde: 0, cc: 600 },
+    { kjent: 'prosent', verdi: 2, lengde: 3000, cc: 0 },
+    { kjent: 'prosent', verdi: 2, lengde: 3000, cc: 600, start: -5 },
+    { kjent: 'prosent', verdi: 2, lengde: 300000, cc: 0.6 },
+    { kjent: 'grader', verdi: 95, lengde: 3000, cc: 600 },
+    { kjent: 'malt', verdi: 2, lengde: 3000, cc: 600 },
+  ];
+  for (const inn of feil) {
+    const r = regnOppforing(inn);
+    assert.equal(r.ok, false, JSON.stringify(inn));
+    assert.ok(r.feil.length > 0 && r.feil.every((t) => !t.includes('NaN')));
+  }
 });

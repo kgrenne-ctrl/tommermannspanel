@@ -4,14 +4,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GRUPPER, KALKULATORER, finnKalkulator, startverdier, lesInndata, tekstFor, erSynlig } from '../src/skjerm/matte-liste.js';
-import { tegnFall, forholdTekst } from '../src/skjerm/matte-tegning.js';
-import { regnFall } from '../src/matte/tak.js';
+import { tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal } from '../src/skjerm/matte-tegning.js';
+import { regnFall, regnTrekant, regnOppforing } from '../src/matte/tak.js';
+import { regnDiagonal } from '../src/matte/vinkel.js';
 import { grader } from '../src/skjerm/format.js';
 
 // Alt som skal vises: nøkkeltall, utregning og skisse
 function alleTekster(k, svar, d) {
-  const { nokkeltall, utregning } = k.vis(svar, d);
-  return [...nokkeltall.flat(), ...utregning, k.tegn ? k.tegn(svar, d) : '', ...(svar.varsler ?? []).map((v) => v.tekst)];
+  const { nokkeltall, utregning, forklaring = [], liste = null } = k.vis(svar, d);
+  return [...nokkeltall.flat(), ...utregning, ...forklaring, ...(liste ? [liste.tittel, ...liste.kolonner, ...liste.rader.flat()] : []),
+    k.tegn ? k.tegn(svar, d) : '', ...(svar.varsler ?? []).map((v) => v.tekst)];
 }
 
 test('Hver oppføring er fullstendig: id, gruppe, felt, regning, visning og eksempel', () => {
@@ -102,4 +104,83 @@ test('Forholdet skrives med to desimaler når det er bratt', () => {
   assert.equal(forholdTekst(68.5714), '1:68,6');
   assert.equal(forholdTekst(2.4751), '1:2,48');
   assert.equal(forholdTekst(Infinity), 'Flatt');
+});
+
+// ---------- Fase M1 ----------
+
+// mm() skriver tusenskillet som hardt mellomrom (U+00A0). Testene sammenligner med vanlig mellomrom.
+const rens = (t) => String(t).replace(/\u00a0/g, ' ');
+
+const nokkel = (id, verdier) => {
+  const k = finnKalkulator(id);
+  const d = lesInndata(k, startverdier(k, verdier));
+  const svar = k.regn(d);
+  const vist = k.vis(svar, d);
+  return {
+    svar,
+    forklaring: (vist.forklaring ?? []).map(rens),
+    liste: vist.liste,
+    verdi: (tittel) => { const n = vist.nokkeltall.find((x) => x[0] === tittel); return n ? rens(n[1]) : undefined; },
+  };
+};
+
+test('Trekanten: eksempelet gir 5000 og vinklene på emnet og saga', () => {
+  const { verdi, forklaring } = nokkel('trekant', finnKalkulator('trekant').eksempel);
+  assert.equal(verdi('Skrå'), '5 000 mm');
+  assert.equal(verdi('Vinkel'), '53,1°');
+  assert.equal(verdi('Saga mot liggende'), '36,9°');
+  assert.equal(verdi('Saga mot stående'), '53,1°');
+  assert.ok(forklaring[0].includes('0° på saga er rett kapp'));
+  // Bare de to feltene som hører til valget, vises
+  const k = finnKalkulator('trekant');
+  const v = startverdier(k, { kjent: 'skraVinkel' });
+  assert.deepEqual(k.felt.filter((f) => erSynlig(f, v)).map((f) => f.id), ['kjent', 'skra', 'vinkel']);
+  assert.equal(k.mangler(lesInndata(k, v)), 'Skriv inn de to målene du vet.');
+});
+
+test('Kiler og oppforing: eksempelet gir tabell med hver høyde og høy ende 70 mm', () => {
+  const { verdi, liste, svar } = nokkel('oppforing', finnKalkulator('oppforing').eksempel);
+  assert.equal(verdi('Høy ende'), '70 mm');
+  assert.equal(verdi('Per c/c'), '12 mm');
+  assert.equal(verdi('Fall'), '1:50');
+  assert.deepEqual(liste.rader.map((r) => r[2]), ['10', '22', '34', '46', '58', '70']);
+  assert.equal(svar.varsler[0].kilde, 'TEK17 § 13-15');
+  // Høyde i lav ende har 0 som standard, så det holder med fall, lengde og c/c
+  const k = finnKalkulator('oppforing');
+  assert.equal(k.mangler(lesInndata(k, startverdier(k, { verdi: '50', lengde: '3000', cc: '600' }))), null);
+});
+
+test('Rett vinkel og diagonal: eksempelet er kontrolleksempelet med 20 mm skjevhet', () => {
+  const { verdi, forklaring, svar } = nokkel('diagonal', finnKalkulator('diagonal').eksempel);
+  assert.equal(verdi('Diagonal'), '10 000 mm');
+  assert.equal(verdi('Skjevhet'), '20 mm');
+  assert.equal(verdi('Kontroll 3-4-5'), '10 000 mm');
+  assert.ok(forklaring[0].includes('Skyv siden motsatt av a 20 mm'));
+  assert.equal(svar.varsler.length, 1);
+  // Én diagonal: hvor mye den er for lang
+  const en = nokkel('diagonal', { a: '8000', b: '6000', d1: '10010' });
+  assert.equal(en.verdi('For lang'), '10 mm');
+  // Like diagonaler: rett
+  assert.ok(nokkel('diagonal', { a: '8000', b: '6000', d1: '10000', d2: '10000' }).forklaring[0].includes('Hjørnene er rette'));
+});
+
+test('Skissene i M1: mål, ingen NaN, og «ikke i målestokk» når noe er forstørret', () => {
+  const t = rens(tegnTrekant(regnTrekant({ kjent: 'liggendeStaende', liggende: 3000, staende: 4000 })));
+  for (const ord of ['Liggende 3 000 mm', '4 000 mm', '5 000 mm', grader(53.13), grader(36.87)]) assert.ok(t.includes(ord), ord);
+  assert.ok(!t.includes('målestokk'));
+  assert.ok(tegnTrekant(regnTrekant({ kjent: 'liggendeVinkel', liggende: 3000, vinkel: 3 })).includes('Ikke i målestokk'));
+
+  const o = rens(tegnOppforing(regnOppforing({ kjent: 'prosent', verdi: 2, lengde: 3000, cc: 600, start: 10 })));
+  for (const ord of ['>10<', '>70<', '>3 000<', 'Lav ende', 'Høy ende', 'ikke i målestokk']) assert.ok(o.includes(ord), ord);
+  // Mange punkter: tallene går ikke i hverandre, men første og siste har alltid mål
+  const mange = rens(tegnOppforing(regnOppforing({ kjent: 'prosent', verdi: 2, lengde: 12000, cc: 300 })));
+  assert.ok(mange.includes('>240<') && mange.includes('>12 000<'));
+  assert.ok((mange.match(/font-weight="700"/g) ?? []).length <= 8);
+  // Flatt og uten høyde i lav ende: ingen NaN
+  assert.ok(!/NaN|Infinity/.test(tegnOppforing(regnOppforing({ kjent: 'prosent', verdi: 0, lengde: 3000, cc: 600 }))));
+
+  const dg = rens(tegnDiagonal(regnDiagonal({ a: 8000, b: 6000, d1: 10016, d2: 9984 })));
+  for (const ord of ['10 000 mm', 'a = 8 000 mm', '6 000 mm', 'Skyv 20 mm', 'ikke i målestokk']) assert.ok(dg.includes(ord), ord);
+  assert.ok(!tegnDiagonal(regnDiagonal({ a: 8000, b: 6000 })).includes('Skyv'));
+  for (const svg of [t, o, mange, dg]) assert.ok(!/NaN|undefined/.test(svg));
 });

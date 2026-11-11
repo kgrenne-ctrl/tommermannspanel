@@ -946,6 +946,14 @@ footer p { margin: 4px 0; }
 .matte-tegning .tegning { max-width: 520px; margin: 0 auto; }
 
 .matte-utregning p { font-size: 15px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+/* Tallene i Matte kan være lange («10 000 mm»), så de er litt mindre enn i Kledning og Trapp og
+   får bryte før «mm» heller enn å gå ut av kortet. Tusenskillet er hardt mellomrom og bryter ikke. */
+#matte-resultat .kort-verdi { font-size: 22px; white-space: normal; }
+/* Det tømreren skal gjøre med svaret, rett under nøkkeltallene */
+.matte-forklaring { margin: 4px 0 12px; }
+.matte-forklaring p { margin: 6px 0; }
+/* Løpende mål: alle kolonnene er tall og står til høyre, også nummeret */
+.matte-liste th:first-child, .matte-liste td:first-child { width: 3em; }
 
 @media (min-width: 600px) {
   .matte-meny { grid-template-columns: 1fr 1fr; }

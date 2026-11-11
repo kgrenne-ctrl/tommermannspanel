@@ -106,6 +106,15 @@ function visVarsler(varsler) {
   return deler.join('');
 }
 
+// Tabell med løpende mål. Første kolonne er nummeret, de andre er tall og står til høyre.
+function listeHtml({ tittel, kolonner, rader }) {
+  return `<table class="maltabell matte-liste">
+    <caption>${tittel}</caption>
+    <thead><tr>${kolonner.map((k) => `<th>${k}</th>`).join('')}</tr></thead>
+    <tbody>${rader.map((rad) => `<tr>${rad.map((celle) => `<td class="tall">${celle}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+}
+
 function visResultat(k) {
   const ut = document.getElementById('matte-resultat');
   const d = lesInndata(k, tilstand.verdier[k.id]);
@@ -119,13 +128,15 @@ function visResultat(k) {
     ut.innerHTML = `<section class="del">${boks('feil', svar.feil.map((t) => `<p>${t}</p>`).join(''))}</section>`;
     return;
   }
-  const { nokkeltall, utregning } = k.vis(svar, d);
+  const { nokkeltall, utregning, forklaring = [], liste = null } = k.vis(svar, d);
   ut.innerHTML = `
     <section class="del">
       <h2>Resultat</h2>
       <div class="nokkeltall">${nokkeltall.map(([t, verdi, under]) => kort(t, verdi, under)).join('')}</div>
+      ${forklaring.length ? `<div class="matte-forklaring">${forklaring.map((t) => `<p>${t}</p>`).join('')}</div>` : ''}
       ${visVarsler(svar.varsler ?? [])}
       ${k.tegn ? `<div class="matte-tegning">${k.tegn(svar, d)}</div>` : ''}
+      ${liste ? listeHtml(liste) : ''}
       <details class="detaljer matte-utregning">
         <summary>Slik er det regnet</summary>
         ${utregning.map((linje) => `<p>${linje}</p>`).join('')}

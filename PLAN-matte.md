@@ -2,7 +2,7 @@
 
 Plan 2026-11-11, oppdatert samme dag etter Kennys svar (punkt 10). Skrevet da appen sto på commit cdb69f1 (Kledning og Trapp til og med fase T3). Planen er skrevet for Opus 5.5 i Claude Code og bygges én fase om gangen, rett på `main`.
 
-Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
+Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 bygget samme dag (181 tester). T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
 
 ## 1. Mål
 
@@ -42,8 +42,12 @@ Modulen skal se ut og oppføre seg som Kledning og Trapp: samme toppbånd, kort,
 - Greit å vite på bad: preaksepterte ytelser i TEK17 § 13-15 (punkt 9).
 
 **Nytt: Trekanten.** Rettvinklet trekant med liggende, stående, skrå og vinkel. To kjente gir de to andre. Dekker skråstag, avstivere, kiler og alt annet som er en trekant, og er grunnlaget de andre takkalkulatorene bygger på.
+- Saga: et stag langs skrå kappes på 90 − v mot liggende og på v mot stående. Over 45° på saga sier appen at det kan merkes og kappes etter strek.
+- Kontroll (lagt til i M1): liggende 3000 og stående 4000 gir skrå 5000 og vinkel 53,13°, saga 36,9° mot liggende og 53,1° mot stående.
 
 **Nytt: Kiler og oppforing.** Fall og c/c gir høyden på oppforingen i hvert punkt bortover (løpende liste), for flatt tak, terrasse og avretting.
+- Høyde i et punkt = høyde i lav ende + avstand × tan(v). Siste punkt er alltid enden.
+- Kontroll (lagt til i M1): 2 % over 3000 mm, c/c 600, 10 mm i lav ende gir 10, 22, 34, 46, 58 og 70 mm.
 
 **Sperre.** Inn: løp (vannrett fra utside svill til midt møne), takvinkel, utstikk (vannrett), sperrehøyde, sete i fuglemunnen, tykkelse på mønebord (0 uten).
 - Lengde langs overkant = (løp + utstikk) / cos(v). Med mønebord trekkes (tykkelse / 2) / cos(v).
@@ -190,7 +194,7 @@ En oppføring i `matte-liste.js` ser omtrent slik ut:
 | Fase | Innhold | Ferdig når |
 |---|---|---|
 | M0 Ramme | Planen inn i repoet som `PLAN-matte.md`, avsnitt i appens CLAUDE.md, tredje valg i bryteren, meny, felles skjerm bygd fra oppføringer, én kalkulator hele veien (fall og takvinkel) | Bryteren virker på 375 px bredde, Kledning og Trapp er uendret, 153 tester grønne pluss de nye |
-| M1 Fall og trekant | Fall over lengde, trekanten, kiler og oppforing, diagonal og skjevhet | Fall på et bad og diagonalen på et fundament kan regnes fra telefonen |
+| M1 Fall og trekant | Fall over lengde (kom med i «Fall og takvinkel» i M0), trekanten, kiler og oppforing, diagonal og skjevhet | Fall på et bad og diagonalen på et fundament kan regnes fra telefonen |
 | M2 Inndeling | Lik avstand, spiler og rekkverk, terrassebord, lekter | Spiler til et rekkverk går opp med åpning under kravet |
 | M3 Tak | Sperre med loddsnitt og fuglemunn, gavlstendere, takflate | Kontrolleksempelet for sperre stemmer, og skissen viser hvor hvert mål tas |
 | M4 Gjæring | Hjørne, mangekant, sammensatt gjæring | De kjente verdiene i punkt 4 går grønt. Prøvd på en ekte list |

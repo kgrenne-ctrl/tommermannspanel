@@ -461,7 +461,23 @@ Claude-mappe. Ved uenighet gjelder den fila.
   målt høydeforskjell på en lengde. Alt regnes fra tangens. Valgfri lengde gir høydeforskjellen.
   Under 5° vises «greit å vite» om fall til sluk (TEK17 § 13-15, preaksepterte ytelser, lest på
   dibk.no 2026-11-11 via sammendrag).
-- Tester: `test/matte-tak.test.js` (kontrolleksempelet i planen punkt 4 først, skal aldri slettes)
+- **Fase M1 (2026-11-11):** «Trekanten» (`regnTrekant`, seks valg av to kjente), «Kiler og oppforing»
+  (`regnOppforing`, høyden i hvert c/c-punkt fra lav ende, siste punkt er alltid enden, hvert punkt
+  regnes fra starten) i `src/matte/tak.js`, og «Rett vinkel og diagonal» (`regnDiagonal` i
+  `src/matte/vinkel.js`: diagonal, største 3-4-5 i hele 100 mm, skjevhet (lang² − kort²) / (4 × a)).
+  Fall over en lengde lå allerede i «Fall og takvinkel».
+- Trekanten viser «Saga mot liggende» (90 − v) og «Saga mot stående» (v) med vinkelen på emnet under.
+  Over 45° på saga kommer «greit å vite» om å merke og kappe etter strek, uten tall for hva sager går til.
+- Skjevheten forutsetter at motstående sider er like lange. Det står alltid som «greit å vite», og
+  «Slik er det regnet» viser kontrollen √((d1² + d2²) / 2) mot diagonalen. Ingen toleranse er lagt inn.
+- `vis` kan også gi `forklaring` (avsnitt rett under nøkkeltallene: hva tømreren skal gjøre) og
+  `liste` (tabell med løpende mål, `maltabell matte-liste`).
+- Tallene i kortene i Matte er 22 px og kan bryte før «mm» (`#matte-resultat .kort-verdi`), fordi
+  «10 000 mm» ikke fikk plass på 375 px. Kledning og Trapp er uendret.
+- Oransje i skissene: vinkelbuen, og pila som viser hvor noe skal skyves (diagonal).
+- `mm()` skriver tusenskillet som hardt mellomrom (U+00A0). Tester som leter etter «3 000» må bytte
+  det til vanlig mellomrom først (`rens` i `test/matte-skjerm.test.js`).
+- Tester: `test/matte-tak.test.js` og `test/matte-vinkel.test.js` (kontrolleksemplene i planen punkt 4 først, skal aldri slettes)
   og `test/matte-skjerm.test.js` (hver oppføring er fullstendig, eksempelet går opp uten NaN eller
   tankestrek, skissen). Nye utregninger fanges opp av de felles testene automatisk.
 - Se appen lokalt i nettleseren inne i Claude-appen: `python3 -m http.server 8000 --bind 127.0.0.1`
@@ -478,7 +494,7 @@ assets/               logo og app-ikoner
 src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
 src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js), uttatt vange
                       (vange.js), trapphull og fri høyde, materialer og fagverdier
-src/matte/            regnemodellen for Matte: fall og tak (tak.js), flere filer per fase
+src/matte/            regnemodellen for Matte: fall og tak (tak.js), diagonal (vinkel.js), flere filer per fase
 src/skjerm/           skjermdelen (felt, vegg, trapp, merking av vange, matte, tegning, utskrift,
                       lagring, tallformat, felles biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)
