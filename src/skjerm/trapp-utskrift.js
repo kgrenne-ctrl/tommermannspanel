@@ -30,13 +30,13 @@ function inndata(d, valg, hull, hoyde) {
     ['Øverste trinn', d.ovreTrinn === 'eget' ? 'Eget trinn i høyde med dekket' : 'Dekket'],
     ['Bredde over vangene', d.bredde ? `${tall(d.bredde)} mm` : 'Ikke oppgitt'],
   ];
-  if (d.utstikk) par.push(['Utstikk på hver side', `${tall(d.utstikk)} mm`]);
+  if (d.utstikk && d.vangetype !== 'hel') par.push(['Utstikk på hver side', `${tall(d.utstikk)} mm`]);
   par.push(['Inntrinnet gitt av', LENGDEVALG[d.lengdevalg] ?? d.lengdevalg]);
   if (d.trinnbord) par.push(['Trinn av bord', `${d.trinnbord.antall} × ${tall(d.trinnbord.bredde)} mm, spalte ${tall(d.trinnbord.spalte)}`]);
   if (d.lengdevalg === 'lengde') par.push(['Plass til trappa', `${tall(d.lengde)} mm`]);
   par.push(
     ['Nese', `${tall(valg.nese)} mm`],
-    ['Vange', `${tall(valg.vangeTykkelse)} × ${tall(valg.vangeBredde)} mm, uttatt`],
+    ['Vange', `${tall(valg.vangeTykkelse)} × ${tall(valg.vangeBredde)} mm, ${valg.vangetype === 'hel' ? 'hel (trinn mellom)' : 'uttatt'}`],
     ['Trinntykkelse', `${tall(valg.trinnTykkelse)} mm`],
   );
   if (valg.beleggNede) par.push(['Gulv nede senere', `${tall(valg.beleggNede)} mm`]);
@@ -65,7 +65,7 @@ function spissTabell(vange) {
   return biter.map((bit) => `<table class="tu-tabell tu-spisser"><tbody>
     <tr><th>Spiss</th>${bit.map((m) => `<td>${m.nr}${m.hjelp ? '*' : ''}</td>`).join('')}${tomme(bit)}</tr>
     <tr><th>Fra 0 (mm)</th>${bit.map((m) => `<td>${tall(m.avstand)}</td>`).join('')}${tomme(bit)}</tr></tbody></table>`).join('')
-    + (vange.merker.at(-1).hjelp ? '<p class="tu-fotnote">* Hjelpespiss: trengs bare for å tegne øverste hakk, og kappes bort.</p>' : '');
+    + (vange.merker.at(-1).hjelp ? `<p class="tu-fotnote">* Hjelpespiss: trengs bare for å tegne ${vange.type === 'hel' ? 'øverste trinn og toppen' : 'øverste hakk'}, og kappes bort.</p>` : '');
 }
 
 function materialer(liste) {
@@ -139,9 +139,12 @@ export function lagTrappUtskrift({ tilstand, d, l, vange, valg, liste, hull = nu
     <section class="tu-del tu-ny-side">
       <h2>Merking av vangen</h2>
       <div class="tu-tall">
-        ${kort('Hakk', `${tall(vange.hakkDybde, 1)} mm`, 'Inn fra overkanten')}
-        ${kort('Resthøyde', `${tall(vange.resthoyde, 1)} mm`, `Av ${tall(valg.vangeBredde)} mm`)}
-        ${kort('Mellom spissene', `${tall(vange.s, 1)} mm`, 'Langs overkanten')}
+        ${vange.type === 'hel'
+    ? `${kort('Over forkant', `${tall(vange.overkant, 1)} mm`, 'Vange over forkant trinn')}
+        ${kort('Under trinnet', `${tall(vange.underTrinn, 1)} mm`, 'Vange under bakkant trinn')}`
+    : `${kort('Hakk', `${tall(vange.hakkDybde, 1)} mm`, 'Inn fra overkanten')}
+        ${kort('Resthøyde', `${tall(vange.resthoyde, 1)} mm`, `Av ${tall(valg.vangeBredde)} mm`)}`}
+        ${kort('Mellom spissene', `${tall(vange.s, 1)} mm`, vange.type === 'hel' ? 'Langs hjelpelinja' : 'Langs overkanten')}
         ${kort('Emne', `${tall(vange.emnelengde)} mm`, 'Minste lengde')}
       </div>
       <p class="tu-liten">Legg vangen på bukkene med overkanten mot deg. Nederste ende av trappa er til venstre.</p>

@@ -20,7 +20,7 @@ const finn = (id) => document.getElementById(id);
 
 // Innstillinger som kan endres, målene for vangen og materialene. Alt lagres under «innstillinger».
 const INNSTILLINGER = ['onsketOpptrinn', 'formelIdeal', 'formelMin', 'formelMax'];
-const VANGE = ['trinnTykkelse', 'vangeBredde', 'beleggNede', 'vangeTykkelse', 'antallVanger', 'utstikk'];
+const VANGE = ['trinnTykkelse', 'vangeBredde', 'beleggNede', 'vangeTykkelse', 'antallVanger', 'utstikk', 'overkant'];
 const MATERIAL = ['maksAvstandVangerTynn', 'maksAvstandVangerTykk', 'kapptillegg', 'svinn'];
 
 // Det som vises nå, til utskrift og deling av materiallista
@@ -217,6 +217,7 @@ function lesTilstand() {
     nese: finn('t-nese').value,
     lengde: finn('t-lengde').value,
     maltSom: skjema.elements['t-maltSom'].value,
+    vangetype: skjema.elements['t-vangetype'].value,
     gulvOppe: finn('t-gulvOppe').value,
     etasjeskiller: finn('t-etasjeskiller').value,
     hullLengde: finn('t-hullLengde').value,
@@ -233,6 +234,7 @@ function settTilstand(t) {
     if (t.lengdevalg) skjema.elements['t-lengdevalg'].value = t.lengdevalg;
     if (t.antall) finn('t-antall').value = t.antall;
     skjema.elements['t-maltSom'].value = t.maltSom === 'naa' ? 'naa' : 'ferdig';
+    skjema.elements['t-vangetype'].value = t.vangetype === 'hel' ? 'hel' : 'uttatt';
     finn('t-tetteOpptrinn').checked = t.tetteOpptrinn === true;
     for (const [felt, id] of [['hoyde', 't-hoyde'], ['bredde', 't-bredde'], ['bordbredde', 't-bordbredde'],
       ['spalte', 't-spalte'], ['nese', 't-nese'], ['lengde', 't-lengde'], ['gulvOppe', 't-gulvOppe'],
@@ -254,6 +256,8 @@ function lesSkjema() {
     bredde: lesTall(t.bredde),
     utstikk: lesTall(t.innstillinger.utstikk) ?? STANDARD_TRAPP.utstikk,
     maltSom: t.maltSom,
+    vangetype: t.vangetype,
+    vangeTykkelse: lesTall(t.innstillinger.vangeTykkelse) ?? STANDARD_TRAPP.vangeTykkelse,
     gulvNede: lesTall(t.innstillinger.beleggNede) ?? 0,
     gulvOppe: lesTall(t.gulvOppe) ?? 0,
     lengdevalg: t.lengdevalg,
@@ -275,7 +279,8 @@ function vangeValg(inndata) {
   const ute = inndata.type === 'utvendig';
   const tykkelse = lesTall(finn('t-trinnTykkelse').value)
     ?? (ute ? STANDARD_TRAPP.trinnTykkelseUte : STANDARD_TRAPP.trinnTykkelseInne);
-  return { nese: inndata.nese, trinnTykkelse: tykkelse,
+  return { vangetype: inndata.vangetype, overkant: lesTall(finn('t-overkant').value),
+    nese: inndata.nese, trinnTykkelse: tykkelse,
     vangeBredde: lesTall(finn('t-vangeBredde').value) ?? STANDARD_TRAPP.vangeBredde,
     vangeTykkelse: lesTall(finn('t-vangeTykkelse').value) ?? STANDARD_TRAPP.vangeTykkelse,
     beleggNede: lesTall(finn('t-beleggNede').value) ?? 0,
@@ -301,7 +306,8 @@ function materialer(inndata, l, vange, valg) {
     kapptillegg: tall('t-kapptillegg', STANDARD_TRAPP.kapptillegg), svinn: tall('t-svinn', STANDARD_TRAPP.svinn),
     maksAvstandVangerTynn: tall('t-maksAvstandVangerTynn', STANDARD_TRAPP.maksAvstandVangerTynn),
     maksAvstandVangerTykk: tall('t-maksAvstandVangerTykk', STANDARD_TRAPP.maksAvstandVangerTykk),
-    stusstrinn: finn('t-tetteOpptrinn').checked ? { tykkelse: lesTall(finn('t-stusstrinnTykkelse').value) } : null });
+    stusstrinn: finn('t-tetteOpptrinn').checked ? { tykkelse: lesTall(finn('t-stusstrinnTykkelse').value) } : null,
+    vangetype: valg.vangetype });
 }
 
 // ---------- Vise resultatet ----------
@@ -317,6 +323,14 @@ function oppdater() {
   // Gulv oppe betyr bare noe når høyden er målt slik det står nå. Tykkelsen på stusstrinn bare med tette opptrinn.
   finn('t-gulvOppe-felt').hidden = inndata.maltSom !== 'naa';
   finn('t-stusstrinn-felt').hidden = !finn('t-tetteOpptrinn').checked;
+  // Hel vange: alltid to vanger og ingen utstikk, men avstand over forkanten kan settes
+  const hel = inndata.vangetype === 'hel';
+  finn('t-antallVanger-felt').hidden = hel;
+  finn('t-utstikk-felt').hidden = hel;
+  finn('t-overkant-felt').hidden = !hel;
+  finn('t-vange-hjelp').textContent = hel
+    ? 'Hel vange: trinnene står mellom to hele vanger, festet på innsiden. Står vangen på noe som får gulv eller helle senere (feltet «Gulv nede» over), blir alle opptrinn like når gulvet er lagt.'
+    : 'Uttatt vange: trinnene ligger oppå hakk i vangen. Står vangen på noe som får gulv eller helle senere (feltet «Gulv nede» over), blir alle opptrinn like når gulvet er lagt.';
   finn('t-hoyde-hjelp').textContent = inndata.maltSom === 'naa'
     ? 'Målt slik det står nå. Appen legger til gulvet som kommer oppe og trekker fra gulvet som kommer nede.'
     : 'Fra ferdig underlag nede (helle, terreng, gulv) til overkant ferdig dekke eller gulv oppe.';
@@ -428,8 +442,8 @@ function visTrapp(l, svar, indeks, inndata, vange, valg, liste, hull) {
     <section class="del">
     <h2>Tegning</h2>
     ${zoomBoks('trapp', tegnTrapp(l, vange, { ...valg, trapphull: hull?.ok ? hull : null }))}
-    <p class="hjelp">Sett fra siden, i riktig målestokk. ${toppTekst} Vangen er uttatt: trinnene ligger
-      oppå hakk i vangen.${valg.beleggNede > 0 ? ' Stiplet strek nederst er der vangen står før gulvet er lagt.' : ''}${hull?.ok
+    <p class="hjelp">Sett fra siden, i riktig målestokk. ${toppTekst} Vangen er ${vange.type === 'hel' ? 'hel: trinnene står' : 'uttatt: trinnene ligger'}
+      ${vange.type === 'hel' ? 'mellom vangene.' : 'oppå hakk i vangen.'}${valg.beleggNede > 0 ? ' Stiplet strek nederst er der vangen står før gulvet er lagt.' : ''}${hull?.ok
     ? ' Etasjeskilleren er tegnet over trappa, med fri høyde ved kanten av trapphullet.' : ''}</p>
     </section>
 
@@ -526,9 +540,12 @@ function visVange(l, v, valg) {
     <section class="del">
     <h2>Vangen</h2>
     <div class="nokkeltall">
-      ${kort('Hakk', `${mm(v.hakkDybde, 1)} mm`, 'Dybde inn fra overkanten')}
-      ${kort('Resthøyde', `${mm(v.resthoyde, 1)} mm`, `Igjen av vangen på ${mm(valg.vangeBredde)} mm`)}
-      ${kort('Mellom spissene', `${mm(v.s, 1)} mm`, 'Langs overkanten')}
+      ${v.type === 'hel'
+    ? `${kort('Over forkant', `${mm(v.overkant, 1)} mm`, 'Vange over forkant trinn')}
+      ${kort('Under trinnet', `${mm(v.underTrinn, 1)} mm`, 'Vange under bakkant trinn')}`
+    : `${kort('Hakk', `${mm(v.hakkDybde, 1)} mm`, 'Dybde inn fra overkanten')}
+      ${kort('Resthøyde', `${mm(v.resthoyde, 1)} mm`, `Igjen av vangen på ${mm(valg.vangeBredde)} mm`)}`}
+      ${kort('Mellom spissene', `${mm(v.s, 1)} mm`, v.type === 'hel' ? 'Langs hjelpelinja' : 'Langs overkanten')}
       ${kort('Emne', `${mm(v.emnelengde)} mm`, 'Minste lengde på bordet')}
     </div>
 

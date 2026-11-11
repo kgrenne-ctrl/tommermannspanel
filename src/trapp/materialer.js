@@ -28,7 +28,7 @@ export function maksAvstandVanger(trinnTykkelse, inn = STANDARD_TRAPP) {
 export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTykkelse, nese = STANDARD_TRAPP.nese,
   vangeTykkelse = STANDARD_TRAPP.vangeTykkelse, vangeBredde = STANDARD_TRAPP.vangeBredde,
   utstikk = STANDARD_TRAPP.utstikk, antallVanger = null, kapptillegg = STANDARD_TRAPP.kapptillegg,
-  svinn = STANDARD_TRAPP.svinn, stusstrinn = null, ...resten }) {
+  svinn = STANDARD_TRAPP.svinn, stusstrinn = null, vangetype = 'uttatt', ...resten }) {
   const inn = { ...STANDARD_TRAPP, ...resten };
   const feil = [];
   const positiv = (x) => Number.isFinite(x) && x > 0;
@@ -47,14 +47,20 @@ export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTy
     return { ok: false, feil: [`Trappa på ${en(bredde)} mm er for smal for to vanger på ${en(vangeTykkelse)} mm.`] };
   }
   const maks = maksAvstandVanger(trinnTykkelse, inn);
-  const anbefalt = Math.max(2, Math.ceil(spenn / maks - SLINGRING) + 1);
-  const antall = antallVanger ?? anbefalt;
+  const hel = vangetype === 'hel';
+  // Hel vange: trinnene står mellom to vanger, så det er alltid to, uten utstikk
+  const anbefalt = hel ? 2 : Math.max(2, Math.ceil(spenn / maks - SLINGRING) + 1);
+  const antall = hel ? 2 : antallVanger ?? anbefalt;
   const avstand = spenn / (antall - 1);
 
   const m = l.antallInntrinn;
   const eget = m === l.antallOpptrinn;
   const varsler = [];
-  if (avstand > maks + SLINGRING) {
+  if (hel && avstand > maks + SLINGRING) {
+    varsler.push({ niva: 'bor', type: 'vange-avstand', kilde: null,
+      tekst: `Med hel vange spenner trinnene ${en(avstand)} mm mellom vangene. Bakøy bruker høyst ${en(maks)} mm `
+        + `med ${en(trinnTykkelse)} mm trinn. Bruk tykkere trinn, smalere trapp eller uttatt vange med flere vanger.` });
+  } else if (avstand > maks + SLINGRING) {
     varsler.push({ niva: 'bor', type: 'vange-avstand', kilde: null,
       tekst: `Med ${antall} vanger blir avstanden mellom dem ${en(avstand)} mm. Bakøy bruker høyst ${en(maks)} mm `
         + `med ${en(trinnTykkelse)} mm trinn, altså ${anbefalt} vanger.` });
@@ -64,7 +70,8 @@ export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTy
   const biter = [];
   const vangeDim = dimensjon(vangeTykkelse, vangeBredde);
   biter.push({ del: 'Vange', dim: vangeDim, antall, lengde: vange.emnelengde + kapptillegg, hel: true });
-  const trinnBredde = bredde + 2 * utstikk;   // lengden på trinnene
+  // Lengden på trinnene: uttatt vange over vangene pluss utstikket, hel vange mellom vangene
+  const trinnBredde = hel ? bredde - 2 * vangeTykkelse : bredde + 2 * utstikk;
   const trinnLengde = trinnBredde + kapptillegg;
   if (trinnbord) {
     biter.push({ del: 'Trinnbord', dim: dimensjon(trinnTykkelse, trinnbord.bredde), antall: m * trinnbord.antall, lengde: trinnLengde, hel: false });
@@ -83,7 +90,7 @@ export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTy
   if (stusstrinn) {
     const r = stusstrinn.tykkelse;
     biter.push({ del: 'Stusstrinn', dim: dimensjon(r, Math.ceil(l.opptrinn - trinnTykkelse - SLINGRING)), antall: m,
-      lengde: bredde + kapptillegg, hel: false });
+      lengde: (hel ? trinnBredde : bredde) + kapptillegg, hel: false });
     const synligNese = nese - r;
     varsler.push(synligNese < -SLINGRING
       ? { niva: 'bor', type: 'stusstrinn-nese', kilde: null,

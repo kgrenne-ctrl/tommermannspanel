@@ -411,6 +411,27 @@ Claude-mappe. Ved uenighet gjelder den fila.
   Tegningen viser etasjeskilleren fram til kanten av hullet, lengden på hullet og fri høyde
   (rødt når den er for liten). Uten lengde på hullet vises minste trapphull stiplet.
 
+## Hel vange (fase T6, 2026-11-11)
+- Vangetype velges i skjemaet: «Uttatt (trinn oppå)» eller «Hel (trinn mellom)». `lagVange` velger
+  `lagUttattVange` eller `lagHelVange` etter `valg.vangetype`. Begge gir det samme til tegningene:
+  `flatt`, `merker`, `hakk`, `linje` (hvor langt inn spissene ligger: 0 for uttatt, «over forkant» for
+  hel), `kutt` (bunn og topp lagt flatt), `kuttMal`, `reis` og `trinn` (strekene for trinnene, bare hel).
+  Tegningene og stegene bruker disse, ikke indekser i omrisset.
+- Hel vange: spissene ligger på en hjelpelinje gjennom forkantene av trinnene. Vinkelen legges på
+  hjelpelinja som for uttatt vange. Armen for inntrinnet, forlenget med nesa, er overkant trinn.
+  Underkant trinn er trinntykkelsen under. Ingenting skjæres ut.
+- Antakelser (ikke avklart med Kenny, sagt i leveransen): trinnene står midt i vangen når «Vange
+  over forkant trinn» er tomt. Bunnen kappes vannrett der vangen står og loddrett foran i linje med
+  forkanten av nederste trinn. Toppen loddrett mot bjelken (nesa bak forkanten av dekket) og
+  vannrett i høyde med underkant dekke, med dekkebord like tykke som trinnene. Med eget trinn
+  øverst kappes toppen i høyde med dekket.
+- Hel vange: alltid to vanger, ingen utstikk (feltene skjules). Trinnene er bredden over vangene minus
+  to vangetykkelser, både i materiallista og i kravet til bredde (`losTrapp` får `vangetype` og
+  `vangeTykkelse`). Spenner trinnene mer enn Bakøys grense, «bør sjekkes».
+- Funn: med vange 48 × 223 og trinn av 2 × 145 (295 mm dype) blir det bare 22 mm vange over og under
+  trinnet. Hel vange trenger bredere bord enn uttatt.
+- Tester: `test/trapp-helvange.test.js` (reist opp stemmer, strekene blir vannrette i riktig høyde).
+
 ## Mappestruktur
 ```
 index.html            siden som åpnes i nettleseren

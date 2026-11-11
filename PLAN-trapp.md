@@ -204,6 +204,8 @@ Utvendig trapp som er bygd sammen med huset (inngang, terrasse) følger § 12-14
 
 **Fase T5 (2026-11-11):** fri høyde 2,0 m inne i boligen og 2,1 m ellers (§ 12-14, lest). Tykkelse på stusstrinn har ingen standardverdi, tømreren skriver den inn.
 
+**Fase T6 (2026-11-11), antakelser som bør bekreftes av Kenny:** hel vange med trinnene midt i vangen, bunnen kappet vannrett og loddrett foran i linje med nederste trinn, toppen kappet loddrett mot bjelken og vannrett i høyde med underkant dekke (dekkebord like tykke som trinnene). Alltid to vanger.
+
 **Ikke funnet på nett** (søkt 2026-11-11, bare forumtråder uten kilde):
 
 - Minste resthøyde i uttatt vange.

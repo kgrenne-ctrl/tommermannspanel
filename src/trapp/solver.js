@@ -63,11 +63,13 @@ function varslerFor(l, d, inn) {
     varsler.push({ niva: 'ma', type: 'repos', kilde: 'TEK17 § 12-14',
       tekst: `Høyden er ${en(d.hoyde)} mm. Over ${en(inn.reposOver)} mm må trappa ha repos.` });
   }
-  // Kravet gjelder bredden man går på: trinnene, altså bredden over vangene pluss utstikket
-  const trinnBredde = d.bredde === null ? null : d.bredde + 2 * d.utstikk;
+  // Kravet gjelder bredden man går på: trinnene. Uttatt vange: bredden over vangene pluss
+  // utstikket. Hel vange: trinnene står mellom vangene, så bredden minus to vangetykkelser.
+  const trinnBredde = d.bredde === null ? null
+    : d.vangetype === 'hel' ? d.bredde - 2 * d.vangeTykkelse : d.bredde + 2 * d.utstikk;
   if (trinnBredde !== null && trinnBredde < type.breddeMin - SLINGRING) {
     varsler.push({ niva: 'ma', type: 'bredde', kilde: 'TEK17 § 12-14',
-      tekst: `Trappa er ${en(trinnBredde)} mm bred${d.utstikk > 0 ? ' målt over trinnene' : ''}. `
+      tekst: `Trappa er ${en(trinnBredde)} mm bred${d.utstikk > 0 || d.vangetype === 'hel' ? ' målt over trinnene' : ''}. `
         + `${type.navn} med rett løp skal være minst ${en(type.breddeMin)} mm.` });
   }
   if (!l.innenforFormel) {
@@ -183,7 +185,8 @@ export function lagTrinnliste(l) {
 export function losTrapp(inndata) {
   const { hoyde: malt, lengdevalg = 'trinn', inntrinn = null, trinnbord = null, lengde = null,
     nese = STANDARD_TRAPP.nese, ovreTrinn = 'dekke', type = 'utvendig', bredde = null,
-    utstikk = STANDARD_TRAPP.utstikk, maltSom = 'ferdig', gulvNede = 0, gulvOppe = 0, ...resten } = inndata;
+    utstikk = STANDARD_TRAPP.utstikk, maltSom = 'ferdig', gulvNede = 0, gulvOppe = 0,
+    vangetype = 'uttatt', vangeTykkelse = STANDARD_TRAPP.vangeTykkelse, ...resten } = inndata;
   const inn = { ...STANDARD_TRAPP, ...resten };
 
   // Høyden: målt fra ferdig gulv til ferdig gulv, eller slik det står nå (fase T5). Er den målt
@@ -196,7 +199,7 @@ export function losTrapp(inndata) {
   if (hoydeFeil.length) return { ok: false, feil: hoydeFeil };
   const hoyde = maltSom === 'naa' ? malt - gulvNede + gulvOppe : malt;
   const hoydeInfo = { malt, ferdig: hoyde, maltSom, gulvNede, gulvOppe };
-  const d = { hoyde, lengdevalg, inntrinn, trinnbord, lengde, nese, ovreTrinn, type, bredde, utstikk };
+  const d = { hoyde, lengdevalg, inntrinn, trinnbord, lengde, nese, ovreTrinn, type, bredde, utstikk, vangetype, vangeTykkelse };
 
   const feil = kontrollerInndata(d);
   if (feil.length > 0) return { ok: false, feil };
