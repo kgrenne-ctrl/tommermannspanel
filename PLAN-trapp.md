@@ -202,6 +202,8 @@ Utvendig trapp som er bygd sammen med huset (inngang, terrasse) følger § 12-14
 - Kapptillegg 50 mm og svinn 10 %, som i kledningsdelen. Kan endres i appen.
 - Trinn som stikker ut på sidene er valgfritt (standard 0).
 
+**Fase T5 (2026-11-11):** fri høyde 2,0 m inne i boligen og 2,1 m ellers (§ 12-14, lest). Tykkelse på stusstrinn har ingen standardverdi, tømreren skriver den inn.
+
 **Ikke funnet på nett** (søkt 2026-11-11, bare forumtråder uten kilde):
 
 - Minste resthøyde i uttatt vange.

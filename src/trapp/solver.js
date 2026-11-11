@@ -181,10 +181,21 @@ export function lagTrinnliste(l) {
 //      eller { ok: false, melding, forslag } når ingen løsning gir lovlig inntrinn
 //      eller { ok: false, feil: [...] } når inndata er feil.
 export function losTrapp(inndata) {
-  const { hoyde, lengdevalg = 'trinn', inntrinn = null, trinnbord = null, lengde = null,
+  const { hoyde: malt, lengdevalg = 'trinn', inntrinn = null, trinnbord = null, lengde = null,
     nese = STANDARD_TRAPP.nese, ovreTrinn = 'dekke', type = 'utvendig', bredde = null,
-    utstikk = STANDARD_TRAPP.utstikk, ...resten } = inndata;
+    utstikk = STANDARD_TRAPP.utstikk, maltSom = 'ferdig', gulvNede = 0, gulvOppe = 0, ...resten } = inndata;
   const inn = { ...STANDARD_TRAPP, ...resten };
+
+  // Høyden: målt fra ferdig gulv til ferdig gulv, eller slik det står nå (fase T5). Er den målt
+  // nå, blir ferdig høyde målt − gulv nede + gulv oppe (gulv nede løfter underlaget, gulv oppe
+  // løfter dekket).
+  const hoydeFeil = [];
+  if (!['ferdig', 'naa'].includes(maltSom)) hoydeFeil.push("Høyden er målt må være 'ferdig' eller 'naa'.");
+  if (!(Number.isFinite(gulvNede) && gulvNede >= 0)) hoydeFeil.push('Gulv nede må være 0 eller mer.');
+  if (!(Number.isFinite(gulvOppe) && gulvOppe >= 0)) hoydeFeil.push('Gulv oppe må være 0 eller mer.');
+  if (hoydeFeil.length) return { ok: false, feil: hoydeFeil };
+  const hoyde = maltSom === 'naa' ? malt - gulvNede + gulvOppe : malt;
+  const hoydeInfo = { malt, ferdig: hoyde, maltSom, gulvNede, gulvOppe };
   const d = { hoyde, lengdevalg, inntrinn, trinnbord, lengde, nese, ovreTrinn, type, bredde, utstikk };
 
   const feil = kontrollerInndata(d);
@@ -197,7 +208,7 @@ export function losTrapp(inndata) {
   }
 
   const alle = alleLosninger(d, inn);
-  if (alle.length > 0) return { ok: true, valgt: alle[0], alle, trinn };
+  if (alle.length > 0) return { ok: true, valgt: alle[0], alle, trinn, hoyde: hoydeInfo };
 
   const krav = TRAPPETYPER[type].inntrinnMin;
   const melding = {
@@ -205,5 +216,5 @@ export function losTrapp(inndata) {
     lengde: `Trappa går ikke opp med inntrinn på minst ${krav} mm (TEK17 § 12-14) på ${en(lengde)} mm lengde.`,
     fri: `Fant ingen inndeling med inntrinn på minst ${krav} mm (TEK17 § 12-14). Sjekk innstillingene.`,
   }[lengdevalg];
-  return { ok: false, melding, forslag: finnForslag(d, inn), trinn };
+  return { ok: false, melding, forslag: finnForslag(d, inn), trinn, hoyde: hoydeInfo };
 }

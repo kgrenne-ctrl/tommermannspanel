@@ -4,6 +4,7 @@
 import { losTrapp, trinnFraBord, lagTrinnliste } from '../trapp/solver.js';
 import { lagVange } from '../trapp/vange.js';
 import { lagTrappMaterialer, trappMaterialTekst } from '../trapp/materialer.js';
+import { lagTrapphull } from '../trapp/trapphull.js';
 import { STANDARD_TRAPP } from '../trapp/fagverdier.js';
 import { tegnTrapp, tegnVangeFlatt, tegnHakk, tegnBunn, tegnTopp, tegnMerkesteg } from './trapp-tegning.js';
 import { lagMerkesteg, lagVangeSteg } from './trapp-merking.js';
@@ -215,6 +216,12 @@ function lesTilstand() {
     spalte: finn('t-spalte').value,
     nese: finn('t-nese').value,
     lengde: finn('t-lengde').value,
+    maltSom: skjema.elements['t-maltSom'].value,
+    gulvOppe: finn('t-gulvOppe').value,
+    etasjeskiller: finn('t-etasjeskiller').value,
+    hullLengde: finn('t-hullLengde').value,
+    tetteOpptrinn: finn('t-tetteOpptrinn').checked,
+    stusstrinnTykkelse: finn('t-stusstrinnTykkelse').value,
     innstillinger: Object.fromEntries([...INNSTILLINGER, ...VANGE, ...MATERIAL].map((n) => [n, finn(`t-${n}`).value])),
   };
 }
@@ -225,8 +232,11 @@ function settTilstand(t) {
     if (t.ovre) skjema.elements['t-ovre'].value = t.ovre;
     if (t.lengdevalg) skjema.elements['t-lengdevalg'].value = t.lengdevalg;
     if (t.antall) finn('t-antall').value = t.antall;
+    skjema.elements['t-maltSom'].value = t.maltSom === 'naa' ? 'naa' : 'ferdig';
+    finn('t-tetteOpptrinn').checked = t.tetteOpptrinn === true;
     for (const [felt, id] of [['hoyde', 't-hoyde'], ['bredde', 't-bredde'], ['bordbredde', 't-bordbredde'],
-      ['spalte', 't-spalte'], ['nese', 't-nese'], ['lengde', 't-lengde']]) {
+      ['spalte', 't-spalte'], ['nese', 't-nese'], ['lengde', 't-lengde'], ['gulvOppe', 't-gulvOppe'],
+      ['etasjeskiller', 't-etasjeskiller'], ['hullLengde', 't-hullLengde'], ['stusstrinnTykkelse', 't-stusstrinnTykkelse']]) {
       if (t[felt] !== undefined) finn(id).value = t[felt];
     }
     for (const [n, v] of Object.entries(t.innstillinger ?? {})) if (finn(`t-${n}`)) finn(`t-${n}`).value = v;
@@ -243,6 +253,9 @@ function lesSkjema() {
     ovreTrinn: t.ovre,
     bredde: lesTall(t.bredde),
     utstikk: lesTall(t.innstillinger.utstikk) ?? STANDARD_TRAPP.utstikk,
+    maltSom: t.maltSom,
+    gulvNede: lesTall(t.innstillinger.beleggNede) ?? 0,
+    gulvOppe: lesTall(t.gulvOppe) ?? 0,
     lengdevalg: t.lengdevalg,
     nese: lesTall(t.nese) ?? 0,
   };
@@ -265,7 +278,16 @@ function vangeValg(inndata) {
   return { nese: inndata.nese, trinnTykkelse: tykkelse,
     vangeBredde: lesTall(finn('t-vangeBredde').value) ?? STANDARD_TRAPP.vangeBredde,
     vangeTykkelse: lesTall(finn('t-vangeTykkelse').value) ?? STANDARD_TRAPP.vangeTykkelse,
-    beleggNede: lesTall(finn('t-beleggNede').value) ?? 0 };
+    beleggNede: lesTall(finn('t-beleggNede').value) ?? 0,
+    // Tette opptrinn: tykkelsen på stusstrinnene, eller null
+    stusstrinn: finn('t-tetteOpptrinn').checked ? lesTall(finn('t-stusstrinnTykkelse').value) : null };
+}
+
+// Trapphull og fri høyde, når etasjeskilleren er fylt inn
+function trapphull(inndata, l) {
+  const e = lesTall(finn('t-etasjeskiller').value);
+  if (e === null) return null;
+  return lagTrapphull(l, { etasjeskiller: e, hullLengde: lesTall(finn('t-hullLengde').value), type: inndata.type });
 }
 
 // Materiallista for løsningen som vises
@@ -278,7 +300,8 @@ function materialer(inndata, l, vange, valg) {
     utstikk: inndata.utstikk, antallVanger: antall ? Number(antall) : null,
     kapptillegg: tall('t-kapptillegg', STANDARD_TRAPP.kapptillegg), svinn: tall('t-svinn', STANDARD_TRAPP.svinn),
     maksAvstandVangerTynn: tall('t-maksAvstandVangerTynn', STANDARD_TRAPP.maksAvstandVangerTynn),
-    maksAvstandVangerTykk: tall('t-maksAvstandVangerTykk', STANDARD_TRAPP.maksAvstandVangerTykk) });
+    maksAvstandVangerTykk: tall('t-maksAvstandVangerTykk', STANDARD_TRAPP.maksAvstandVangerTykk),
+    stusstrinn: finn('t-tetteOpptrinn').checked ? { tykkelse: lesTall(finn('t-stusstrinnTykkelse').value) } : null });
 }
 
 // ---------- Vise resultatet ----------
@@ -291,6 +314,12 @@ function oppdater() {
 
   // Vis bare feltene som hører til valget for inntrinnet
   for (const valg of ['trinn', 'lengde', 'fri']) finn(`t-valg-${valg}`).hidden = inndata.lengdevalg !== valg;
+  // Gulv oppe betyr bare noe når høyden er målt slik det står nå. Tykkelsen på stusstrinn bare med tette opptrinn.
+  finn('t-gulvOppe-felt').hidden = inndata.maltSom !== 'naa';
+  finn('t-stusstrinn-felt').hidden = !finn('t-tetteOpptrinn').checked;
+  finn('t-hoyde-hjelp').textContent = inndata.maltSom === 'naa'
+    ? 'Målt slik det står nå. Appen legger til gulvet som kommer oppe og trekker fra gulvet som kommer nede.'
+    : 'Fra ferdig underlag nede (helle, terreng, gulv) til overkant ferdig dekke eller gulv oppe.';
   finn('t-trinnTykkelse').placeholder = String(vangeValg(inndata).trinnTykkelse);
 
   // Hvor dypt trinnet blir av bordene, rett under feltene
@@ -329,8 +358,9 @@ function oppdater() {
   const valg = vangeValg(inndata);
   const vange = lagVange(l, valg);
   const liste = vange.ok ? materialer(inndata, l, vange, valg) : null;
-  sisteTrapp = vange.ok ? { tilstand: lesTilstand(), d: inndata, l, vange, valg, liste } : null;
-  resultat.innerHTML = visTrapp(l, svar, indeks, inndata, vange, valg, liste);
+  const hull = trapphull(inndata, l);
+  sisteTrapp = vange.ok ? { tilstand: lesTilstand(), d: inndata, l, vange, valg, liste, hull, hoyde: svar.hoyde } : null;
+  resultat.innerHTML = visTrapp(l, svar, indeks, inndata, vange, valg, liste, hull);
   if (vange.ok) {
     merking = { steg: lagMerkesteg(vange, l, valg), vange, l, valg };
     visMerkesteg(merkeIndeks);
@@ -357,10 +387,10 @@ function visVarsler(varsler) {
   return deler.join('');
 }
 
-function visTrapp(l, svar, indeks, inndata, vange, valg, liste) {
-  // Varsler fra trappa, vangen og materialene (det som bare er «greit å vite» om materialene,
-  // står under Materialer)
-  const varsler = [...l.varsler, ...(vange.varsler ?? []),
+function visTrapp(l, svar, indeks, inndata, vange, valg, liste, hull) {
+  // Varsler fra trappa, vangen, trapphullet og materialene (det som bare er «greit å vite» om
+  // materialene, står under Materialer)
+  const varsler = [...l.varsler, ...(vange.varsler ?? []), ...(hull?.ok ? hull.varsler : []),
     ...(liste?.ok ? liste.varsler.filter((v) => v.niva !== 'vite') : [])];
   const underInntrinn = svar.trinn ? `Trinnet ${mm(svar.trinn.dybde)} mm dypt` : `${l.antallInntrinn} trinn`;
 
@@ -388,6 +418,8 @@ function visTrapp(l, svar, indeks, inndata, vange, valg, liste) {
       ${kort('Trappeformel', `${mm(l.formel, 1)} mm`, '2 × opptrinn + inntrinn')}
       ${kort('Stigning', `${mm(l.vinkel, 1)}°`, `Løpslengde ${mm(l.lopslengde)} mm`)}
     </div>
+    ${svar.hoyde?.maltSom === 'naa' ? `<p class="hjelp">Ferdig høyde: målt ${mm(svar.hoyde.malt)} − gulv nede ${mm(svar.hoyde.gulvNede)}
+      + gulv oppe ${mm(svar.hoyde.gulvOppe)} = <strong>${mm(svar.hoyde.ferdig)} mm</strong>.</p>` : ''}
     ${visVarsler(varsler)}
     ${andre}
     ${vange.ok ? '<button type="button" class="knapp bred" id="t-skriv-ut">Skriv ut / PDF</button>' : ''}
@@ -395,10 +427,13 @@ function visTrapp(l, svar, indeks, inndata, vange, valg, liste) {
 
     <section class="del">
     <h2>Tegning</h2>
-    ${zoomBoks('trapp', tegnTrapp(l, vange, valg))}
+    ${zoomBoks('trapp', tegnTrapp(l, vange, { ...valg, trapphull: hull?.ok ? hull : null }))}
     <p class="hjelp">Sett fra siden, i riktig målestokk. ${toppTekst} Vangen er uttatt: trinnene ligger
-      oppå hakk i vangen.${valg.beleggNede > 0 ? ' Stiplet strek nederst er der vangen står før belegget er lagt.' : ''}</p>
+      oppå hakk i vangen.${valg.beleggNede > 0 ? ' Stiplet strek nederst er der vangen står før gulvet er lagt.' : ''}${hull?.ok
+    ? ' Etasjeskilleren er tegnet over trappa, med fri høyde ved kanten av trapphullet.' : ''}</p>
     </section>
+
+    ${visTrapphull(hull)}
 
     ${visVange(l, vange, valg)}
 
@@ -414,6 +449,25 @@ function visTrapp(l, svar, indeks, inndata, vange, valg, liste) {
     </section>
 
     ${liste ? visMaterialer(liste, l) : ''}`;
+}
+
+function visTrapphull(hull) {
+  if (!hull) return '';
+  if (!hull.ok) return `<section class="del"><h2>Trapphull og fri høyde</h2>${boks('feil', hull.feil.map((t) => `<p>${t}</p>`).join(''))}</section>`;
+  const fri = hull.friHoyde === null ? ''
+    : kort('Fri høyde', `${mm(hull.friHoyde)} mm`, `Ved kanten av hullet. Krav ${mm(hull.krav)} mm`);
+  return `
+    <section class="del">
+    <div class="del-topp"><h2>Trapphull og fri høyde</h2>${hull.friHoyde === null ? ''
+    : hull.varsler.length ? '<span class="merke merke-feil">For kort</span>' : '<span class="merke merke-ok">OK</span>'}</div>
+    <div class="nokkeltall">
+      ${kort('Minste trapphull', `${mm(hull.minsteHull)} mm`, `For ${mm(hull.krav)} mm fri høyde`)}
+      ${fri}
+    </div>
+    <p class="hjelp">Trapphullet måles vannrett fra kanten av dekket der trappa kommer opp, og bakover over
+      trappa. Fri høyde måles loddrett fra linja gjennom forkantene av trinnene til underkant himling
+      (TEK17 § 12-14: 2,0 m inne i boligen, ellers 2,1 m). Etasjeskilleren er ${mm(hull.etasjeskiller)} mm.</p>
+    </section>`;
 }
 
 function visMaterialer(liste, l) {

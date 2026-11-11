@@ -28,7 +28,7 @@ export function maksAvstandVanger(trinnTykkelse, inn = STANDARD_TRAPP) {
 export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTykkelse, nese = STANDARD_TRAPP.nese,
   vangeTykkelse = STANDARD_TRAPP.vangeTykkelse, vangeBredde = STANDARD_TRAPP.vangeBredde,
   utstikk = STANDARD_TRAPP.utstikk, antallVanger = null, kapptillegg = STANDARD_TRAPP.kapptillegg,
-  svinn = STANDARD_TRAPP.svinn, ...resten }) {
+  svinn = STANDARD_TRAPP.svinn, stusstrinn = null, ...resten }) {
   const inn = { ...STANDARD_TRAPP, ...resten };
   const feil = [];
   const positiv = (x) => Number.isFinite(x) && x > 0;
@@ -38,6 +38,7 @@ export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTy
   if (!(Number.isFinite(kapptillegg) && kapptillegg >= 0)) feil.push('Kapptillegget må være 0 eller mer.');
   if (!(Number.isFinite(svinn) && svinn >= 0)) feil.push('Svinnet må være 0 eller mer.');
   if (antallVanger !== null && !(Number.isInteger(antallVanger) && antallVanger >= 2)) feil.push('Antall vanger må være minst 2.');
+  if (stusstrinn && !(Number.isFinite(stusstrinn.tykkelse) && stusstrinn.tykkelse > 0)) feil.push('Skriv inn tykkelsen på stusstrinnene.');
   if (feil.length) return { ok: false, feil };
 
   // Vangene: senter til senter mellom de ytterste. Bredden er over ytterkant av vangene.
@@ -73,6 +74,22 @@ export function lagTrappMaterialer({ l, vange, bredde, trinnbord = null, trinnTy
     const vanlige = eget ? m - 1 : m;
     if (vanlige > 0) biter.push({ del: 'Trinn', dim: dimensjon(trinnTykkelse, dybde), antall: vanlige, lengde: trinnLengde, hel: false });
     if (eget) biter.push({ del: 'Øverste trinn', dim: dimensjon(trinnTykkelse, Math.ceil(l.inntrinn - SLINGRING)), antall: 1, lengde: trinnLengde, hel: false });
+  }
+
+  // Tette opptrinn (fase T5): ett stusstrinn foran hvert hakk, festet på den loddrette flaten.
+  // Det går fra trinnet under (eller gulvet) opp til undersiden av trinnet over: opptrinn − trinn.
+  // Med dekket øverst er det øverste opptrinnet bjelken under dekket, så antallet er antall trinn.
+  // Stusstrinnene er like lange som bredden over vangene.
+  if (stusstrinn) {
+    const r = stusstrinn.tykkelse;
+    biter.push({ del: 'Stusstrinn', dim: dimensjon(r, Math.ceil(l.opptrinn - trinnTykkelse - SLINGRING)), antall: m,
+      lengde: bredde + kapptillegg, hel: false });
+    const synligNese = nese - r;
+    varsler.push(synligNese < -SLINGRING
+      ? { niva: 'bor', type: 'stusstrinn-nese', kilde: null,
+        tekst: `Stusstrinnene er ${en(r)} mm tykke, mer enn nesa på ${en(nese)} mm. Trinnene stikker ikke fram foran stusstrinnene. Øk nesa eller bruk tynnere stusstrinn.` }
+      : { niva: 'vite', type: 'stusstrinn-nese', kilde: null,
+        tekst: `Med tette opptrinn stikker trinnet ${en(synligNese)} mm fram foran stusstrinnet (nesa ${en(nese)} minus ${en(r)} mm).` });
   }
 
   // Bestilling: vanger i stykk med minste lengde, trinn i løpemeter med svinn

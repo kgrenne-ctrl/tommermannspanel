@@ -21,10 +21,12 @@ const kort = (etikett, verdi, under) => `<div class="tu-kort"><span class="tu-et
   + `<span class="tu-verdi">${verdi}</span><span class="tu-under">${under}</span></div>`;
 const nokkelVerdi = (par) => `<table class="tu-nv"><tbody>${par.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody></table>`;
 
-function inndata(d, valg) {
+function inndata(d, valg, hull, hoyde) {
   const par = [
     ['Type trapp', vask(TRAPPETYPER[d.type]?.navn ?? d.type)],
-    ['Høyde', `${tall(d.hoyde)} mm`],
+    ['Høyde', hoyde?.maltSom === 'naa'
+      ? `${tall(hoyde.ferdig)} mm ferdig (målt ${tall(hoyde.malt)} − ${tall(hoyde.gulvNede)} + ${tall(hoyde.gulvOppe)})`
+      : `${tall(d.hoyde)} mm`],
     ['Øverste trinn', d.ovreTrinn === 'eget' ? 'Eget trinn i høyde med dekket' : 'Dekket'],
     ['Bredde over vangene', d.bredde ? `${tall(d.bredde)} mm` : 'Ikke oppgitt'],
   ];
@@ -37,7 +39,12 @@ function inndata(d, valg) {
     ['Vange', `${tall(valg.vangeTykkelse)} × ${tall(valg.vangeBredde)} mm, uttatt`],
     ['Trinntykkelse', `${tall(valg.trinnTykkelse)} mm`],
   );
-  if (valg.beleggNede) par.push(['Belegg nede senere', `${tall(valg.beleggNede)} mm`]);
+  if (valg.beleggNede) par.push(['Gulv nede senere', `${tall(valg.beleggNede)} mm`]);
+  if (valg.stusstrinn) par.push(['Tette opptrinn', `Stusstrinn ${tall(valg.stusstrinn)} mm`]);
+  if (hull?.ok) {
+    par.push(['Etasjeskiller', `${tall(hull.etasjeskiller)} mm`]);
+    par.push(['Trapphull', hull.hullLengde === null ? 'Ikke oppgitt' : `${tall(hull.hullLengde)} mm`]);
+  }
   return nokkelVerdi(par);
 }
 
@@ -82,8 +89,14 @@ function materialer(liste) {
 
 // tilstand: skjemaet slik det lagres (gjenskaper eksempelet). d: inndata til losTrapp.
 // l: valgt løsning. vange: lagVange(...). valg: målene for vangen. liste: lagTrappMaterialer(...).
-export function lagTrappUtskrift({ tilstand, d, l, vange, valg, liste, versjon, dato = new Date() }) {
-  const varsler = [...l.varsler, ...(vange.varsler ?? []), ...(liste?.ok ? liste.varsler.filter((v) => v.niva !== 'vite') : [])];
+export function lagTrappUtskrift({ tilstand, d, l, vange, valg, liste, hull = null, hoyde = null, versjon, dato = new Date() }) {
+  const varsler = [...l.varsler, ...(vange.varsler ?? []), ...(hull?.ok ? hull.varsler : []),
+    ...(liste?.ok ? liste.varsler.filter((v) => v.niva !== 'vite') : [])];
+  // Trapphullet som melding under kontroll: minstemålet, og fri høyde når lengden er oppgitt
+  if (hull?.ok && !hull.varsler.length) {
+    varsler.push({ niva: 'vite', tekst: `Trapphullet må være minst ${tall(hull.minsteHull)} mm langt for ${tall(hull.krav)} mm fri høyde.`
+      + (hull.friHoyde !== null ? ` Fri høyde ved kanten blir ${tall(hull.friHoyde)} mm.` : ''), kilde: 'TEK17 § 12-14' });
+  }
   const trinn = lagTrinnliste(l).map((r) => `<tr><td>${r.nr ?? 'Dekket'}</td><td>${tall(r.hoyde)}</td><td>${tall(r.forkant)}</td></tr>`).join('');
   const data = JSON.stringify({ app: 'tommermannspanel', verktoy: 'trapp', versjon, trapp: tilstand });
   const tid = `${String(dato.getDate()).padStart(2, '0')}.${String(dato.getMonth() + 1).padStart(2, '0')}.${dato.getFullYear()}`;
@@ -112,12 +125,12 @@ export function lagTrappUtskrift({ tilstand, d, l, vange, valg, liste, versjon, 
         ${kort('Stigning', `${tall(l.vinkel, 1)}°`, `Løp ${tall(l.lopslengde)} mm`)}
       </div>
       <div class="tu-to">
-        <div><h2>Inndata</h2>${inndata(d, valg)}</div>
+        <div><h2>Inndata</h2>${inndata(d, valg, hull, hoyde)}</div>
         <div><h2>Kontroll</h2>${kontroll(varsler)}</div>
       </div>
       <h2>Trappa sett fra siden</h2>
       <div class="tu-tegning-rad">
-        <div class="tu-figur">${tegnTrapp(l, vange, valg)}</div>
+        <div class="tu-figur">${tegnTrapp(l, vange, { ...valg, trapphull: hull?.ok ? hull : null })}</div>
         <table class="tu-tabell"><thead><tr><th>Trinn</th><th>Høyde</th><th>Forkant</th></tr></thead><tbody>${trinn}</tbody></table>
       </div>
       <p class="tu-fotnote">Høyde er overkant trinn over ferdig underlag. Forkant er vannrett fra forkant av nederste trinn. Alle mål i mm.</p>

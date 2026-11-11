@@ -391,6 +391,26 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - PDF-en sjekkes med Chrome uten skjerm (`--headless --print-to-pdf`) på en midlertidig testside i
   rotmappa som slettes etterpå, og ses på side for side.
 
+## Innvendig rett trapp (fase T5, 2026-11-11)
+- `src/trapp/trapphull.js` (`lagTrapphull`): minste trapphull og fri høyde. Etasjeskilleren er fra
+  underkant himling til ferdig gulv oppe. Trapphullet måles vannrett fra forkanten av dekket og
+  bakover. Fri høyde måles loddrett fra linja gjennom forkantene av trinnene til underkant himling
+  ved kanten av hullet. Krav 2,0 m inne i boligen, ellers 2,1 m (`TRAPPETYPER.friHoyde`, § 12-14).
+  For kort hull gir «må fikses». Minstemålet rundes opp til hel mm.
+- Kontrolleksempel 2 (2700 mm, 3640 mm, etasjeskiller 300, krav 2,0 m): minste trapphull 3323 mm,
+  3300 mm gir 1984,6 mm fri høyde og varsel (`test/trapp-trapphull.test.js`).
+- Høyden kan være målt «ferdig til ferdig» eller «slik det står nå» (`maltSom: 'naa'`). Da er ferdig
+  høyde = målt − gulv nede + gulv oppe (`losTrapp` gir `svar.hoyde`). «Gulv nede som legges senere»
+  er det samme feltet som senker vangen (`beleggNede`). Feltet for gulv oppe vises bare ved «nå».
+- Tette opptrinn (stusstrinn): avkrysning og tykkelse (ingen standardverdi, tømreren skriver den).
+  Ett stusstrinn per trinn, opptrinn − trinntykkelse høyt, like langt som bredden over vangene.
+  Med dekket øverst er øverste opptrinn bjelken, så antallet er antall trinn. Stusstrinnet står på
+  den loddrette flaten i hakket, så trinnet stikker nese − tykkelse fram foran det (varsel når det
+  blir under 0).
+- Skjema: delen «Trapphull» etter «Trappa». Resultat: «Trapphull og fri høyde» etter tegningen.
+  Tegningen viser etasjeskilleren fram til kanten av hullet, lengden på hullet og fri høyde
+  (rødt når den er for liten). Uten lengde på hullet vises minste trapphull stiplet.
+
 ## Mappestruktur
 ```
 index.html            siden som åpnes i nettleseren
@@ -401,7 +421,7 @@ versjon.json          versjonsnummeret appen sjekker mot (skrives ved commit)
 assets/               logo og app-ikoner
 src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
 src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js), uttatt vange
-                      (vange.js), materialer og fagverdier
+                      (vange.js), trapphull og fri høyde, materialer og fagverdier
 src/skjerm/           skjermdelen (felt, vegg, trapp, merking av vange, tegning, utskrift, lagring,
                       tallformat, felles biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)

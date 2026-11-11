@@ -43,14 +43,14 @@ export const STANDARD_TRAPP = Object.freeze({
 });
 
 // Krav per type trapp (§ 12-14). inntrinnMin er forskriftskrav: under er aldri lov.
-// breddeMin gjelder rette løp.
+// breddeMin og friHoyde gjelder rette løp (§ 12-14 første ledd h, andre ledd a).
 export const TRAPPETYPER = Object.freeze({
   // Sannsynlig: utvendig trapp bygd sammen med huset (inngang, terrasse) er ikke «internt i
   // boenhet», så hovedregelen på 0,90 m gjelder. Ikke bekreftet av DiBK for akkurat dette.
-  utvendig: Object.freeze({ navn: 'Utvendig trapp', inntrinnMin: 250, breddeMin: 900 }),
-  boenhet: Object.freeze({ navn: 'Trapp inne i boligen', inntrinnMin: 250, breddeMin: 800 }),
-  flere: Object.freeze({ navn: 'Felles trapp for flere boliger', inntrinnMin: 250, breddeMin: 1100 }),
-  annen: Object.freeze({ navn: 'Annen trapp', inntrinnMin: 250, breddeMin: 900 }),
+  utvendig: Object.freeze({ navn: 'Utvendig trapp', inntrinnMin: 250, breddeMin: 900, friHoyde: 2100 }),
+  boenhet: Object.freeze({ navn: 'Trapp inne i boligen', inntrinnMin: 250, breddeMin: 800, friHoyde: 2000 }),
+  flere: Object.freeze({ navn: 'Felles trapp for flere boliger', inntrinnMin: 250, breddeMin: 1100, friHoyde: 2100 }),
+  annen: Object.freeze({ navn: 'Annen trapp', inntrinnMin: 250, breddeMin: 900, friHoyde: 2100 }),
 });
 
 // Trapp i uteareal som ikke er bygd sammen med huset (§ 8-9). Preaksepterte ytelser, ikke krav.

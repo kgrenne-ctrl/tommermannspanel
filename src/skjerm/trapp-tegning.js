@@ -9,7 +9,10 @@
 
 import { mm } from './format.js';
 
-export function tegnTrapp(l, vange, { nese = 20, trinnTykkelse = 28, beleggNede = 0 } = {}) {
+// trapphull: fra lagTrapphull (valgfri). Da tegnes etasjeskilleren over trappa, kanten av hullet
+// og fri høyde ved kanten. Uten lengde på hullet vises minste trapphull.
+// stusstrinn: tykkelsen på tette opptrinn (valgfri).
+export function tegnTrapp(l, vange, { nese = 20, trinnTykkelse = 28, beleggNede = 0, trapphull = null, stusstrinn = null } = {}) {
   const h = l.opptrinn;
   const b = l.inntrinn;
   const H = l.opptrinn * l.antallOpptrinn;
@@ -23,11 +26,13 @@ export function tegnTrapp(l, vange, { nese = 20, trinnTykkelse = 28, beleggNede 
   const strek = storst * 0.0022;
   const kant = storst * 0.06;
   const dekkeLengde = Math.max(400, lop * 0.3);
-  const dekkeTykkelse = Math.min(200, H * 0.25);
+  const dekkeTykkelse = trapphull ? trapphull.etasjeskiller : Math.min(200, H * 0.25);
+  // Kanten av trapphullet: den som er lagt inn, ellers der hullet minst må gå
+  const hullKant = trapphull ? (trapphull.kant ?? lop - trapphull.minsteHull) : null;
 
-  const xMin = -kant * 2.2;                 // plass til høydemålet til venstre
+  const xMin = Math.min(-kant * 2.2, hullKant === null ? 0 : hullKant - kant * 2);
   const xMaks = lop + dekkeLengde;
-  const yTopp = H + kant;
+  const yTopp = H + kant * (trapphull ? 2.2 : 1);
   const yBunn = -kant * 2 - beleggNede;     // plass til lengdemålet under
   const Y = (y) => yTopp - y;
 
@@ -44,6 +49,21 @@ export function tegnTrapp(l, vange, { nese = 20, trinnTykkelse = 28, beleggNede 
     + `fill="var(--dekke)" stroke="var(--tekst-gra)" stroke-width="${strek}"/>`);
   deler.push(`<text x="${lop + dekkeLengde / 2}" y="${Y(H) + dekkeTykkelse / 2 + skrift * 0.35}" font-size="${skrift}" `
     + 'text-anchor="middle" fill="var(--tekst)">Dekke</text>');
+
+  // Etasjeskilleren over trappa, fra venstre kant til kanten av trapphullet
+  if (trapphull) {
+    deler.push(`<rect class="t-etasjeskiller" x="${xMin}" y="${Y(H)}" width="${hullKant - xMin}" height="${dekkeTykkelse}" `
+      + `fill="var(--dekke)" stroke="var(--tekst-gra)" stroke-width="${strek}"${trapphull.kant === null ? ` stroke-dasharray="${skrift * 0.3}"` : ''}/>`);
+  }
+
+  // Tette opptrinn: stusstrinnet står på den loddrette flaten i hakket, fra trinnet under til trinnet over
+  if (stusstrinn) {
+    for (let k = 1; k <= m; k++) {
+      const x = (k - 1) * b + nese;
+      deler.push(`<rect class="t-stusstrinn" x="${x - stusstrinn}" y="${Y(k * h - t)}" width="${stusstrinn}" height="${h - t}" `
+        + `fill="var(--trinn)" stroke="var(--bord-kant)" stroke-width="${strek * 0.8}"/>`);
+    }
+  }
 
   // Trinnene. Trinnet stikker nesa ut foran hakket. Med eget trinn øverst slutter det mot dekket.
   for (let k = 1; k <= m; k++) {
@@ -78,6 +98,27 @@ export function tegnTrapp(l, vange, { nese = 20, trinnTykkelse = 28, beleggNede 
   deler.push(`<text x="${xH - skrift * 0.5}" y="${Y(H / 2)}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)" `
     + `transform="rotate(-90 ${xH - skrift * 0.5} ${Y(H / 2)})">${mm(H)} mm</text>`);
   deler.push(`<text x="${lop / 2}" y="${Y(yL) + skrift * 1.3}" font-size="${skrift}" text-anchor="middle" fill="var(--tekst)">${mm(lop)} mm</text>`);
+
+  // Trapphullet: lengden over og fri høyde ved kanten
+  if (trapphull) {
+    const underkant = H - dekkeTykkelse;
+    const fri = trapphull.friHoyde ?? trapphull.krav;
+    const gang = underkant - fri;
+    const yHull = H + kant * 1.2;
+    const lengde = lop - hullKant;
+    const forKort = trapphull.friHoyde !== null && trapphull.friHoyde < trapphull.krav - 1e-6;
+    deler.push(`<g class="t-hull" stroke="var(--tekst)" stroke-width="${strek}">`
+      + `<line x1="${hullKant}" y1="${Y(yHull)}" x2="${lop}" y2="${Y(yHull)}"/>`
+      + `<line x1="${hullKant}" y1="${Y(yHull) - pil}" x2="${hullKant}" y2="${Y(H)}"/>`
+      + `<line x1="${lop}" y1="${Y(yHull) - pil}" x2="${lop}" y2="${Y(H)}"/></g>`);
+    deler.push(`<text x="${(hullKant + lop) / 2}" y="${Y(yHull) - skrift * 0.35}" font-size="${skrift * 0.9}" text-anchor="middle" `
+      + `fill="var(--tekst)">${trapphull.kant === null ? `Trapphull minst ${mm(lengde)} mm` : `Trapphull ${mm(lengde)} mm`}</text>`);
+    deler.push(`<line class="t-fri" x1="${hullKant}" y1="${Y(gang)}" x2="${hullKant}" y2="${Y(underkant)}" `
+      + `stroke="${forKort ? 'var(--feil-tekst)' : 'var(--bakoy-oransje)'}" stroke-width="${strek * 2}" stroke-dasharray="${skrift * 0.3}"/>`);
+    deler.push(`<text x="${hullKant + skrift * 0.4}" y="${Y((gang + underkant) / 2)}" font-size="${skrift * 0.9}" text-anchor="start" `
+      + `fill="${forKort ? 'var(--feil-tekst)' : 'var(--tekst)'}" paint-order="stroke" stroke="var(--hvit)" stroke-width="${skrift * 0.2}">`
+      + `Fri høyde ${mm(fri)}</text>`);
+  }
 
   return `<svg class="tegning" viewBox="${xMin} 0 ${xMaks - xMin} ${yTopp - yBunn}" xmlns="http://www.w3.org/2000/svg" role="img" `
     + `aria-label="Trappa sett fra siden, ${l.antallOpptrinn} opptrinn à ${mm(h, 1)} mm og ${m} trinn">`
