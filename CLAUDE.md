@@ -326,6 +326,12 @@ Claude-mappe. Ved uenighet gjelder den fila.
   opptrinn = eget trinn), så vangen og trappa ikke kan spriker.
 - Merkene regnes fra nederste spiss (0), hvert avrundet for seg. `spissFraEnden` er hvor langt
   nederste spiss står fra enden av emnet. `emnelengde` er minste lengde på bordet (rundet opp).
+- `merker` har én spiss mer enn antall hakk: hjelpespissen øverst (`hjelp: true`). Vinkelen trenger
+  to spisser for å tegne øverste hakk. Hjelpespissen kappes bort, men bordet må rekke til den, så
+  `emnelengde` regnes til den (rettet 2026-11-11: eksempeltrappa var oppgitt 1279 mm, riktig 1368).
+- `hakk`: hvert hakk lagt flatt (spiss, innerste hjørne, neste spiss). `reis`: matrisen fra vangen
+  lagt flatt til vangen reist i trappa (brukes av animasjonen).
+- Spissene nummereres fra 0 overalt (tabell, steg og skisser).
 - For smal vange (hakket går gjennom) gir varsel som må fikses. Resthøyde har ingen grense
   før Kenny har bestemt den. Appen regner ikke bæreevne og sier det.
 - Skjermen: delen «Vangen» i skjemaet (vangebredde, trinntykkelse, belegg nede; tom
@@ -339,6 +345,14 @@ Claude-mappe. Ved uenighet gjelder den fila.
   mellom spissene, så tallene ikke kan overlappe (test i `trapp-skjerm.test.js`). Lange vanger
   får fast bredde (om lag 56 piksler mellom spissene) og skyves sideveis på telefonen.
 - Oransje bare på streker og flater i skissene (spiss 0, vinkelen), aldri på tekst.
+- «Se det steg for steg» (Kenny 2026-11-11 ba om en interaktiv fremstilling av merkingen): boksen
+  øverst i «Slik merker du vangen». `lagMerkesteg` (`src/skjerm/trapp-merking.js`) lager stegene:
+  bordet og spiss 0, én spiss om gangen, ett hakk om gangen med vinkelen, bunnen, toppen, kapp og
+  «Slik står den». `tegnMerkesteg` (trapp-tegning.js) tegner hvert steg med utsnitt der det skjer.
+  Forrige/Neste, glider og «Spill av» (1,6 s per steg) ligger i trapp-skjerm.js. Steget huskes
+  når appen regner på nytt.
+- Siste steg dreier vangen fra flatt til stående med CSS-animasjon (`.reis`, `--reis: matrix(...)`
+  fra `vange.reis`), så kommer trinnene fram. Av med `prefers-reduced-motion`.
 - Varsler uten forskrift bak har `kilde: null`, og da vises ingen kilde.
 
 ## Mappestruktur
@@ -352,8 +366,8 @@ assets/               logo og app-ikoner
 src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
 src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js), uttatt vange
                       (vange.js) og fagverdier
-src/skjerm/           skjermdelen (felt, vegg, tegning, utskrift, lagring, tallformat, felles
-                      biter, versjonssjekk, verktøyvelger)
+src/skjerm/           skjermdelen (felt, vegg, trapp, merking av vange, tegning, utskrift, lagring,
+                      tallformat, felles biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)
 scripts/lag-ikon.swift lager app-ikonene
 .githooks/            git-kroker (pre-commit setter versjon)

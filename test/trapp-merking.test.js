@@ -34,7 +34,7 @@ test('Tekstene har målene fra vangen', () => {
   assert.match(steg[8].tekst, /mot spiss 3 og 170 mm mot spiss 4/);
   assert.match(steg[9].tekst, /bare 142 mm/);
   assert.match(steg[10].tekst, /Toppkuttet blir 92 mm/);
-  for (const s of steg) assert.ok(!s.tekst.includes('—') && !s.tittel.includes('—'), 'tankestrek (em dash) i teksten');
+  for (const s of steg) assert.ok(!s.tekst.includes('\u2014') && !s.tittel.includes('\u2014'), 'tankestrek (em dash) i teksten');
 });
 
 test('Tegningen bygges opp steg for steg', () => {
