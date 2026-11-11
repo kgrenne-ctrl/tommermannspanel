@@ -13,31 +13,33 @@
   <meta name="apple-mobile-web-app-title" content="Tømrerverktøy">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd) -->
-  <script>window.APP_VERSJON = '20261111-110848';</script>
+  <script>window.APP_VERSJON = '20261111-113659';</script>
   <script type="importmap">
   {
     "imports": {
-      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-110848",
-      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-110848",
-      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-110848",
-      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-110848",
-      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-110848",
-      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-110848",
-      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-110848",
-      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-110848",
-      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-110848",
-      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261111-110848",
-      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-110848",
-      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-110848",
-      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-110848",
-      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-110848",
-      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-110848",
-      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261111-110848",
-      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261111-110848"
+      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-113659",
+      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-113659",
+      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-113659",
+      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-113659",
+      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-113659",
+      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-113659",
+      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-113659",
+      "./src/skjerm/trapp-skjerm.js": "./src/skjerm/trapp-skjerm.js?v=20261111-113659",
+      "./src/skjerm/trapp-tegning.js": "./src/skjerm/trapp-tegning.js?v=20261111-113659",
+      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-113659",
+      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-113659",
+      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261111-113659",
+      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-113659",
+      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-113659",
+      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-113659",
+      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-113659",
+      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-113659",
+      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261111-113659",
+      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261111-113659"
     }
   }
   </script>
-  <link rel="stylesheet" href="css/stil.css?v=20261111-110848">
+  <link rel="stylesheet" href="css/stil.css?v=20261111-113659">
   <!-- versjon:slutt -->
 </head>
 <body>
@@ -300,11 +302,109 @@
 
     <!-- ===================== TRAPP ===================== -->
     <div id="trapp-del" hidden>
-      <section class="del">
-        <h2>Trapp</h2>
-        <p>Trappeverktøyet er under arbeid. Første versjon blir utvendig tretrapp med uttatt vange.</p>
-        <p class="hjelp">Utregningen er på plass og testet. Skjemaet kommer i neste versjon.</p>
-      </section>
+      <form id="trapp-skjema" autocomplete="off" onsubmit="return false">
+        <section class="del">
+        <h2>Trappa</h2>
+
+        <label class="felt">
+          <span>Type trapp</span>
+          <select id="t-type">
+            <option value="utvendig">Utvendig (terrasse, inngang)</option>
+            <option value="boenhet">Inne i boligen</option>
+            <option value="flere">Felles trapp, flere boliger</option>
+            <option value="annen">Annen trapp</option>
+          </select>
+        </label>
+
+        <label class="felt">
+          <span>Høyde (mm)</span>
+          <input id="t-hoyde" type="text" inputmode="decimal" placeholder="f.eks. 850">
+        </label>
+        <p class="hjelp">Fra ferdig underlag nede (helle, terreng, gulv) til overkant dekke eller gulv oppe.</p>
+
+        <fieldset class="felt">
+          <legend>Øverste trinn</legend>
+          <div class="valgknapper">
+            <label><input type="radio" name="t-ovre" value="dekke" checked><span>Dekket</span></label>
+            <label><input type="radio" name="t-ovre" value="eget"><span>Eget trinn</span></label>
+          </div>
+        </fieldset>
+        <p class="hjelp">«Dekket»: kanten av dekket er øverste trinn. «Eget trinn»: trappa har et trinn i samme høyde som dekket.</p>
+
+        <label class="felt">
+          <span>Bredde på trappa (mm), kan stå tomt</span>
+          <input id="t-bredde" type="text" inputmode="decimal" placeholder="f.eks. 1000">
+        </label>
+        </section>
+
+        <section class="del">
+        <h2>Trinnene</h2>
+        <fieldset class="felt">
+          <legend>Hva bestemmer inntrinnet?</legend>
+          <div class="valgknapper tre">
+            <label><input type="radio" name="t-lengdevalg" value="trinn" checked><span>Bordene</span></label>
+            <label><input type="radio" name="t-lengdevalg" value="lengde"><span>Plassen</span></label>
+            <label><input type="radio" name="t-lengdevalg" value="fri"><span>Fritt</span></label>
+          </div>
+        </fieldset>
+
+        <div id="t-valg-trinn">
+          <div class="to-kol">
+            <label class="felt">
+              <span>Bord i trinnet</span>
+              <select id="t-antall">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+            <label class="felt">
+              <span>Bordbredde (mm)</span>
+              <input id="t-bordbredde" type="text" inputmode="decimal" placeholder="f.eks. 145">
+            </label>
+            <label class="felt">
+              <span>Spalte (mm)</span>
+              <input id="t-spalte" type="text" inputmode="decimal" placeholder="f.eks. 5">
+            </label>
+            <label class="felt">
+              <span>Nese (mm)</span>
+              <input id="t-nese" type="text" inputmode="decimal">
+            </label>
+          </div>
+          <p id="t-trinninfo" class="hjelp">Nesa er hvor langt trinnet stikker ut foran trinnet under.</p>
+        </div>
+
+        <div id="t-valg-lengde" hidden>
+          <label class="felt">
+            <span>Plass til trappa (mm)</span>
+            <input id="t-lengde" type="text" inputmode="decimal" placeholder="f.eks. 1100">
+          </label>
+          <p class="hjelp">Vannrett fra forkant av nederste trinn til kanten av dekket.</p>
+        </div>
+
+        <p id="t-valg-fri" class="hjelp" hidden>Appen velger opptrinn nærmest ønsket opptrinn og inntrinn
+          etter trappeformelen (2 opptrinn + inntrinn = 620 mm).</p>
+
+        <details class="innstillinger">
+          <summary>Innstillinger</summary>
+          <div class="to-kol">
+            <label class="felt"><span>Ønsket opptrinn</span><input id="t-onsketOpptrinn" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Trappeformel, ideell</span><input id="t-formelIdeal" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Trappeformel, minst</span><input id="t-formelMin" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Trappeformel, størst</span><input id="t-formelMax" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Trinntykkelse i tegningen</span><input id="t-trinnTykkelse" type="text" inputmode="decimal"></label>
+            <label class="felt"><span>Vangebredde i tegningen</span><input id="t-vangeBredde" type="text" inputmode="decimal"></label>
+          </div>
+          <p class="hjelp">Alle mål i mm. Krav og trappeformel fra TEK17 § 12-14 med veiledning.</p>
+        </details>
+
+        <button type="button" id="t-eksempel" class="knapp lenkeknapp">Fyll inn eksempeltrapp</button>
+        <p class="hjelp">Det du skriver inn, lagres på denne telefonen og er der neste gang du åpner appen.</p>
+        </section>
+      </form>
+
+      <section id="trapp-resultat" aria-live="polite"></section>
     </div>
   </main>
 

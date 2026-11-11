@@ -19,3 +19,16 @@ export const EKSEMPELHUS = Object.freeze({
     { navn: 'Vest', lengde: 6000, ...BORD, hjorner: hjorner('mot'), apninger: [vindu(2000, 1600)] },
   ],
 });
+
+// Eksempeltrappa som «Fyll inn eksempeltrapp» legger inn: kontrolleksempel 1 i PLAN-trapp.md,
+// en terrassetrapp på 850 mm med trinn av 2 stk 28 × 145. Samme form som losTrapp() tar imot.
+// En test i test/trapp-skjerm.test.js sjekker at den går opp uten varsler som må fikses.
+export const EKSEMPELTRAPP = Object.freeze({
+  type: 'utvendig',
+  hoyde: 850,
+  ovreTrinn: 'dekke',
+  bredde: 1000,
+  lengdevalg: 'trinn',
+  trinnbord: Object.freeze({ antall: 2, bredde: 145, spalte: 5 }),
+  nese: 20,
+});

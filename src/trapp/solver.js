@@ -156,6 +156,18 @@ function finnForslag(d, inn) {
   return forslag;
 }
 
+// Trinn for trinn, til tabellen og tegningen. Høyde er overkant trinn over ferdig underlag.
+// Forkant er vannrett fra forkant av nederste trinn (0). Siste rad er kanten av dekket.
+// Begge målene er løpende og avrundet hver for seg til nærmeste mm.
+export function lagTrinnliste(l) {
+  const rader = [];
+  for (let k = 1; k <= l.antallInntrinn; k++) {
+    rader.push({ nr: k, hoyde: l.hoyder[k - 1], forkant: k === 1 ? 0 : l.posisjoner[k - 2] });
+  }
+  rader.push({ nr: null, hoyde: l.hoyder.at(-1), forkant: l.posisjoner.at(-1) ?? 0 });
+  return rader;
+}
+
 // Hovedfunksjonen. Regner ut ett rett trappeløp.
 //
 // Inn: { hoyde, lengdevalg, inntrinn, trinnbord: { antall, bredde, spalte }, lengde, nese,

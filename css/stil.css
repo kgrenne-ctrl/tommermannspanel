@@ -34,6 +34,11 @@
   --kloss: #FBD3B8;            /* kloss bak påbord, lys oransje flate */
   --glass: #FFFFFF;
 
+  /* Tegningen av trappa */
+  --trinn: #AFCBEC;            /* trinnene, samme som påbordene */
+  --vange: #EAF0F7;            /* vangen, samme som underbordene */
+  --dekke: #D7DEE6;            /* dekket oppe */
+
   --font: Aptos, system-ui, sans-serif;
   --radius: 14px;              /* kort */
   --radius-liten: 10px;        /* felt og knapper */
@@ -219,6 +224,9 @@ input[type="text"]:focus, select:focus, textarea:focus {
 }
 
 .valgknapper label { position: relative; display: block; }
+
+/* Tre valg i samme bryter */
+.valgknapper.tre { grid-template-columns: 1fr 1fr 1fr; }
 
 .valgknapper input {
   position: absolute;
@@ -859,14 +867,14 @@ footer p { margin: 4px 0; }
 @media (min-width: 1100px) {
   main { max-width: 1320px; padding: 20px 24px; }
   .modusvalg { max-width: 440px; }
-  #felt-del, #vegg-del {
+  #felt-del, #vegg-del, #trapp-del {
     display: grid;
     grid-template-columns: 440px minmax(0, 1fr);
     gap: 0 20px;
     align-items: start;
   }
   .hurtig { grid-column: 1 / -1; }
-  #skjema, #vegg-skjema {
+  #skjema, #vegg-skjema, #trapp-skjema {
     position: sticky;
     top: 12px;
     max-height: calc(100vh - 24px);

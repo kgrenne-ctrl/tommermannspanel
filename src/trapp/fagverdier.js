@@ -36,8 +36,8 @@ export const TRAPPETYPER = Object.freeze({
   // Sannsynlig: utvendig trapp bygd sammen med huset (inngang, terrasse) er ikke «internt i
   // boenhet», så hovedregelen på 0,90 m gjelder. Ikke bekreftet av DiBK for akkurat dette.
   utvendig: Object.freeze({ navn: 'Utvendig trapp', inntrinnMin: 250, breddeMin: 900 }),
-  boenhet: Object.freeze({ navn: 'Trapp internt i boenheten', inntrinnMin: 250, breddeMin: 800 }),
-  flere: Object.freeze({ navn: 'Hovedtrapp for flere boenheter', inntrinnMin: 250, breddeMin: 1100 }),
+  boenhet: Object.freeze({ navn: 'Trapp inne i boligen', inntrinnMin: 250, breddeMin: 800 }),
+  flere: Object.freeze({ navn: 'Felles trapp for flere boliger', inntrinnMin: 250, breddeMin: 1100 }),
   annen: Object.freeze({ navn: 'Annen trapp', inntrinnMin: 250, breddeMin: 900 }),
 });
 

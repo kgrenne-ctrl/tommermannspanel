@@ -10,6 +10,7 @@ import { lesTall, mm } from './format.js';
 import { EGEN, fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBoks, kobleZoom } from './biter.js';
 import { lagre, hent } from './lagring.js';
 import './vegg-skjerm.js';
+import './trapp-skjerm.js';
 import './verktoy.js';
 
 const INNSTILLING_FELT = ['oMin', 'oIdeal', 'oMax', 'toSpikreFraBredde', 'spikeravstand'];

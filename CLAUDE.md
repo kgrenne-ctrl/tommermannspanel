@@ -292,6 +292,27 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - Kontrolleksempel 1 (utvendig, 850 mm, 2 stk 28 × 145) er første test i
   `test/trapp-solver.test.js` og skal aldri slettes.
 
+## Skjerm for trapp (fase T2, 2026-11-11)
+- `index.html`: skjemaet `#trapp-skjema` (Trappa, Trinnene, Innstillinger) og `#trapp-resultat`.
+  Feltene har id som starter med `t-`. Samme kort, brytere og knapper som kledningsdelen.
+- `src/skjerm/trapp-skjerm.js` leser skjemaet, kaller `losTrapp` og viser resultatet: nøkkeltall
+  (opptrinn, inntrinn, trappeformel, stigning), varsler i tre grupper etter `niva`, andre
+  inndelinger som knapper, tegning og «Trinn for trinn» (`lagTrinnliste` i solver.js).
+  Skjemaet lagres under nøkkelen `trapp`.
+- «Hva bestemmer inntrinnet?»: Bordene (`trinn`), Plassen (`lengde`) eller Fritt (`fri`). Bare
+  feltene for valget vises. Under bordene står hvor dypt trinnet blir (`trinnFraBord`).
+- Går trappa ikke opp, vises forslagene fra `losTrapp`. Forslag om flere bord er en knapp.
+- `src/skjerm/trapp-tegning.js` (`tegnTrapp`): trappa sett fra siden i riktig målestokk.
+  x = 0 er forkant av nederste trinn, y = 0 er ferdig underlag. Vangen er tegnet forenklet
+  (hakk under trinnene, rett underkant). Kutt i topp og bunn og merker kommer i T3.
+  Farger: `--trinn`, `--vange`, `--dekke` i `:root`.
+- Trinntykkelse og vangebredde under Innstillinger brukes bare i tegningen ennå. Tom
+  trinntykkelse følger typen trapp (28 ute, 48 inne).
+- «Fyll inn eksempeltrapp» legger inn `EKSEMPELTRAPP` (`src/skjerm/eksempel.js`), som er
+  kontrolleksempel 1. Test i `test/trapp-skjerm.test.js` sjekker at den går opp.
+- Typene heter det samme i valget og i meldingene: «Utvendig», «Inne i boligen», «Felles trapp for
+  flere boliger», «Annen trapp».
+
 ## Mappestruktur
 ```
 index.html            siden som åpnes i nettleseren
@@ -301,7 +322,7 @@ manifest.webmanifest  navn og ikon når appen legges på hjemskjermen
 versjon.json          versjonsnummeret appen sjekker mot (skrives ved commit)
 assets/               logo og app-ikoner
 src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
-src/trapp/            regnemodellen for trapp: inndeling (solver.js) og fagverdier
+src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js) og fagverdier
 src/skjerm/           skjermdelen (felt, vegg, tegning, utskrift, lagring, tallformat, felles
                       biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)
