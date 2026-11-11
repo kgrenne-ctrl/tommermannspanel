@@ -13,33 +13,34 @@
   <meta name="apple-mobile-web-app-title" content="Tømrerverktøy">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd) -->
-  <script>window.APP_VERSJON = '20261111-113659';</script>
+  <script>window.APP_VERSJON = '20261111-114721';</script>
   <script type="importmap">
   {
     "imports": {
-      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-113659",
-      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-113659",
-      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-113659",
-      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-113659",
-      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-113659",
-      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-113659",
-      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-113659",
-      "./src/skjerm/trapp-skjerm.js": "./src/skjerm/trapp-skjerm.js?v=20261111-113659",
-      "./src/skjerm/trapp-tegning.js": "./src/skjerm/trapp-tegning.js?v=20261111-113659",
-      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-113659",
-      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-113659",
-      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261111-113659",
-      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-113659",
-      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-113659",
-      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-113659",
-      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-113659",
-      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-113659",
-      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261111-113659",
-      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261111-113659"
+      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-114721",
+      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-114721",
+      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-114721",
+      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-114721",
+      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-114721",
+      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-114721",
+      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-114721",
+      "./src/skjerm/trapp-skjerm.js": "./src/skjerm/trapp-skjerm.js?v=20261111-114721",
+      "./src/skjerm/trapp-tegning.js": "./src/skjerm/trapp-tegning.js?v=20261111-114721",
+      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-114721",
+      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-114721",
+      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261111-114721",
+      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-114721",
+      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-114721",
+      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-114721",
+      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-114721",
+      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-114721",
+      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261111-114721",
+      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261111-114721",
+      "./src/trapp/vange.js": "./src/trapp/vange.js?v=20261111-114721"
     }
   }
   </script>
-  <link rel="stylesheet" href="css/stil.css?v=20261111-113659">
+  <link rel="stylesheet" href="css/stil.css?v=20261111-114721">
   <!-- versjon:slutt -->
 </head>
 <body>
@@ -386,6 +387,24 @@
         <p id="t-valg-fri" class="hjelp" hidden>Appen velger opptrinn nærmest ønsket opptrinn og inntrinn
           etter trappeformelen (2 opptrinn + inntrinn = 620 mm).</p>
 
+        <h3>Vangen</h3>
+        <div class="to-kol">
+          <label class="felt">
+            <span>Vangebredde (mm)</span>
+            <input id="t-vangeBredde" type="text" inputmode="decimal">
+          </label>
+          <label class="felt">
+            <span>Trinntykkelse (mm)</span>
+            <input id="t-trinnTykkelse" type="text" inputmode="decimal">
+          </label>
+        </div>
+        <label class="felt">
+          <span>Belegg nede som legges senere (mm)</span>
+          <input id="t-beleggNede" type="text" inputmode="decimal" placeholder="0">
+        </label>
+        <p class="hjelp">Uttatt vange: trinnene ligger oppå hakk i vangen. Står vangen på noe som får
+          helle eller flis senere, skriv tykkelsen her, så blir alle opptrinn like når belegget er lagt.</p>
+
         <details class="innstillinger">
           <summary>Innstillinger</summary>
           <div class="to-kol">
@@ -393,8 +412,6 @@
             <label class="felt"><span>Trappeformel, ideell</span><input id="t-formelIdeal" type="text" inputmode="decimal"></label>
             <label class="felt"><span>Trappeformel, minst</span><input id="t-formelMin" type="text" inputmode="decimal"></label>
             <label class="felt"><span>Trappeformel, størst</span><input id="t-formelMax" type="text" inputmode="decimal"></label>
-            <label class="felt"><span>Trinntykkelse i tegningen</span><input id="t-trinnTykkelse" type="text" inputmode="decimal"></label>
-            <label class="felt"><span>Vangebredde i tegningen</span><input id="t-vangeBredde" type="text" inputmode="decimal"></label>
           </div>
           <p class="hjelp">Alle mål i mm. Krav og trappeformel fra TEK17 § 12-14 med veiledning.</p>
         </details>

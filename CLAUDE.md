@@ -303,15 +303,35 @@ Claude-mappe. Ved uenighet gjelder den fila.
   feltene for valget vises. Under bordene står hvor dypt trinnet blir (`trinnFraBord`).
 - Går trappa ikke opp, vises forslagene fra `losTrapp`. Forslag om flere bord er en knapp.
 - `src/skjerm/trapp-tegning.js` (`tegnTrapp`): trappa sett fra siden i riktig målestokk.
-  x = 0 er forkant av nederste trinn, y = 0 er ferdig underlag. Vangen er tegnet forenklet
-  (hakk under trinnene, rett underkant). Kutt i topp og bunn og merker kommer i T3.
-  Farger: `--trinn`, `--vange`, `--dekke` i `:root`.
-- Trinntykkelse og vangebredde under Innstillinger brukes bare i tegningen ennå. Tom
-  trinntykkelse følger typen trapp (28 ute, 48 inne).
+  x = 0 er forkant av nederste trinn, y = 0 er ferdig underlag. Vangen tegnes fra omrisset i
+  `vange.js`. Farger: `--trinn`, `--vange`, `--dekke` i `:root`.
 - «Fyll inn eksempeltrapp» legger inn `EKSEMPELTRAPP` (`src/skjerm/eksempel.js`), som er
   kontrolleksempel 1. Test i `test/trapp-skjerm.test.js` sjekker at den går opp.
 - Typene heter det samme i valget og i meldingene: «Utvendig», «Inne i boligen», «Felles trapp for
   flere boliger», «Annen trapp».
+
+## Uttatt vange (fase T3, 2026-11-11)
+- `src/trapp/vange.js` (`lagVange`): hakk, resthøyde, merker langs overkanten, bunn- og toppkutt,
+  emnelengde og omrisset av vangen (sett fra siden og lagt flatt). Ingen skjermkode.
+- Geometri: setet for trinn k ligger i y = k·h − t (underkant trinn). Den loddrette flaten i hakket
+  står i x = (k − 1)·b + nese, så trinnet stikker nesa ut foran. Spissene ligger på overkanten,
+  `s` = √(h² + b²) fra hverandre. Hakkdybde = h·b/s. Resthøyde = vangebredde − hakkdybde.
+- Bunn: vannrett kutt der vangen står. Nederste opptrinn i vangen = h − t + belegg nede.
+  «Belegg nede som legges senere» (helle, flis) senker vangen, så alle opptrinn blir like etterpå.
+- Topp: loddrett kutt mot bjelken, merket fra innerste hjørne i øverste hakk (dekket er øverste
+  trinn) eller nesa foran det (eget trinn øverst, der dekket begynner). IKKE oppgi hvor
+  loddstreken krysser overkanten: det punktet ligger utenfor emnet (rettet 2026-11-11).
+  Med dekket øverst må dekket stikke like langt ut foran bjelken som nesa på trinnene.
+- Om dekket eller eget trinn er øverst, leser `lagVange` fra løsningen (like mange inntrinn som
+  opptrinn = eget trinn), så vangen og trappa ikke kan spriker.
+- Merkene regnes fra nederste spiss (0), hvert avrundet for seg. `spissFraEnden` er hvor langt
+  nederste spiss står fra enden av emnet. `emnelengde` er minste lengde på bordet (rundet opp).
+- For smal vange (hakket går gjennom) gir varsel som må fikses. Resthøyde har ingen grense
+  før Kenny har bestemt den. Appen regner ikke bæreevne og sier det.
+- Skjermen: delen «Vangen» i skjemaet (vangebredde, trinntykkelse, belegg nede; tom
+  trinntykkelse følger typen trapp, 28 ute og 48 inne) og delen «Vangen» i resultatet
+  (nøkkeltall, «Slik merker du vangen», `tegnVangeFlatt`, merker langs overkanten).
+- Varsler uten forskrift bak har `kilde: null`, og da vises ingen kilde.
 
 ## Mappestruktur
 ```
@@ -322,7 +342,8 @@ manifest.webmanifest  navn og ikon når appen legges på hjemskjermen
 versjon.json          versjonsnummeret appen sjekker mot (skrives ved commit)
 assets/               logo og app-ikoner
 src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
-src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js) og fagverdier
+src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js), uttatt vange
+                      (vange.js) og fagverdier
 src/skjerm/           skjermdelen (felt, vegg, tegning, utskrift, lagring, tallformat, felles
                       biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)

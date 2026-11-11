@@ -455,6 +455,10 @@ summary:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; bo
   color: var(--tekst-gra);
 }
 
+/* Nummererte steg, for eksempel «Slik merker du vangen» */
+.steg { margin: 0 0 12px; padding-left: 22px; }
+.steg li { margin: 0 0 8px; }
+
 /* Meldinger: grønn, oransje, rød og blå, med et lite tegn foran */
 .boks {
   position: relative;

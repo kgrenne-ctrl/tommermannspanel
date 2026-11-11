@@ -4,7 +4,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { losTrapp, lagTrinnliste } from '../src/trapp/solver.js';
-import { tegnTrapp } from '../src/skjerm/trapp-tegning.js';
+import { lagVange } from '../src/trapp/vange.js';
+import { tegnTrapp, tegnVangeFlatt } from '../src/skjerm/trapp-tegning.js';
 import { EKSEMPELTRAPP } from '../src/skjerm/eksempel.js';
 
 const tell = (tekst, bit) => tekst.split(bit).length - 1;
@@ -37,7 +38,7 @@ test('Trinnlista: eget trinn øverst i samme høyde som dekket', () => {
 
 test('Tegningen har ett trinn per inntrinn, vange, dekke og begge målene', () => {
   const l = losTrapp(EKSEMPELTRAPP).valgt;
-  const svg = tegnTrapp(l, { nese: 20, trinnTykkelse: 28, vangeBredde: 223 });
+  const svg = tegnTrapp(l, lagVange(l, { nese: 20, trinnTykkelse: 28, vangeBredde: 223 }), { nese: 20, trinnTykkelse: 28 });
   assert.ok(svg.startsWith('<svg'));
   assert.equal(tell(svg, 'class="t-trinn"'), 4);
   assert.equal(tell(svg, 'class="t-vange"'), 1);
@@ -51,7 +52,7 @@ test('Tegningen har ett trinn per inntrinn, vange, dekke og begge målene', () =
 
 test('Tegningen: trinnene ligger i riktig høyde og avstand, i mm', () => {
   const l = losTrapp(EKSEMPELTRAPP).valgt;
-  const svg = tegnTrapp(l, { nese: 20, trinnTykkelse: 28 });
+  const svg = tegnTrapp(l, lagVange(l), { nese: 20, trinnTykkelse: 28 });
   const trinn = [...svg.matchAll(/class="t-trinn" x="([\d.-]+)" y="([\d.-]+)" width="([\d.]+)" height="([\d.]+)"/g)]
     .map((t) => t.slice(1).map(Number));
   // Forkant 0, 275, 550, 825. Dybde = inntrinn + nese = 295. Tykkelse 28.
@@ -68,8 +69,29 @@ test('Tegningen virker for lav, høy og innvendig trapp', () => {
     { hoyde: 1200, lengdevalg: 'fri', ovreTrinn: 'eget' },
   ]) {
     const l = losTrapp(inndata).valgt;
-    const svg = tegnTrapp(l, { ovreTrinn: inndata.ovreTrinn ?? 'dekke' });
+    const svg = tegnTrapp(l, lagVange(l));
     assert.ok(!svg.includes('NaN') && !svg.includes('Infinity'), JSON.stringify(inndata));
     assert.equal(tell(svg, 'class="t-trinn"'), l.antallInntrinn);
   }
+});
+
+test('Vangen lagt flatt: ett merke per hakk, emnelengde og 0 i oransje', () => {
+  const l = losTrapp(EKSEMPELTRAPP).valgt;
+  const v = lagVange(l, { nese: 20, trinnTykkelse: 28, vangeBredde: 223 });
+  const svg = tegnVangeFlatt(v, { vangeBredde: 223 });
+  assert.equal(tell(svg, 'class="v-vange"'), 1);
+  assert.equal(tell(svg, 'class="v-merke"'), 4); // ett per hakk
+  for (const tall of ['>0<', '>323<', '>647<', '>970<']) assert.ok(svg.includes(tall), `mangler ${tall}`);
+  assert.ok(svg.includes('Emne minst 1\u00a0279 mm') || svg.includes('Emne minst 1 279 mm'));
+  assert.ok(svg.includes('var(--bakoy-oransje)'));
+  assert.ok(!svg.includes('NaN'));
+});
+
+test('Sideriss med belegg nede viser stiplet linje der vangen står', () => {
+  const l = losTrapp(EKSEMPELTRAPP).valgt;
+  const med = tegnTrapp(l, lagVange(l, { beleggNede: 40 }), { beleggNede: 40 });
+  const uten = tegnTrapp(l, lagVange(l), { beleggNede: 0 });
+  assert.equal(tell(med, 'stroke-dasharray'), tell(uten, 'stroke-dasharray') + 1);
+  const svg = med;
+  assert.ok(!svg.includes('NaN'));
 });
