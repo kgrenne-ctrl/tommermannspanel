@@ -1,7 +1,9 @@
-# Tømmermannspanel – regler for prosjektet
+# Bakøy tømrerverktøy – regler for prosjektet
 
-Webapp for inndeling av stående tømmermannskledning. Hele planen står i `PLAN.md`, og planen er
-fasit. Er noe i planen uklart eller ser feil ut: spør Kenny før du koder, ikke etterpå.
+Webapp for Bakøys tømrere med to verktøy: **Kledning** (inndeling av stående tømmermannskledning,
+planen i `PLAN.md`) og **Trapp** (inndeling og merking av vange, planen i `PLAN-trapp.md`).
+Planene er fasit. Er noe i en plan uklart eller ser feil ut: spør Kenny før du koder, ikke etterpå.
+Appen het «Tømmermannspanel» fram til 2026-11-11. Repoet og adressen har beholdt det navnet.
 
 ## Hvem appen er for
 - Bakøys egne tømrere, på mobilen i nettleseren, gjerne på stillaset.
@@ -21,8 +23,8 @@ fasit. Er noe i planen uklart eller ser feil ut: spør Kenny før du koder, ikke
 
 ## Regnemodellen ligger for seg selv
 - All matematikk ligger i `src/`, uten noe skjermkode (ingen `document`, ingen HTML).
-- Én mappe per kledningstype. Tømmermannskledning: `src/tommermann/`.
-  En ny kledningstype får egen mappe, uten å endre det som finnes.
+- Én mappe per kledningstype eller verktøy. Tømmermannskledning: `src/tommermann/`. Trapp:
+  `src/trapp/`. Noe nytt får egen mappe, uten å endre det som finnes.
 - `solver.js` regner ut ett felt. `fagverdier.js` holder standardverdiene.
 - Skjermdelen leser bare resultatet fra regnemodellen. Den regner aldri selv.
 
@@ -255,6 +257,41 @@ Claude-mappe. Ved uenighet gjelder den fila.
   to linjer. Felt som kan få noe under seg (målt bredde, hjørnene) står på linje i toppen.
 - Nye farger og mål legges som variabler i `:root` i `css/stil.css`, aldri rett i reglene.
 
+## Verktøyvelger (fase T0, 2026-11-11)
+- Bryteren «Kledning | Trapp» øverst i `index.html` (`name="verktoy"`) styres av
+  `src/skjerm/verktoy.js`. Den viser `#kledning-del` eller `#trapp-del`, bytter tittelen i
+  toppbåndet (`#topp-tittel`, `#topp-under`) og husker valget (nøkkel `verktoy`).
+- Alt for kledning ligger inne i `#kledning-del`, også bryteren «Ett felt | Hel vegg». Kledningsdelen
+  er ellers uendret.
+- Sidetittel og hjemskjerm heter «Bakøy tømrerverktøy» («Tømrerverktøy» som kort navn). Utskrift
+  av kledning heter fortsatt «Tømmermannspanel ÅÅÅÅ-MM-DD».
+
+## Trapp (fase T1, 2026-11-11, avklart med Kenny)
+- Planen er `PLAN-trapp.md`. Faser T0–T10, én om gangen. Utvendig tretrapp med uttatt vange først.
+- `src/trapp/solver.js`: `losTrapp` regner ett rett løp. Lengden gis på tre måter (`lengdevalg`):
+  `trinn` (inntrinnet gitt direkte eller av bordene i trinnet, `trinnFraBord`), `lengde`
+  (tilgjengelig lengde) eller `fri` (b = 620 − 2·h, opptrinn nærmest ønsket 175 mm).
+- Ord: opptrinn `h = H / n`, inntrinn `b`. Antall inntrinn er `n − 1` når dekket eller gulvet oppe
+  er øverste trinn (`ovreTrinn: 'dekke'`), og `n` med eget trinn øverst (`'eget'`).
+- Trinn av bord: dybde = antall × bredde + (antall − 1) × spalte. Inntrinn = dybde − nese.
+- Inntrinn under 250 mm er aldri lov (forskriftskrav), og slike løsninger er ikke med.
+  Trappeformel utenfor 600–640 gir varsel, ikke sperre (preakseptert ytelse).
+- Rangering: trappeformel innenfor 600–640 først, nærmest 620, så opptrinn nærmest 175.
+- Varsler har `niva`: `ma` (må fikses før du begynner), `bor` (bør sjekkes), `vite` (greit å
+  vite), samme tre grupper som i kledningsdelen. I tillegg `type`, `tekst` og `kilde`.
+- Løpende høyder og posisjoner (`hoyder`, `posisjoner`) avrundes hver for seg til nærmeste mm,
+  aldri avrundet trinn lagt sammen.
+- `src/trapp/fagverdier.js`: `STANDARD_TRAPP` (Bakøys verdier, Kenny 2026-11-11: ønsket opptrinn
+  175, nese 20, trinn 48 inne og 28 ute, vange 48 × 223) og `TRAPPETYPER` (krav fra § 12-14).
+  Sannsynlig, ikke bekreftet: utvendig trapp bygd sammen med huset skal være minst 0,90 m bred
+  (hovedregelen, fordi den ikke er «internt i boenhet»).
+- § 8-9 (trapp i uteareal, ikke bygd sammen med huset) gir bare «greit å vite» på utvendig trapp:
+  inntrinn minst 280 og under 30 grader er preaksepterte ytelser, ikke krav.
+- Ikke funnet kilde for (2026-11-11): minste resthøyde i uttatt vange, antall vanger, åpning
+  mellom trinn, nedre grense for rekkverk. Ikke legg inn tall for disse før Kenny har bestemt dem.
+- Kontrolleksempel 1 (utvendig, 850 mm, 2 stk 28 × 145) er første test i
+  `test/trapp-solver.test.js` og skal aldri slettes.
+
 ## Mappestruktur
 ```
 index.html            siden som åpnes i nettleseren
@@ -263,12 +300,14 @@ sw.js                 lagrer appen på telefonen, så den virker uten nett
 manifest.webmanifest  navn og ikon når appen legges på hjemskjermen
 versjon.json          versjonsnummeret appen sjekker mot (skrives ved commit)
 assets/               logo og app-ikoner
-src/tommermann/       regnemodellen: felt, vegg, hus (hjørner), materialer, fagverdier
+src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
+src/trapp/            regnemodellen for trapp: inndeling (solver.js) og fagverdier
 src/skjerm/           skjermdelen (felt, vegg, tegning, utskrift, lagring, tallformat, felles
-                      biter, versjonssjekk)
+                      biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)
 scripts/lag-ikon.swift lager app-ikonene
 .githooks/            git-kroker (pre-commit setter versjon)
 test/                 automatiske tester
-PLAN.md               planen (fasit)
+PLAN.md               planen for kledning (fasit)
+PLAN-trapp.md         planen for trapp (fasit)
 ```

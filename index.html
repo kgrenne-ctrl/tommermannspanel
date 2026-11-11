@@ -3,51 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tømmermannspanel</title>
+  <title>Bakøy tømrerverktøy</title>
   <!-- Hjemskjerm og bruk uten nett -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#074EA2">
   <link rel="apple-touch-icon" href="assets/ikon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Tømmermann">
+  <meta name="apple-mobile-web-app-title" content="Tømrerverktøy">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd) -->
-  <script>window.APP_VERSJON = '20261111-104122';</script>
+  <script>window.APP_VERSJON = '20261111-110848';</script>
   <script type="importmap">
   {
     "imports": {
-      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-104122",
-      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-104122",
-      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-104122",
-      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-104122",
-      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-104122",
-      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-104122",
-      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-104122",
-      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-104122",
-      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-104122",
-      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-104122",
-      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-104122",
-      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-104122",
-      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-104122",
-      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-104122"
+      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-110848",
+      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-110848",
+      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-110848",
+      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-110848",
+      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-110848",
+      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-110848",
+      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-110848",
+      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-110848",
+      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-110848",
+      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261111-110848",
+      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-110848",
+      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-110848",
+      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-110848",
+      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-110848",
+      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-110848",
+      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261111-110848",
+      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261111-110848"
     }
   }
   </script>
-  <link rel="stylesheet" href="css/stil.css?v=20261111-104122">
+  <link rel="stylesheet" href="css/stil.css?v=20261111-110848">
   <!-- versjon:slutt -->
 </head>
 <body>
   <header class="toppband">
     <img src="assets/BAKOY_logo_hvit_transparent.png" alt="Bakøy Entreprenør AS">
     <div class="tittel">
-      <h1>Tømmermannspanel</h1>
-      <p class="undertittel">Inndeling av stående kledning</p>
+      <!-- Navnet på verktøyet som er valgt. Byttes av src/skjerm/verktoy.js -->
+      <h1 id="topp-tittel">Tømmermannspanel</h1>
+      <p id="topp-under" class="undertittel">Inndeling av stående kledning</p>
     </div>
   </header>
 
   <main>
-    <div class="valgknapper modusvalg" role="radiogroup" aria-label="Hva vil du regne ut?">
+    <!-- Hvilket verktøy: kledning eller trapp. Valget huskes (src/skjerm/verktoy.js) -->
+    <div class="valgknapper modusvalg" role="radiogroup" aria-label="Velg verktøy">
+      <label><input type="radio" name="verktoy" value="kledning" checked><span>Kledning</span></label>
+      <label><input type="radio" name="verktoy" value="trapp"><span>Trapp</span></label>
+    </div>
+
+    <!-- ===================== KLEDNING ===================== -->
+    <div id="kledning-del">
+    <div class="valgknapper modusvalg undervalg" role="radiogroup" aria-label="Hva vil du regne ut?">
       <label><input type="radio" name="modus" value="felt" checked><span>Ett felt</span></label>
       <label><input type="radio" name="modus" value="vegg"><span>Hel vegg</span></label>
     </div>
@@ -283,6 +295,16 @@
       </form>
 
       <section id="vegg-resultat" aria-live="polite"></section>
+    </div>
+    </div>
+
+    <!-- ===================== TRAPP ===================== -->
+    <div id="trapp-del" hidden>
+      <section class="del">
+        <h2>Trapp</h2>
+        <p>Trappeverktøyet er under arbeid. Første versjon blir utvendig tretrapp med uttatt vange.</p>
+        <p class="hjelp">Utregningen er på plass og testet. Skjemaet kommer i neste versjon.</p>
+      </section>
     </div>
   </main>
 

@@ -256,6 +256,15 @@ input[type="text"]:focus, select:focus, textarea:focus {
 
 .modusvalg span { min-height: 48px; font-size: 17px; }
 
+/* Valg inne i et verktøy (Ett felt | Hel vegg) er roligere enn verktøyvalget over (Kledning | Trapp) */
+.undervalg {
+  background: var(--flate);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.undervalg span { min-height: 42px; font-size: 16px; }
+
 /* Bokser som kan åpnes: innstillinger, feltkort, detaljer. Egen pil i stedet for nettleserens. */
 summary { list-style: none; cursor: pointer; }
 summary::-webkit-details-marker { display: none; }

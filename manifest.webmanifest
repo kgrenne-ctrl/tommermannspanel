@@ -1,7 +1,7 @@
 {
-  "name": "Tømmermannspanel – Bakøy Entreprenør AS",
-  "short_name": "Tømmermann",
-  "description": "Inndeling av stående tømmermannskledning",
+  "name": "Bakøy tømrerverktøy",
+  "short_name": "Tømrerverktøy",
+  "description": "Inndeling av stående tømmermannskledning og trapp. Bakøy Entreprenør AS",
   "lang": "no",
   "start_url": "./",
   "scope": "./",
