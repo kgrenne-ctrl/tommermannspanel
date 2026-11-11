@@ -4,7 +4,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { GRUPPER, KALKULATORER, finnKalkulator, startverdier, lesInndata, tekstFor, erSynlig } from '../src/skjerm/matte-liste.js';
-import { tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal } from '../src/skjerm/matte-tegning.js';
+import {
+  tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnBord,
+} from '../src/skjerm/matte-tegning.js';
+import { fordelLikt, fordelSpiler, fordelBord } from '../src/matte/inndeling.js';
 import { regnFall, regnTrekant, regnOppforing } from '../src/matte/tak.js';
 import { regnDiagonal } from '../src/matte/vinkel.js';
 import { grader } from '../src/skjerm/format.js';
@@ -183,4 +186,63 @@ test('Skissene i M1: mål, ingen NaN, og «ikke i målestokk» når noe er forst
   for (const ord of ['10 000 mm', 'a = 8 000 mm', '6 000 mm', 'Skyv 20 mm', 'ikke i målestokk']) assert.ok(dg.includes(ord), ord);
   assert.ok(!tegnDiagonal(regnDiagonal({ a: 8000, b: 6000 })).includes('Skyv'));
   for (const svg of [t, o, mange, dg]) assert.ok(!/NaN|undefined/.test(svg));
+});
+
+// ---------- Fase M2 ----------
+
+test('Lik avstand: eksempelet gir 7 felt à 571,4 og merkene fra planen, og feltene følger valget', () => {
+  const { verdi, liste } = nokkel('likAvstand', finnKalkulator('likAvstand').eksempel);
+  assert.equal(verdi('Felt'), '7');
+  assert.equal(verdi('C/c'), '571,4 mm');
+  assert.deepEqual(liste.rader.map((r) => rens(r[1])), ['571', '1 143', '1 714', '2 286', '2 857', '3 429']);
+  const k = finnKalkulator('likAvstand');
+  const lekter = startverdier(k, { metode: 'lekter' });
+  assert.equal(erSynlig(k.felt.find((f) => f.id === 'min'), lekter), true);
+  assert.equal(erSynlig(k.felt.find((f) => f.id === 'min'), startverdier(k, {})), false);
+  assert.equal(tekstFor(k.felt.find((f) => f.id === 'maks').ledetekst, lekter), 'Største lekteavstand (mm)');
+  // Lekter har ingen standardverdier: uten minste avstand regnes det ikke
+  assert.equal(k.mangler(lesInndata(k, startverdier(k, { metode: 'lekter', lengde: '4500', maks: '375' }))), 'Skriv inn minste lekteavstand.');
+  const fast = nokkel('likAvstand', { metode: 'fast', lengde: '4000', maks: '600' });
+  assert.equal(fast.verdi('Rest'), '400 mm');
+});
+
+test('Spiler og rekkverk: eksempelet gir 15 spiler, åpning 92,8 og merkene fra planen', () => {
+  const { verdi, liste, svar } = nokkel('spiler', finnKalkulator('spiler').eksempel);
+  assert.equal(verdi('Spiler'), '15');
+  assert.equal(verdi('Åpning'), '92,8 mm');
+  assert.equal(verdi('Én spile færre'), '100,4 mm');
+  assert.deepEqual(liste.rader.slice(0, 4).map((r) => r[1]), ['93', '207', '320', '434']);
+  assert.equal(svar.varsler[0].kilde, 'TEK17 § 12-15 femte ledd');
+  // Største åpning har 100 som standard (avklart med Kenny)
+  const k = finnKalkulator('spiler');
+  assert.equal(startverdier(k, {}).maks, '100');
+});
+
+test('Terrassebord: eksempelet gir 24 bord, spalte 5,2 og ett færre og ett mer', () => {
+  const { verdi, liste } = nokkel('bord', finnKalkulator('bord').eksempel);
+  assert.equal(verdi('Bord'), '24');
+  assert.equal(verdi('Spalte'), '5,2 mm');
+  assert.equal(verdi('23 bord'), '10,9 mm');
+  assert.equal(verdi('25 bord'), '0 mm');
+  assert.equal(liste.rader.length, 24);
+});
+
+test('Skissene i M2: mål og ingen NaN', () => {
+  const lik = rens(tegnInndeling(fordelLikt({ metode: 'lik', lengde: 4000, maks: 600 })));
+  for (const ord of ['7 felt à 571,4 mm', '>571<', '>4 000<']) assert.ok(lik.includes(ord), ord);
+  const fast = rens(tegnInndeling(fordelLikt({ metode: 'fast', lengde: 4000, maks: 600 })));
+  assert.ok(fast.includes('rest 400 mm'));
+  const mange = rens(tegnInndeling(fordelLikt({ metode: 'lik', lengde: 12000, maks: 300 })));
+  // 40 felt på 340 px: mål bare der det er minst 44 px mellom tallene, altså høyst 8
+  assert.ok((mange.match(/font-size="14"/g) ?? []).length <= 8);
+
+  const sp = rens(tegnSpiler(fordelSpiler({ lysapning: 1800, bredde: 21, maks: 100 })));
+  for (const ord of ['Åpning 92,8 mm', 'Lysåpning 1 800 mm, 15 spiler']) assert.ok(sp.includes(ord), ord);
+  assert.equal((sp.match(/opacity="0.8"/g) ?? []).length, 15);
+  const ingen = rens(tegnSpiler(fordelSpiler({ lysapning: 90, bredde: 21, maks: 100 })));
+  assert.ok(ingen.includes('0 spiler'));
+
+  const b = rens(tegnBord(fordelBord({ bredde: 3000, bordbredde: 120, spalte: 5 })));
+  for (const ord of ['24 bord, spalte 5,2 mm', 'Bredde 3 000 mm']) assert.ok(b.includes(ord), ord);
+  for (const svgTekst of [lik, fast, mange, sp, ingen, b]) assert.ok(!/NaN|undefined|Infinity/.test(svgTekst));
 });

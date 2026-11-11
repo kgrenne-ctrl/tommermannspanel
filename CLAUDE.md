@@ -436,7 +436,7 @@ Claude-mappe. Ved uenighet gjelder den fila.
 
 ## Matte (fase M0, 2026-11-11, avklart med Kenny)
 - Planen er `PLAN-matte.md`. Faser M0–M10, én om gangen. Trapp er satt på pause etter T6, og
-  T7 (sprosser) skal bruke inndelingen for spiler fra `src/matte/inndeling.js` når den kommer (M2).
+  T7 (sprosser) skal bruke `fordelSpiler` fra `src/matte/inndeling.js` (finnes fra M2).
 - Matte er mange små utregninger, ikke ett stort skjema. Hver utregning er én oppføring i
   `src/skjerm/matte-liste.js` (`KALKULATORER`): felt, `mangler`, `regn`, `vis`, `tegn` og `eksempel`.
   Formatet står øverst i fila. `src/skjerm/matte-skjerm.js` bygger meny, skjema og resultat av
@@ -477,7 +477,16 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - Oransje i skissene: vinkelbuen, og pila som viser hvor noe skal skyves (diagonal).
 - `mm()` skriver tusenskillet som hardt mellomrom (U+00A0). Tester som leter etter «3 000» må bytte
   det til vanlig mellomrom først (`rens` i `test/matte-skjerm.test.js`).
-- Tester: `test/matte-tak.test.js` og `test/matte-vinkel.test.js` (kontrolleksemplene i planen punkt 4 først, skal aldri slettes)
+- **Fase M2 (2026-11-11):** `src/matte/inndeling.js` med `fordelLikt` (lik, fast c/c med rest,
+  lekter med minste og største), `fordelSpiler` og `fordelBord`. **Trapp T7 skal bruke
+  `fordelSpiler`**, ikke regne spiler på nytt. Merker regnes hvert for seg fra start (i × L / n).
+- Spiler: største åpning har 100 som standard (`KRAV_APNING_REKKVERK`, TEK17 § 12-15 femte ledd, lest
+  på dibk.no 2026-11-11). Over 100 gir «må fikses», ellers «greit å vite» med kravet. Merket er
+  forkanten av spilen målt fra innsiden av stolpen. Spilebredde har ingen standard.
+- Terrassebord: bord helt ut i begge kanter, antall som gir spalten nærmest ønsket, med ett færre og
+  ett mer som alternativ. Lekter har ingen standardverdier (leggeanvisningen er ikke slått opp).
+- «Sist brukt» vises nå i menyen (sju utregninger etter M2).
+- Tester: `test/matte-tak.test.js`, `test/matte-vinkel.test.js` og `test/matte-inndeling.test.js` (kontrolleksemplene i planen punkt 4 først, skal aldri slettes)
   og `test/matte-skjerm.test.js` (hver oppføring er fullstendig, eksempelet går opp uten NaN eller
   tankestrek, skissen). Nye utregninger fanges opp av de felles testene automatisk.
 - Se appen lokalt i nettleseren inne i Claude-appen: `python3 -m http.server 8000 --bind 127.0.0.1`
@@ -494,7 +503,7 @@ assets/               logo og app-ikoner
 src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
 src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js), uttatt vange
                       (vange.js), trapphull og fri høyde, materialer og fagverdier
-src/matte/            regnemodellen for Matte: fall og tak (tak.js), diagonal (vinkel.js), flere filer per fase
+src/matte/            regnemodellen for Matte: fall og tak (tak.js), diagonal (vinkel.js), inndeling (inndeling.js), flere filer per fase
 src/skjerm/           skjermdelen (felt, vegg, trapp, merking av vange, matte, tegning, utskrift,
                       lagring, tallformat, felles biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)

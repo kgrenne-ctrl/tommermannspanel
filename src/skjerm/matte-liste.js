@@ -19,8 +19,11 @@
 
 import { regnFall, regnTrekant, regnOppforing } from '../matte/tak.js';
 import { regnDiagonal } from '../matte/vinkel.js';
+import { fordelLikt, fordelSpiler, fordelBord } from '../matte/inndeling.js';
 import { lesTall, mm, grader } from './format.js';
-import { tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal } from './matte-tegning.js';
+import {
+  tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnBord,
+} from './matte-tegning.js';
 
 // Rekkefølgen på gruppene i menyen. Grupper uten utregninger vises ikke.
 export const GRUPPER = Object.freeze([
@@ -358,8 +361,198 @@ const diagonal = {
   eksempel: { a: '8000', b: '6000', d1: '10016', d2: '9984' },
 };
 
+// ---------- Lik avstand (fase M2) ----------
+
+const LIKT_MAKS = { lik: 'Største c/c (mm)', fast: 'C/c (mm)', lekter: 'Største lekteavstand (mm)' };
+
+const likAvstand = {
+  id: 'likAvstand',
+  gruppe: 'inndeling',
+  tittel: 'Lik avstand',
+  beskrivelse: 'Del en lengde i like felt, fast c/c med rest, eller lekter med minste og største avstand',
+  felt: [
+    {
+      id: 'metode',
+      type: 'valg',
+      ledetekst: 'Hvordan',
+      standard: 'lik',
+      valg: [
+        { verdi: 'lik', tekst: 'Like felt mellom to faste punkter' },
+        { verdi: 'fast', tekst: 'Fast c/c fra start, rest til slutt' },
+        { verdi: 'lekter', tekst: 'Lekter, med minste og største avstand' },
+      ],
+    },
+    {
+      id: 'lengde',
+      type: 'tall',
+      ledetekst: (v) => (v.metode === 'lekter' ? 'Fra første til øverste lekt (mm)' : 'Lengde mellom de faste punktene (mm)'),
+      plassholder: 'f.eks. 4000',
+    },
+    {
+      id: 'maks',
+      type: 'tall',
+      ledetekst: (v) => LIKT_MAKS[v.metode] ?? 'C/c (mm)',
+      plassholder: (v) => (v.metode === 'lekter' ? 'fra leggeanvisningen' : 'f.eks. 600'),
+    },
+    {
+      id: 'min',
+      type: 'tall',
+      ledetekst: 'Minste lekteavstand (mm)',
+      plassholder: 'fra leggeanvisningen',
+      hjelp: 'Avstandene står i leggeanvisningen for steinen. Appen har ingen standardverdier for lekter.',
+      vis: (v) => v.metode === 'lekter',
+    },
+  ],
+  mangler: (d) => {
+    if (d.lengde === null) return 'Skriv inn lengden.';
+    if (d.maks === null) return d.metode === 'fast' ? 'Skriv inn c/c.' : 'Skriv inn største avstand.';
+    if (d.metode === 'lekter' && d.min === null) return 'Skriv inn minste lekteavstand.';
+    return null;
+  },
+  regn: (d) => fordelLikt(d),
+  vis: (r, d) => {
+    const nokkeltall = [];
+    const utregning = [];
+    if (r.metode === 'fast') {
+      nokkeltall.push(
+        ['Felt', String(r.antallFelt), `${r.merker.length} merker mellom endene`],
+        ['C/c', `${mm(r.cc)} mm`, 'Fra start'],
+        ['Rest', `${mm(r.rest)} mm`, 'Siste felt'],
+      );
+      utregning.push(`Merker for hver ${mm(r.cc)} mm fra start så lenge det er under ${mm(r.lengde)} mm.`);
+      const siste = r.merker.at(-1) ?? 0;
+      utregning.push(`Rest: ${mm(r.lengde)} − ${mm(siste)} = ${mm(r.rest, 1)} mm.`);
+    } else {
+      nokkeltall.push(
+        ['Felt', String(r.antallFelt), `${r.merker.length} merker mellom endene`],
+        ['C/c', `${mm(r.cc, 1)} mm`, r.metode === 'lekter' ? `Mellom ${mm(d.min)} og ${mm(d.maks)} mm` : `Høyst ${mm(d.maks)} mm`],
+      );
+      utregning.push(`Antall felt: ${mm(r.lengde)} / ${mm(d.maks)} = ${mm(r.lengde / d.maks, 2)}, rundet opp til ${r.antallFelt}.`);
+      utregning.push(`C/c: ${mm(r.lengde)} / ${r.antallFelt} = ${mm(r.cc, 2)} mm.`);
+      if (r.merker.length > 1) {
+        utregning.push(`Merke nummer n = n × ${mm(r.lengde)} / ${r.antallFelt}. Merke 2: 2 × ${mm(r.lengde)} / ${r.antallFelt} = ${mm(r.merker[1], 1)} mm.`);
+      }
+    }
+    utregning.push('Hvert merke er regnet fra start og rundet til nærmeste mm for seg, så det samler seg ikke opp feil bortover.');
+    return {
+      nokkeltall,
+      forklaring: r.merker.length ? ['Mål alle merkene fra samme start, ikke fra merke til merke.'] : [],
+      liste: r.merker.length ? {
+        tittel: 'Merker',
+        kolonner: ['Nr', 'Fra start (mm)'],
+        rader: r.merker.map((m, i) => [String(i + 1), mm(m)]),
+      } : null,
+      utregning,
+    };
+  },
+  tegn: (r) => tegnInndeling(r),
+  eksempel: { metode: 'lik', lengde: '4000', maks: '600' },
+};
+
+// ---------- Spiler og rekkverk (fase M2) ----------
+
+const spiler = {
+  id: 'spiler',
+  gruppe: 'inndeling',
+  tittel: 'Spiler og rekkverk',
+  beskrivelse: 'Antall spiler og nøyaktig åpning mellom stolpene, under kravet på 100 mm',
+  felt: [
+    { id: 'lysapning', type: 'tall', ledetekst: 'Lysåpning mellom stolpene (mm)', plassholder: 'f.eks. 1800' },
+    { id: 'bredde', type: 'tall', ledetekst: 'Bredde på spilene (mm)', plassholder: 'f.eks. 21' },
+    {
+      id: 'maks',
+      type: 'tall',
+      ledetekst: 'Største åpning (mm)',
+      standard: 100,
+      plassholder: '100',
+      hjelp: 'Kravet er høyst 100 mm. Sett lavere for å ha margin.',
+    },
+  ],
+  mangler: (d) => {
+    if (d.lysapning === null) return 'Skriv inn lysåpningen mellom stolpene.';
+    if (d.bredde === null) return 'Skriv inn bredden på spilene.';
+    if (d.maks === null) return 'Skriv inn største åpning.';
+    return null;
+  },
+  regn: (d) => fordelSpiler(d),
+  vis: (r) => {
+    const nokkeltall = [
+      ['Spiler', String(r.antall), `${mm(r.bredde)} mm brede`],
+      ['Åpning', `${mm(r.apning, 1)} mm`, `Høyst ${mm(r.maks)} mm`],
+    ];
+    if (r.apningEnFaerre !== null) nokkeltall.push(['Én spile færre', `${mm(r.apningEnFaerre, 1)} mm`, 'Gir for stor åpning']);
+    nokkeltall.push(['Lysåpning', `${mm(r.lysapning)} mm`, 'Mellom stolpene']);
+    const utregning = [
+      `Antall: (lysåpning − største åpning) / (bredde + største åpning) = (${mm(r.lysapning)} − ${mm(r.maks)}) / `
+        + `(${mm(r.bredde)} + ${mm(r.maks)}) = ${mm((r.lysapning - r.maks) / (r.bredde + r.maks), 2)}, rundet opp til ${r.antall}.`,
+      `Åpning: (lysåpning − antall × bredde) / (antall + 1) = (${mm(r.lysapning)} − ${r.antall} × ${mm(r.bredde)}) / `
+        + `${r.antall + 1} = ${mm(r.apning, 2)} mm.`,
+    ];
+    if (r.antall > 1) {
+      utregning.push(`Forkant spile n = n × åpning + (n − 1) × bredde. Spile 2: 2 × ${mm(r.apning, 2)} + ${mm(r.bredde)} = ${mm(r.forkant[1], 1)} mm.`);
+    }
+    return {
+      nokkeltall,
+      forklaring: r.antall ? [
+        'Mål fra innsiden av den ene stolpen. Merket er forkanten av spilen, siden nærmest stolpen du måler fra. '
+          + 'Første spile står én åpning fra stolpen.',
+      ] : ['Lysåpningen er ikke større enn største åpning, så det trengs ingen spiler.'],
+      liste: r.antall ? {
+        tittel: 'Forkant av hver spile',
+        kolonner: ['Nr', 'Fra stolpen (mm)'],
+        rader: r.forkant.map((f, i) => [String(i + 1), mm(f)]),
+      } : null,
+      utregning,
+    };
+  },
+  tegn: (r) => tegnSpiler(r),
+  eksempel: { lysapning: '1800', bredde: '21', maks: '100' },
+};
+
+// ---------- Terrassebord og spaltekledning (fase M2) ----------
+
+const bord = {
+  id: 'bord',
+  gruppe: 'inndeling',
+  tittel: 'Terrassebord og spaltekledning',
+  beskrivelse: 'Antall hele bord og nøyaktig spalte, med ett bord færre og ett mer',
+  felt: [
+    { id: 'bredde', type: 'tall', ledetekst: 'Bredde på flaten (mm)', plassholder: 'f.eks. 3000', hjelp: 'Bord helt ut i begge kanter.' },
+    { id: 'bordbredde', type: 'tall', ledetekst: 'Bordbredde (mm)', plassholder: 'f.eks. 120' },
+    { id: 'spalte', type: 'tall', ledetekst: 'Ønsket spalte (mm)', plassholder: 'f.eks. 5' },
+  ],
+  mangler: (d) => {
+    if (d.bredde === null) return 'Skriv inn bredden på flaten.';
+    if (d.bordbredde === null) return 'Skriv inn bordbredden.';
+    if (d.spalte === null) return 'Skriv inn ønsket spalte.';
+    return null;
+  },
+  regn: (d) => fordelBord(d),
+  vis: (r) => ({
+    nokkeltall: [
+      ['Bord', String(r.antall), `à ${mm(r.bordbredde)} mm`],
+      ['Spalte', `${mm(r.spalte, 1)} mm`, `Ønsket ${mm(r.onsket, 1)} mm`],
+      ...r.alternativer.map((a) => [`${a.antall} bord`, `${mm(a.spalte, 1)} mm`, a.antall < r.antall ? 'Spalte med ett færre' : 'Spalte med ett mer']),
+    ],
+    liste: {
+      tittel: 'Forkant av hvert bord',
+      kolonner: ['Nr', 'Fra kanten (mm)'],
+      rader: r.forkant.map((f, i) => [String(i + 1), mm(f)]),
+    },
+    utregning: [
+      `Antall: (bredde + spalte) / (bordbredde + spalte) = (${mm(r.bredde)} + ${mm(r.onsket, 1)}) / (${mm(r.bordbredde)} + `
+        + `${mm(r.onsket, 1)}) = ${mm((r.bredde + r.onsket) / (r.bordbredde + r.onsket), 2)}, rundet til ${r.antall}.`,
+      `Spalte: (bredde − antall × bordbredde) / (antall − 1) = (${mm(r.bredde)} − ${r.antall} × ${mm(r.bordbredde)}) / `
+        + `${r.antall - 1} = ${mm(r.spalte, 2)} mm.`,
+      `Forkant bord n = (n − 1) × (bordbredde + spalte) = (n − 1) × ${mm(r.bordbredde + r.spalte, 2)} mm.`,
+    ],
+  }),
+  tegn: (r) => tegnBord(r),
+  eksempel: { bredde: '3000', bordbredde: '120', spalte: '5' },
+};
+
 // Alle utregningene, i den rekkefølgen de står i menyen innenfor hver gruppe.
-export const KALKULATORER = Object.freeze([fallOgTakvinkel, trekanten, oppforing, diagonal]);
+export const KALKULATORER = Object.freeze([fallOgTakvinkel, trekanten, oppforing, diagonal, likAvstand, spiler, bord]);
 
 export function finnKalkulator(id) {
   return KALKULATORER.find((k) => k.id === id) ?? null;

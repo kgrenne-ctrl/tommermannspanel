@@ -2,7 +2,7 @@
 
 Plan 2026-11-11, oppdatert samme dag etter Kennys svar (punkt 10). Skrevet da appen sto på commit cdb69f1 (Kledning og Trapp til og med fase T3). Planen er skrevet for Opus 5.5 i Claude Code og bygges én fase om gangen, rett på `main`.
 
-Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 bygget samme dag (181 tester). T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
+Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 publisert samme dag (commit 8c89330, 181 tester). M2 bygget samme dag (194 tester), med `fordelSpiler` i `src/matte/inndeling.js` klar for T7. T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
 
 ## 1. Mål
 
@@ -96,7 +96,8 @@ Regnefunksjonene her er de samme som trapp fase T7 skal bruke.
 
 **Spiler og rekkverk.** Inn: lysåpning mellom stolpene, spilebredde, største åpning (standard 100 mm etter kravet, kan settes lavere for margin, avklart med Kenny). Over 100 gir varsel som må fikses. Antall = (lysåpning − maks) / (bredde + maks), rundet opp. Åpning = (lysåpning − antall × bredde) / (antall + 1). Løpende mål til forkant av hver spile.
 - Kontroll: 1800 mm, spiler 21 mm, maks 100 gir 15 spiler og åpning 92,8 (14 spiler gir 100,4, for mye). Første merker 93, 207, 320, 434.
-- Krav: TEK17 § 12-15 (punkt 9).
+- Krav: TEK17 § 12-15 femte ledd (punkt 9). Lest på nytt på dibk.no 2026-11-11 i fase M2.
+- Lekter: appen har ingen standardverdier. Minste og største avstand skrives inn fra leggeanvisningen for steinen. Går det ikke opp med lik avstand innenfor begge, kommer «må fikses».
 
 **Nytt: Terrassebord og spaltekledning.** Inn: bredde, bordbredde, ønsket spalte. Gir antall hele bord og nøyaktig spalte, med ett bord færre og ett mer som alternativ.
 - Kontroll: 3000 mm, 120 mm bord, ønsket 5 gir 24 bord og spalte 5,2.
@@ -226,7 +227,7 @@ En oppføring i `matte-liste.js` ser omtrent slik ut:
 
 | Krav | Verdi | Type |
 |---|---|---|
-| Åpninger i rekkverk | maks 0,10 m opp til minst 0,75 m høyde | Forskrift, § 12-15 |
+| Åpninger i rekkverk | maks 0,10 m opp til minst 0,75 m høyde, også mellom rekkverk og gulv eller trinn (veiledningen). Lest på nytt 2026-11-11 i M2 | Forskrift, § 12-15 femte ledd |
 | Rekkverk i trapp og rampe | minst 0,9 m over gulv eller trinn | Forskrift, § 12-15 |
 | Rekkverk på balkong og terrasse | minst 1,0 m ved nivåforskjell inntil 10 m, 1,2 m over | Forskrift, § 12-15 |
 | Vannrett avstand mellom bygningsdel og utenpåliggende rekkverk | maks 0,05 m | Forskrift, § 12-15 |

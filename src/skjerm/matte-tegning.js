@@ -218,3 +218,83 @@ export function tegnDiagonal(r) {
   if (skjev) deler.push(tekst(B / 2, H - 6, 'Skjevheten er forstørret, ikke i målestokk', { storrelse: 12, farge: 'var(--tekst-gra)' }));
   return svg(B, H, deler.join(''), `Rektangel ${mm(r.a)} × ${mm(r.b)} mm, diagonal ${mm(r.diagonal)} mm`);
 }
+
+// Målelinje med endestreker og tekst under, for mål som lysåpning og bredde
+function malelinje(xa, xb, y, innhold) {
+  return `<line x1="${xa}" y1="${y}" x2="${xb}" y2="${y}" stroke="var(--tekst-gra)" stroke-width="1"/>`
+    + `<line x1="${xa}" y1="${y - 6}" x2="${xa}" y2="${y + 6}" stroke="var(--tekst-gra)" stroke-width="1"/>`
+    + `<line x1="${xb}" y1="${y - 6}" x2="${xb}" y2="${y + 6}" stroke="var(--tekst-gra)" stroke-width="1"/>`
+    + tekst((xa + xb) / 2, y + 20, innhold);
+}
+
+// Lik avstand: lengden som en list med et merke for hvert punkt. Tegnes i riktig forhold.
+export function tegnInndeling(r) {
+  const B = 400;
+  const x0 = 30;
+  const bredde = 340;
+  const y = 44;
+  const s = bredde / r.lengde;
+  const punkter = [0, ...r.merker, r.lengde];
+  const xer = punkter.map((p) => x0 + p * s);
+  const medMal = new Set(punkterMedMal(xer, 44)); // «12 345» er om lag 40 px bred i 14 px
+  const overskrift = r.metode === 'fast'
+    ? `C/c ${mm(r.cc)} mm, rest ${mm(r.rest)} mm`
+    : `${r.antallFelt} felt à ${mm(r.cc, 1)} mm`;
+  const deler = [
+    tekst(B / 2, 20, overskrift, { vekt: 700, farge: 'var(--bla-mork)' }),
+    `<rect x="${x0}" y="${y}" width="${bredde}" height="16" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="2"/>`,
+  ];
+  if (r.metode === 'fast' && r.merker.length) {
+    const xr = xer.at(-2);
+    deler.push(`<rect x="${xr}" y="${y}" width="${x0 + bredde - xr}" height="16" fill="var(--hvit)" stroke="var(--skisse-strek)" `
+      + 'stroke-width="2" stroke-dasharray="4 3"/>');
+  }
+  xer.forEach((px, i) => {
+    deler.push(`<line x1="${px}" y1="${y - 8}" x2="${px}" y2="${y + 24}" stroke="var(--skisse-strek)" stroke-width="2"/>`);
+    if (medMal.has(i)) deler.push(tekst(px, y + 42, mm(punkter[i]), { storrelse: 14 }));
+  });
+  return svg(B, y + 54, deler.join(''), `${overskrift} over ${mm(r.lengde)} mm`);
+}
+
+// Spiler i rekkverk sett forfra: stolpene i hver ende, håndlist over og spilene i riktig forhold.
+export function tegnSpiler(r) {
+  const B = 400;
+  const x0 = 34;
+  const bredde = 332;
+  const topp = 24;
+  const bunn = 140;
+  const s = bredde / r.lysapning;
+  const sb = Math.max(1.5, r.bredde * s);
+  const deler = [
+    `<rect x="${x0 - 14}" y="${topp - 8}" width="14" height="${bunn - topp + 16}" fill="var(--skisse-strek)"/>`,
+    `<rect x="${x0 + bredde}" y="${topp - 8}" width="14" height="${bunn - topp + 16}" fill="var(--skisse-strek)"/>`,
+    `<rect x="${x0}" y="${topp - 8}" width="${bredde}" height="8" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="1.5"/>`,
+  ];
+  for (const f of r.forkant) {
+    deler.push(`<rect x="${x0 + f * s}" y="${topp}" width="${sb}" height="${bunn - topp}" fill="var(--skisse-strek)" opacity="0.8"/>`);
+  }
+  // Første åpning markert, så det synes hva «åpning» er
+  const xa = x0;
+  const xb = x0 + r.apning * s;
+  deler.push(`<line x1="${xa}" y1="${(topp + bunn) / 2}" x2="${xb}" y2="${(topp + bunn) / 2}" stroke="var(--bakoy-oransje)" stroke-width="3"/>`);
+  deler.push(tekst(x0 + 2, bunn + 22, `Åpning ${mm(r.apning, 1)} mm`, { anker: 'start', vekt: 700, farge: 'var(--bla-mork)' }));
+  deler.push(malelinje(x0, x0 + bredde, bunn + 40, `Lysåpning ${mm(r.lysapning)} mm, ${r.antall} spiler`));
+  return svg(B, bunn + 70, deler.join(''), `${r.antall} spiler i ${mm(r.lysapning)} mm, åpning ${mm(r.apning, 1)} mm`);
+}
+
+// Terrassebord og spaltekledning sett ovenfra: bordene side om side over bredden, i riktig forhold.
+export function tegnBord(r) {
+  const B = 400;
+  const x0 = 30;
+  const bredde = 340;
+  const topp = 34;
+  const hoyde = 80;
+  const s = bredde / r.bredde;
+  const deler = [tekst(B / 2, 20, `${r.antall} bord, spalte ${mm(r.spalte, 1)} mm`, { vekt: 700, farge: 'var(--bla-mork)' })];
+  for (const f of r.forkant) {
+    deler.push(`<rect x="${x0 + f * s}" y="${topp}" width="${r.bordbredde * s}" height="${hoyde}" fill="var(--skisse-flate)" `
+      + 'stroke="var(--skisse-strek)" stroke-width="1"/>');
+  }
+  deler.push(malelinje(x0, x0 + bredde, topp + hoyde + 16, `Bredde ${mm(r.bredde)} mm`));
+  return svg(B, topp + hoyde + 46, deler.join(''), `${r.antall} bord à ${mm(r.bordbredde)} mm over ${mm(r.bredde)} mm`);
+}
