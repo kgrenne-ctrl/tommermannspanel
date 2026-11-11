@@ -618,6 +618,7 @@ summary:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; bo
 }
 
 .maltabell tbody tr:nth-child(even) { background: var(--stripe); }
+.maltabell td.tall { white-space: nowrap; }
 
 /* ---------- Hel vegg ---------- */
 
@@ -957,6 +958,12 @@ footer p { margin: 4px 0; }
 .u-hjorner svg { width: 100%; height: auto; }
 .u-data pre { white-space: pre-wrap; word-break: break-all; font-size: 8pt; background: var(--stripe); padding: 8px; }
 .u-bunn { margin-top: 16px; text-align: center; color: var(--tekst-gra); font-size: 10pt; }
+.u-steg { padding-left: 18px; font-size: 11pt; }
+.u-steg li { margin: 3px 0; }
+.u-skisser { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 0; }
+.u-skisser svg { width: 100%; height: auto; }
+/* Trappa og vangen i utskriften: lave nok til at tegning og tekst får plass på samme side */
+.u-tegning.u-lav svg { width: auto; max-width: 100%; max-height: 85mm; display: block; margin: 0 auto; }
 
 @media print {
   @page { size: A4; margin: 12mm; }
@@ -966,6 +973,7 @@ footer p { margin: 4px 0; }
   #utskrift * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .u-vegg { break-before: page; }
   .u-vegg:first-of-type { break-before: auto; }
-  .u-tabell tr, .u-tegning, .u-hjorner, .u-hus, .u-blokk { break-inside: avoid; }
+  .u-vegg.u-samme-side { break-before: auto; }
+  .u-tabell tr, .u-tegning, .u-hjorner, .u-hus, .u-blokk, .u-skisser, .u-steg { break-inside: avoid; }
   #utskrift h2, #utskrift h3, #utskrift h4 { break-after: avoid; }
 }

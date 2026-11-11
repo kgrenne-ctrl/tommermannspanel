@@ -48,3 +48,37 @@ export function lagMerkesteg(vange, l, { nese = 20 } = {}) {
 
   return steg;
 }
+
+// De fem stegene i «Slik merker du vangen», som tekst med mål. Brukes både på skjermen og i
+// utskriften, så teksten er lik begge steder. Tegningene legges til av den som viser stegene.
+export function lagVangeSteg(vange, l, { trinnTykkelse = 28, beleggNede = 0, nese = 20 } = {}) {
+  const eget = l.antallInntrinn === l.antallOpptrinn;
+  const h = mm(l.opptrinn, 1);
+  const b = mm(l.inntrinn, 1);
+  const t = mm(trinnTykkelse);
+  const bunnGrunn = beleggNede > 0
+    ? `${h} minus ${t} mm trinntykkelse, pluss ${mm(beleggNede)} mm belegg som legges senere`
+    : `${h} minus ${t} mm, fordi trinnet ligger oppå`;
+  return [
+    { id: 'spisser', tittel: 'Merk spissene.',
+      tekst: `Mål ${mm(vange.spissFraEnden)} mm fra enden av bordet langs overkanten. Det er nederste spiss (0). `
+        + 'Merk resten av spissene med målene under. Alle mål er fra 0, ikke fra forrige merke.' },
+    { id: 'hakk', tittel: 'Tegn hakkene.',
+      tekst: `Sett av <strong>${b} mm</strong> (inntrinn) på den ene armen av vinkelen og <strong>${h} mm</strong> `
+        + '(opptrinn) på den andre. Legg vinkelen på vangen så de to målene treffer to spisser ved siden av hverandre, '
+        + 'og tegn langs armene. Gjør det for hvert hakk. Streken for inntrinnet er der trinnet ligger.' },
+    { id: 'bunn', tittel: 'Tegn bunnen.',
+      tekst: `Tegn streken for opptrinnet fra spiss 0 og nedover, men bare <strong>${mm(vange.nedersteOpptrinn, 1)} mm</strong> `
+        + `(${bunnGrunn}). Tegn bunnkuttet derfra i rett vinkel, parallelt med inntrinnene, ut til underkanten. `
+        + `Det blir ${mm(vange.fot)} mm langt.` },
+    { id: 'topp', tittel: 'Tegn toppen.',
+      tekst: `${eget
+        ? `Gå ${mm(vange.toppkutt.foranBakkant)} mm tilbake fra innerste hjørne i øverste hakk, langs streken for inntrinnet. `
+          + 'Tegn en strek derfra i rett vinkel ned til underkanten. Der begynner dekket.'
+        : 'Forleng streken for opptrinnet i øverste hakk, fra innerste hjørne og ned til underkanten.'} `
+        + `Toppkuttet blir ${mm(vange.toppkutt.lengde)} mm langt.` },
+    { id: 'kapp', tittel: 'Kapp og prøv.',
+      tekst: `Kapp langs strekene. Legg et trinn i et hakk: forkanten av trinnet skal stikke ${mm(nese)} mm forbi `
+        + `streken for opptrinnet.${eget ? '' : ` Dekket må stikke like mye (${mm(nese)} mm) ut foran bjelken, ellers blir øverste inntrinn feil.`}` },
+  ];
+}

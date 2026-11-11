@@ -3,9 +3,11 @@
 
 import { losTrapp, trinnFraBord, lagTrinnliste } from '../trapp/solver.js';
 import { lagVange } from '../trapp/vange.js';
+import { lagTrappMaterialer, trappMaterialTekst } from '../trapp/materialer.js';
 import { STANDARD_TRAPP } from '../trapp/fagverdier.js';
 import { tegnTrapp, tegnVangeFlatt, tegnHakk, tegnBunn, tegnTopp, tegnMerkesteg } from './trapp-tegning.js';
-import { lagMerkesteg } from './trapp-merking.js';
+import { lagMerkesteg, lagVangeSteg } from './trapp-merking.js';
+import { lagTrappUtskrift, lesTrappdata } from './trapp-utskrift.js';
 import { lesTall, mm } from './format.js';
 import { kort, boks, zoomBoks, kobleZoom } from './biter.js';
 import { EKSEMPELTRAPP } from './eksempel.js';
@@ -15,9 +17,13 @@ const skjema = document.getElementById('trapp-skjema');
 const resultat = document.getElementById('trapp-resultat');
 const finn = (id) => document.getElementById(id);
 
-// Innstillinger som kan endres, og målene for vangen. Begge lagres under «innstillinger».
+// Innstillinger som kan endres, målene for vangen og materialene. Alt lagres under «innstillinger».
 const INNSTILLINGER = ['onsketOpptrinn', 'formelIdeal', 'formelMin', 'formelMax'];
-const VANGE = ['trinnTykkelse', 'vangeBredde', 'beleggNede'];
+const VANGE = ['trinnTykkelse', 'vangeBredde', 'beleggNede', 'vangeTykkelse', 'antallVanger', 'utstikk'];
+const MATERIAL = ['maksAvstandVangerTynn', 'maksAvstandVangerTykk', 'kapptillegg', 'svinn'];
+
+// Det som vises nå, til utskrift og deling av materiallista
+let sisteTrapp = null;  // { tilstand, d, l, vange, valg, liste }
 
 // Hvilken av løsningene som vises (0 = den beste). Nullstilles når inndata endres.
 let valgtIndeks = 0;
@@ -33,7 +39,9 @@ let avspilling = null;
 
 kobleZoom(resultat);
 for (const navn of INNSTILLINGER) finn(`t-${navn}`).value = String(STANDARD_TRAPP[navn]);
+for (const navn of MATERIAL) finn(`t-${navn}`).value = String(STANDARD_TRAPP[navn]);
 finn('t-vangeBredde').value = String(STANDARD_TRAPP.vangeBredde);
+finn('t-vangeTykkelse').value = String(STANDARD_TRAPP.vangeTykkelse);
 finn('t-nese').value = String(STANDARD_TRAPP.nese);
 
 const lagret = hent('trapp');
@@ -54,6 +62,8 @@ finn('t-eksempel').addEventListener('click', () => {
 resultat.addEventListener('click', (hendelse) => {
   const knapp = hendelse.target.closest('button');
   if (!knapp) return;
+  if (knapp.id === 't-skriv-ut') { skrivUt(); return; }
+  if (knapp.id === 't-del-liste') { delListe(knapp); return; }
   if (knapp.dataset.merkesteg) {
     if (knapp.dataset.merkesteg === 'spill') {
       if (avspilling) stoppAvspilling(); else startAvspilling();
@@ -82,6 +92,79 @@ resultat.addEventListener('input', (hendelse) => {
 });
 
 oppdater();
+
+// ---------- Utskrift, deling og data for eksempler ----------
+
+// Hele trappa med inndata og resultater. Nettleserens utskrift kan lagre som PDF.
+function skrivUt() {
+  if (!sisteTrapp) return;
+  const omrade = finn('utskrift');
+  omrade.innerHTML = lagTrappUtskrift({ ...sisteTrapp, versjon: window.APP_VERSJON ?? '' });
+  omrade.hidden = false;
+  document.body.classList.add('skriver-ut');
+  // Navnet på PDF-fila hentes fra sidetittelen
+  const tittel = document.title;
+  const d = new Date();
+  document.title = `Trapp ${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const ferdig = () => {
+    document.body.classList.remove('skriver-ut');
+    omrade.hidden = true;
+    omrade.innerHTML = '';
+    document.title = tittel;
+    window.removeEventListener('afterprint', ferdig);
+  };
+  window.addEventListener('afterprint', ferdig);
+  setTimeout(() => window.print(), 150); // la tegningene og logoen komme på plass først
+}
+
+// Del med telefonens Del-meny (SMS, e-post) når den finnes, ellers kopier til utklippstavla
+async function delListe(knapp) {
+  if (!sisteTrapp?.liste?.ok) return;
+  const tekst = trappMaterialTekst(sisteTrapp.liste);
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Materialliste trapp', text: tekst });
+      return;
+    }
+    await navigator.clipboard.writeText(tekst);
+    knapp.textContent = 'Kopiert';
+  } catch (feil) {
+    if (feil?.name === 'AbortError') return; // brukeren lukket Del-menyen
+    knapp.textContent = 'Fikk ikke kopiert. Merk teksten under.';
+    knapp.insertAdjacentHTML('afterend', `<textarea class="del-tekst" readonly rows="10">${tekst.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</textarea>`);
+  }
+}
+
+finn('t-kopier-data').addEventListener('click', async () => {
+  const tekst = JSON.stringify({ app: 'tommermannspanel', verktoy: 'trapp', versjon: window.APP_VERSJON ?? '', trapp: lesTilstand() });
+  const melding = finn('t-data-melding');
+  try {
+    await navigator.clipboard.writeText(tekst);
+    melding.textContent = 'Kopiert. Lim inn i en e-post eller melding.';
+  } catch {
+    finn('t-data').value = tekst;
+    finn('t-data').select();
+    melding.textContent = 'Fikk ikke kopiert automatisk. Teksten er merket i feltet, kopier den selv.';
+  }
+});
+
+finn('t-last-data').addEventListener('click', () => {
+  const melding = finn('t-data-melding');
+  let ny;
+  try {
+    ny = lesTrappdata(finn('t-data').value);
+  } catch (feil) {
+    melding.textContent = feil.message;
+    return;
+  }
+  if (!window.confirm('Erstatte trappa som er lagt inn nå med trappa fra dataene?')) return;
+  settTilstand(ny);
+  finn('t-data').value = '';
+  melding.textContent = 'Lastet inn.';
+  valgtIndeks = 0;
+  merkeIndeks = 0;
+  oppdater();
+});
 
 // ---------- Se det steg for steg ----------
 
@@ -132,7 +215,7 @@ function lesTilstand() {
     spalte: finn('t-spalte').value,
     nese: finn('t-nese').value,
     lengde: finn('t-lengde').value,
-    innstillinger: Object.fromEntries([...INNSTILLINGER, ...VANGE].map((n) => [n, finn(`t-${n}`).value])),
+    innstillinger: Object.fromEntries([...INNSTILLINGER, ...VANGE, ...MATERIAL].map((n) => [n, finn(`t-${n}`).value])),
   };
 }
 
@@ -180,7 +263,21 @@ function vangeValg(inndata) {
     ?? (ute ? STANDARD_TRAPP.trinnTykkelseUte : STANDARD_TRAPP.trinnTykkelseInne);
   return { nese: inndata.nese, trinnTykkelse: tykkelse,
     vangeBredde: lesTall(finn('t-vangeBredde').value) ?? STANDARD_TRAPP.vangeBredde,
+    vangeTykkelse: lesTall(finn('t-vangeTykkelse').value) ?? STANDARD_TRAPP.vangeTykkelse,
     beleggNede: lesTall(finn('t-beleggNede').value) ?? 0 };
+}
+
+// Materiallista for løsningen som vises
+function materialer(inndata, l, vange, valg) {
+  const tall = (id, standard) => lesTall(finn(id).value) ?? standard;
+  const antall = finn('t-antallVanger').value;
+  return lagTrappMaterialer({ l, vange, bredde: inndata.bredde,
+    trinnbord: inndata.lengdevalg === 'trinn' ? inndata.trinnbord : null,
+    trinnTykkelse: valg.trinnTykkelse, nese: valg.nese, vangeTykkelse: valg.vangeTykkelse, vangeBredde: valg.vangeBredde,
+    utstikk: tall('t-utstikk', STANDARD_TRAPP.utstikk), antallVanger: antall ? Number(antall) : null,
+    kapptillegg: tall('t-kapptillegg', STANDARD_TRAPP.kapptillegg), svinn: tall('t-svinn', STANDARD_TRAPP.svinn),
+    maksAvstandVangerTynn: tall('t-maksAvstandVangerTynn', STANDARD_TRAPP.maksAvstandVangerTynn),
+    maksAvstandVangerTykk: tall('t-maksAvstandVangerTykk', STANDARD_TRAPP.maksAvstandVangerTykk) });
 }
 
 // ---------- Vise resultatet ----------
@@ -230,7 +327,9 @@ function oppdater() {
   const l = svar.alle[indeks];
   const valg = vangeValg(inndata);
   const vange = lagVange(l, valg);
-  resultat.innerHTML = visTrapp(l, svar, indeks, inndata, vange, valg);
+  const liste = vange.ok ? materialer(inndata, l, vange, valg) : null;
+  sisteTrapp = vange.ok ? { tilstand: lesTilstand(), d: inndata, l, vange, valg, liste } : null;
+  resultat.innerHTML = visTrapp(l, svar, indeks, inndata, vange, valg, liste);
   if (vange.ok) {
     merking = { steg: lagMerkesteg(vange, l, valg), vange, l, valg };
     visMerkesteg(merkeIndeks);
@@ -257,8 +356,11 @@ function visVarsler(varsler) {
   return deler.join('');
 }
 
-function visTrapp(l, svar, indeks, inndata, vange, valg) {
-  const varsler = [...l.varsler, ...(vange.varsler ?? [])];
+function visTrapp(l, svar, indeks, inndata, vange, valg, liste) {
+  // Varsler fra trappa, vangen og materialene (det som bare er «greit å vite» om materialene,
+  // står under Materialer)
+  const varsler = [...l.varsler, ...(vange.varsler ?? []),
+    ...(liste?.ok ? liste.varsler.filter((v) => v.niva !== 'vite') : [])];
   const underInntrinn = svar.trinn ? `Trinnet ${mm(svar.trinn.dybde)} mm dypt` : `${l.antallInntrinn} trinn`;
 
   // Andre inndelinger: de innenfor anbefalt trappeformel, ellers de to beste
@@ -287,6 +389,7 @@ function visTrapp(l, svar, indeks, inndata, vange, valg) {
     </div>
     ${visVarsler(varsler)}
     ${andre}
+    ${vange.ok ? '<button type="button" class="knapp bred" id="t-skriv-ut">Skriv ut / PDF</button>' : ''}
     </section>
 
     <section class="del">
@@ -307,6 +410,38 @@ function visTrapp(l, svar, indeks, inndata, vange, valg) {
       <thead><tr><th>Trinn</th><th>Høyde (mm)</th><th>Forkant (mm)</th></tr></thead>
       <tbody>${rader}</tbody>
     </table>
+    </section>
+
+    ${liste ? visMaterialer(liste, l) : ''}`;
+}
+
+function visMaterialer(liste, l) {
+  if (!liste.ok) {
+    return `<section class="del"><h2>Materialer</h2><p class="hjelp stor">${liste.feil.join(' ')}</p></section>`;
+  }
+  const bestill = liste.linjer.map((x) => `<tr><td>${x.del}</td><td>${x.dim.navn}</td><td>${x.hel
+    ? `${x.antall} stk à minst ${mm(x.lengde)} mm` : `<strong>${mm(x.bestill)} lm</strong> <small>(netto ${mm(x.netto, 1)})</small>`}</td></tr>`).join('');
+  const kapp = liste.linjer.map((x) => `<tr><td class="tall">${x.antall} stk</td><td class="tall">${mm(x.lengde)} mm</td><td>${x.del} ${x.dim.navn}</td></tr>`).join('');
+  const vite = liste.varsler.filter((v) => v.niva === 'vite').map((v) => `<p>${v.tekst}</p>`).join('');
+  const valgt = liste.antallVanger === liste.anbefaltVanger ? 'Som anbefalt' : `Anbefalt ${liste.anbefaltVanger}`;
+  return `
+    <section class="del">
+    <h2>Materialer</h2>
+    <div class="nokkeltall">
+      ${kort('Vanger', `${liste.antallVanger} stk`, `${mm(liste.avstandVanger)} mm mellom (c/c). ${valgt}`)}
+      ${kort('Trinn', `${l.antallInntrinn} stk`, `${mm(liste.trinnLengde)} mm lange`)}
+    </div>
+    <table class="maltabell">
+      <caption>Bestilling</caption>
+      <thead><tr><th>Del</th><th>Dimensjon</th><th>Bestill</th></tr></thead>
+      <tbody>${bestill}</tbody>
+    </table>
+    <p class="hjelp">Vangene må være hele, så de bestilles i stykk. Trinn bestilles i løpemeter med
+      ${mm(liste.svinn)} % svinn. Kapptillegg ${mm(liste.kapptillegg)} mm per bit.</p>
+    <button type="button" class="knapp" id="t-del-liste">Kopier eller del lista</button>
+    <h3>Kappliste</h3>
+    <table class="maltabell"><thead><tr><th>Antall</th><th>Lengde</th><th>Del</th></tr></thead><tbody>${kapp}</tbody></table>
+    ${vite ? boks('info', `<p><strong>Greit å vite</strong></p>${vite}`) : ''}
     </section>`;
 }
 
@@ -316,16 +451,21 @@ function visVange(l, v, valg) {
   }
   if (!v.ok) return '<section class="del"><h2>Vangen</h2><p class="hjelp">Se «Må fikses» over.</p></section>';
 
-  const eget = l.antallInntrinn === l.antallOpptrinn;
-  const h = mm(l.opptrinn, 1);
-  const b = mm(l.inntrinn, 1);
-  const t = mm(valg.trinnTykkelse);
-  const B = valg.beleggNede;
-  const bunnGrunn = B > 0
-    ? `${h} minus ${t} mm trinntykkelse, pluss ${mm(B)} mm belegg som legges senere`
-    : `${h} minus ${t} mm, fordi trinnet ligger oppå`;
   const rader = v.merker.map((m, i) => `<tr><td>${i}</td><td>${m.hjelp ? '<small>hjelpespiss, kappes bort</small> ' : ''}${mm(m.avstand)}</td></tr>`).join('');
-  const steg = (tittel, tekst, tegning = '') => `<li><strong>${tittel}</strong> ${tekst}${tegning}</li>`;
+  const tegninger = {
+    spisser: `${zoomBoks('vange', tegnVangeFlatt(v, valg))}
+        <table class="maltabell">
+          <caption>Spisser langs overkanten</caption>
+          <thead><tr><th>Spiss</th><th>Fra spiss 0 (mm)</th></tr></thead>
+          <tbody>${rader}</tbody>
+        </table>`,
+    hakk: zoomBoks('vange-hakk', tegnHakk(v, l, valg)),
+    bunn: zoomBoks('vange-bunn', tegnBunn(v, valg)),
+    topp: zoomBoks('vange-topp', tegnTopp(v, valg)),
+    kapp: '',
+  };
+  const steg = lagVangeSteg(v, l, valg)
+    .map((st) => `<li><strong>${st.tittel}</strong> ${st.tekst}${tegninger[st.id]}</li>`).join('');
 
   return `
     <section class="del">
@@ -353,35 +493,7 @@ function visVange(l, v, valg) {
 
     <p class="hjelp">Alle stegene med mål og skisser. Legg vangen på bukkene med overkanten mot deg. Nederste
       ende av trappa er til venstre.</p>
-    <ol class="steg">
-      ${steg('Merk spissene.', `Mål ${mm(v.spissFraEnden)} mm fra enden av bordet langs overkanten. Det er
-        nederste spiss (0). Merk resten av spissene med målene under. Alle mål er fra 0, ikke fra
-        forrige merke.
-        ${zoomBoks('vange', tegnVangeFlatt(v, valg))}
-        <table class="maltabell">
-          <caption>Spisser langs overkanten</caption>
-          <thead><tr><th>Spiss</th><th>Fra spiss 0 (mm)</th></tr></thead>
-          <tbody>${rader}</tbody>
-        </table>`)}
-      ${steg('Tegn hakkene.', `Sett av <strong>${b} mm</strong> (inntrinn) på den ene armen av vinkelen
-        og <strong>${h} mm</strong> (opptrinn) på den andre. Legg vinkelen på vangen så de to målene
-        treffer to spisser ved siden av hverandre, og tegn langs armene. Gjør det for hvert hakk. Streken
-        for inntrinnet er der trinnet ligger.
-        ${zoomBoks('vange-hakk', tegnHakk(v, l, valg))}`)}
-      ${steg('Tegn bunnen.', `Tegn streken for opptrinnet fra spiss 0 og nedover, men bare
-        <strong>${mm(v.nedersteOpptrinn, 1)} mm</strong> (${bunnGrunn}). Tegn bunnkuttet derfra i rett
-        vinkel, parallelt med inntrinnene, ut til underkanten. Det blir ${mm(v.fot)} mm langt.
-        ${zoomBoks('vange-bunn', tegnBunn(v, valg))}`)}
-      ${steg('Tegn toppen.', `${eget
-    ? `Gå ${mm(v.toppkutt.foranBakkant)} mm tilbake fra innerste hjørne i øverste hakk, langs streken for
-        inntrinnet. Tegn en strek derfra i rett vinkel ned til underkanten. Der begynner dekket.`
-    : 'Forleng streken for opptrinnet i øverste hakk, fra innerste hjørne og ned til underkanten.'}
-        Toppkuttet blir ${mm(v.toppkutt.lengde)} mm langt.
-        ${zoomBoks('vange-topp', tegnTopp(v, valg))}`)}
-      ${steg('Kapp og prøv.', `Kapp langs strekene. Legg et trinn i et hakk: forkanten av trinnet skal stikke
-        ${mm(valg.nese)} mm forbi streken for opptrinnet.${eget ? '' : ` Dekket må stikke like mye
-        (${mm(valg.nese)} mm) ut foran bjelken, ellers blir øverste inntrinn feil.`}`)}
-    </ol>
+    <ol class="steg">${steg}</ol>
     <p class="hjelp">Grått på tegningene er vangen, hvitt med stiplet kant er det som kappes bort. Oransje
       er spiss 0 og vinkelen. Appen har ingen grense for resthøyde ennå, og regner ikke bæreevne.
       Dimensjon og antall vanger må vurderes for hver trapp.</p>

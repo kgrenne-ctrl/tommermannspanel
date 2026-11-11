@@ -356,6 +356,31 @@ Claude-mappe. Ved uenighet gjelder den fila.
   fra `vange.reis`), så kommer trinnene fram. Av med `prefers-reduced-motion`.
 - Varsler uten forskrift bak har `kilde: null`, og da vises ingen kilde.
 
+## Materialer og utskrift for trapp (fase T4, avklart med Kenny 2026-11-11)
+- `src/trapp/materialer.js` (`lagTrappMaterialer`, `trappMaterialTekst`): vanger, trinn, kappliste og
+  bestilling. Vangene må være hele og bestilles i stykk med minste lengde (emnet + kapptillegg).
+  Trinnbord bestilles i løpemeter med svinn, rundet opp til hel meter. Trinnene går over hele
+  bredden på trappa. Trinn som ikke er gitt av bord: ett trinn per inntrinn, inntrinn + nese dypt
+  (øverste trinn med eget trinn: bare inntrinnet).
+- Antall vanger: appen foreslår ut fra største avstand mellom vangene, senter til senter. Kennys
+  praksis, ikke beregnet: 600 mm med trinn under 48 mm (28 mm terrassebord), 1000 mm fra 48 mm.
+  Trinn mellom 28 og 48 mm får 600 (ingen gjetning midt imellom). Tømreren kan velge antall selv
+  og får «bør sjekkes» når avstanden blir større. Alt kan endres under Innstillinger.
+- De ytterste vangene står innenfor utstikket («Trinnene stikker ut på hver side», valgfritt, 0).
+- Kapptillegg 50 mm og svinn 10 % som i kledningsdelen, kan endres under Innstillinger.
+- Materiallista krever bredden på trappa. Uten bredde står det hva som mangler.
+- Utskrift: «Skriv ut / PDF» i Resultat. `src/skjerm/trapp-utskrift.js` (`lagTrappUtskrift`):
+  trappa (inndata, resultat, varsler, tegning, trinn for trinn), vangen (stegene fra
+  `lagVangeSteg`, vangen lagt flatt, skissene, spissene), materialer og dataene. Samme `u-`-stil
+  som kledningen. PDF-fila heter «Trapp ÅÅÅÅ-MM-DD». Tegningene er høyst 85 mm høye i
+  utskriften (`.u-lav`), så tegning og tekst får plass på samme side.
+- «Data for eksempler» i skjemaet for trapp: `{ app: 'tommermannspanel', verktoy: 'trapp', versjon,
+  trapp }`, der trapp er det som lagres på telefonen. `lesTrappdata` avviser data for kledning.
+- `lagVangeSteg` (trapp-merking.js) har teksten i de fem stegene for vangen, felles for skjerm og
+  utskrift.
+- PDF-en sjekkes med Chrome uten skjerm (`--headless --print-to-pdf`) på en midlertidig testside i
+  rotmappa som slettes etterpå, og ses på side for side.
+
 ## Mappestruktur
 ```
 index.html            siden som åpnes i nettleseren
@@ -366,7 +391,7 @@ versjon.json          versjonsnummeret appen sjekker mot (skrives ved commit)
 assets/               logo og app-ikoner
 src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
 src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js), uttatt vange
-                      (vange.js) og fagverdier
+                      (vange.js), materialer og fagverdier
 src/skjerm/           skjermdelen (felt, vegg, trapp, merking av vange, tegning, utskrift, lagring,
                       tallformat, felles biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)

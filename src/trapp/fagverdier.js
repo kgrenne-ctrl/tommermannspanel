@@ -25,6 +25,18 @@ export const STANDARD_TRAPP = Object.freeze({
   vangeTykkelse: 48,
   vangeBredde: 223,
 
+  // Største avstand mellom vangene, senter til senter (Kenny 2026-11-11, fase T4). Bakøys
+  // praksis, ikke beregnet: 600 mm med trinn under 48 mm (for eksempel 28 mm terrassebord),
+  // 1000 mm med trinn fra 48 mm. Trinn mellom 28 og 48 mm får 600 mm (vi gjetter ikke midt imellom).
+  maksAvstandVangerTynn: 600,
+  maksAvstandVangerTykk: 1000,
+  tykkeTrinnFra: 48,
+  // Hvor langt trinnene stikker ut forbi vangene på hver side (valgfritt, Kenny 2026-11-11)
+  utstikk: 0,
+  // Materialliste (Kenny 2026-11-11: som kledningsdelen, kan endres i appen)
+  kapptillegg: 50, // mm per bit
+  svinn: 10,       // prosent, på trinnbord i løpemeter
+
   // Hvor appen leter etter antall opptrinn: opptrinn mellom disse. Ikke krav, bare søkeområde.
   sokOpptrinnMin: 100,
   sokOpptrinnMax: 250,

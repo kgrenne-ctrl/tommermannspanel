@@ -196,10 +196,16 @@ Utvendig trapp som er bygd sammen med huset (inngang, terrasse) følger § 12-14
 - Trinntykkelse 48 mm inne og 28 mm ute. Nese 20 mm.
 - Appen viser resthøyden i uttatt vange. Grensen settes av Kenny når den er bestemt.
 
+**Bekreftet av Kenny 2026-11-11 (fase T4):**
+
+- Største avstand mellom vangene (senter til senter): 600 mm med trinn under 48 mm (for eksempel 28 mm terrassebord), 1000 mm med 48 mm trinn. Bakøys praksis, ikke beregnet. Appen foreslår antall, tømreren kan endre.
+- Kapptillegg 50 mm og svinn 10 %, som i kledningsdelen. Kan endres i appen.
+- Trinn som stikker ut på sidene er valgfritt (standard 0).
+
 **Ikke funnet på nett** (søkt 2026-11-11, bare forumtråder uten kilde):
 
 - Minste resthøyde i uttatt vange.
-- Antall vanger etter trappebredde og trinntykkelse. En forumtråd sier tre vanger over 60 cm, uten kilde.
+- Antall vanger etter trappebredde og trinntykkelse. En forumtråd sier tre vanger over 60 cm, uten kilde. (Løst med Kennys praksis over.)
 - Krav til åpning mellom trinn i åpen trapp. Det står ikke i § 12-14 eller § 12-15 slik sidene ble lest.
 - Når rekkverk kreves på en lav trapp. Sidene som ble lest, oppgir ikke nedre grense.
 
