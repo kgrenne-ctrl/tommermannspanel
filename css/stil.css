@@ -457,7 +457,9 @@ summary:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; bo
 
 /* Nummererte steg, for eksempel «Slik merker du vangen» */
 .steg { margin: 0 0 12px; padding-left: 22px; }
-.steg li { margin: 0 0 8px; }
+.steg li { margin: 0 0 16px; }
+.steg li > strong:first-child { display: block; color: var(--bla-mork); }
+.steg .zoom, .steg .maltabell { margin-top: 8px; }
 
 /* Meldinger: grønn, oransje, rød og blå, med et lite tegn foran */
 .boks {

@@ -4,7 +4,7 @@
 import { losTrapp, trinnFraBord, lagTrinnliste } from '../trapp/solver.js';
 import { lagVange } from '../trapp/vange.js';
 import { STANDARD_TRAPP } from '../trapp/fagverdier.js';
-import { tegnTrapp, tegnVangeFlatt } from './trapp-tegning.js';
+import { tegnTrapp, tegnVangeFlatt, tegnHakk, tegnBunn, tegnTopp } from './trapp-tegning.js';
 import { lesTall, mm } from './format.js';
 import { kort, boks, zoomBoks, kobleZoom } from './biter.js';
 import { EKSEMPELTRAPP } from './eksempel.js';
@@ -253,15 +253,15 @@ function visVange(l, v, valg) {
   if (!v.ok) return '<section class="del"><h2>Vangen</h2><p class="hjelp">Se «Må fikses» over.</p></section>';
 
   const eget = l.antallInntrinn === l.antallOpptrinn;
-  const t = valg.trinnTykkelse;
+  const h = mm(l.opptrinn, 1);
+  const b = mm(l.inntrinn, 1);
+  const t = mm(valg.trinnTykkelse);
   const B = valg.beleggNede;
   const bunnGrunn = B > 0
-    ? `${mm(t)} mm trinntykkelse trukket fra og ${mm(B)} mm belegg lagt til`
-    : `${mm(t)} mm kortere enn de andre, fordi trinnet ligger oppå`;
-  const toppSted = eget
-    ? `fra et punkt på setet ${mm(v.toppkutt.foranBakkant)} mm foran innerste hjørne i øverste hakk, der dekket begynner`
-    : 'fra innerste hjørne i øverste hakk, der neste opptrinn ville startet';
+    ? `${h} minus ${t} mm trinntykkelse, pluss ${mm(B)} mm belegg som legges senere`
+    : `${h} minus ${t} mm, fordi trinnet ligger oppå`;
   const rader = v.merker.map((m) => `<tr><td>${m.hakk}</td><td>${mm(m.avstand)}</td></tr>`).join('');
+  const steg = (tittel, tekst, tegning = '') => `<li><strong>${tittel}</strong> ${tekst}${tegning}</li>`;
 
   return `
     <section class="del">
@@ -269,35 +269,44 @@ function visVange(l, v, valg) {
     <div class="nokkeltall">
       ${kort('Hakk', `${mm(v.hakkDybde, 1)} mm`, 'Dybde inn fra overkanten')}
       ${kort('Resthøyde', `${mm(v.resthoyde, 1)} mm`, `Igjen av vangen på ${mm(valg.vangeBredde)} mm`)}
-      ${kort('Mellom hakkene', `${mm(v.s, 1)} mm`, 'Langs overkanten')}
+      ${kort('Mellom spissene', `${mm(v.s, 1)} mm`, 'Langs overkanten')}
       ${kort('Emne', `${mm(v.emnelengde)} mm`, 'Minste lengde på bordet')}
     </div>
 
     <h3>Slik merker du vangen</h3>
+    <p class="hjelp">Legg vangen på bukkene med overkanten mot deg. Nederste ende av trappa er til venstre.</p>
     <ol class="steg">
-      <li>Bruk vinkelen med <strong>opptrinn ${mm(l.opptrinn, 1)} mm</strong> på den ene armen og
-        <strong>inntrinn ${mm(l.inntrinn, 1)} mm</strong> på den andre, langs overkanten av vangen.</li>
-      <li>Sett nederste spiss ${mm(v.spissFraEnden)} mm fra enden av bordet. Merk ${v.merker.length} hakk
-        med spissene på målene i tabellen under, alle målt fra nederste spiss.</li>
-      <li>Bunn: kapp vannrett, så nederste opptrinn i vangen blir <strong>${mm(v.nedersteOpptrinn, 1)} mm</strong>
-        (${bunnGrunn}). Bunnkuttet blir ${mm(v.fot)} mm langt.</li>
-      <li>Topp: kapp loddrett ${toppSted}, ned til underkanten. Kuttet blir ${mm(v.toppkutt.lengde)} mm langt.</li>
-      ${eget ? '' : `<li>Dekket må stikke ${mm(valg.nese)} mm ut foran bjelken, like mye som nesa på trinnene.
-        Ellers blir øverste inntrinn feil.</li>`}
+      ${steg('Merk spissene.', `Mål ${mm(v.spissFraEnden)} mm fra enden av bordet langs overkanten. Det er
+        nederste spiss (0). Merk resten av spissene med målene under. Alle mål er fra 0, ikke fra
+        forrige merke.
+        ${zoomBoks('vange', tegnVangeFlatt(v, valg))}
+        <table class="maltabell">
+          <caption>Spisser langs overkanten</caption>
+          <thead><tr><th>Spiss</th><th>Fra 0 (mm)</th></tr></thead>
+          <tbody>${rader}</tbody>
+        </table>`)}
+      ${steg('Tegn hakkene.', `Sett av <strong>${b} mm</strong> (inntrinn) på den ene armen av vinkelen
+        og <strong>${h} mm</strong> (opptrinn) på den andre. Legg vinkelen på vangen så de to målene
+        treffer to spisser ved siden av hverandre, og tegn langs armene. Gjør det for hvert hakk. Streken
+        for inntrinnet er der trinnet ligger.
+        ${zoomBoks('vange-hakk', tegnHakk(v, l, valg))}`)}
+      ${steg('Tegn bunnen.', `Tegn streken for opptrinnet fra spiss 0 og nedover, men bare
+        <strong>${mm(v.nedersteOpptrinn, 1)} mm</strong> (${bunnGrunn}). Tegn bunnkuttet derfra i rett
+        vinkel, parallelt med inntrinnene, ut til underkanten. Det blir ${mm(v.fot)} mm langt.
+        ${zoomBoks('vange-bunn', tegnBunn(v, valg))}`)}
+      ${steg('Tegn toppen.', `${eget
+    ? `Gå ${mm(v.toppkutt.foranBakkant)} mm tilbake fra innerste hjørne i øverste hakk, langs streken for
+        inntrinnet. Tegn en strek derfra i rett vinkel ned til underkanten. Der begynner dekket.`
+    : 'Forleng streken for opptrinnet i øverste hakk, fra innerste hjørne og ned til underkanten.'}
+        Toppkuttet blir ${mm(v.toppkutt.lengde)} mm langt.
+        ${zoomBoks('vange-topp', tegnTopp(v, valg))}`)}
+      ${steg('Kapp og prøv.', `Kapp langs strekene. Legg et trinn i et hakk: forkanten av trinnet skal stikke
+        ${mm(valg.nese)} mm forbi streken for opptrinnet.${eget ? '' : ` Dekket må stikke like mye
+        (${mm(valg.nese)} mm) ut foran bjelken, ellers blir øverste inntrinn feil.`}`)}
     </ol>
-
-    ${zoomBoks('vange', tegnVangeFlatt(v, valg))}
-    <p class="hjelp">Vangen lagt flatt med overkanten opp, slik den ligger på bukkene. Stiplet er bordet
-      før kapping. Oransje strek er nederste spiss (0).</p>
-
-    <table class="maltabell">
-      <caption>Merker langs overkanten</caption>
-      <thead><tr><th>Hakk</th><th>Fra nederste spiss (mm)</th></tr></thead>
-      <tbody>${rader}</tbody>
-    </table>
-    <p class="hjelp">Hvert mål er regnet fra 0, så feilen vokser ikke bortover vangen. Appen har ingen
-      grense for resthøyde ennå, og regner ikke bæreevne. Dimensjon og antall vanger må vurderes for
-      hver trapp.</p>
+    <p class="hjelp">Grått på tegningene er vangen, hvitt med stiplet kant er det som kappes bort. Oransje
+      er spiss 0 og vinkelen. Appen har ingen grense for resthøyde ennå, og regner ikke bæreevne.
+      Dimensjon og antall vanger må vurderes for hver trapp.</p>
     </section>`;
 }
 

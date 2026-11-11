@@ -329,8 +329,16 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - For smal vange (hakket går gjennom) gir varsel som må fikses. Resthøyde har ingen grense
   før Kenny har bestemt den. Appen regner ikke bæreevne og sier det.
 - Skjermen: delen «Vangen» i skjemaet (vangebredde, trinntykkelse, belegg nede; tom
-  trinntykkelse følger typen trapp, 28 ute og 48 inne) og delen «Vangen» i resultatet
-  (nøkkeltall, «Slik merker du vangen», `tegnVangeFlatt`, merker langs overkanten).
+  trinntykkelse følger typen trapp, 28 ute og 48 inne) og delen «Vangen» i resultatet.
+- «Slik merker du vangen» (omarbeidet 2026-11-11, Kenny syntes merkingen var vanskelig å forstå
+  og at tallene overlappet): fem steg med skisse i hvert. 1 Merk spissene (`tegnVangeFlatt` +
+  tabell), 2 Tegn hakkene med vinkelen (`tegnHakk`: ett hakk forstørret med vinkelen lagt på,
+  målene treffer to spisser ved siden av hverandre), 3 Tegn bunnen (`tegnBunn`), 4 Tegn toppen
+  (`tegnTopp`), 5 Kapp og prøv.
+- `tegnVangeFlatt`: tallene står på høykant, og skriften er aldri høyere enn 55 % av avstanden
+  mellom spissene, så tallene ikke kan overlappe (test i `trapp-skjerm.test.js`). Lange vanger
+  får fast bredde (om lag 56 piksler mellom spissene) og skyves sideveis på telefonen.
+- Oransje bare på streker og flater i skissene (spiss 0, vinkelen), aldri på tekst.
 - Varsler uten forskrift bak har `kilde: null`, og da vises ingen kilde.
 
 ## Mappestruktur

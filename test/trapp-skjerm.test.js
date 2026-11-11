@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { losTrapp, lagTrinnliste } from '../src/trapp/solver.js';
 import { lagVange } from '../src/trapp/vange.js';
-import { tegnTrapp, tegnVangeFlatt } from '../src/skjerm/trapp-tegning.js';
+import { tegnTrapp, tegnVangeFlatt, tegnHakk, tegnBunn, tegnTopp } from '../src/skjerm/trapp-tegning.js';
 import { EKSEMPELTRAPP } from '../src/skjerm/eksempel.js';
 
 const tell = (tekst, bit) => tekst.split(bit).length - 1;
@@ -94,4 +94,44 @@ test('Sideriss med belegg nede viser stiplet linje der vangen står', () => {
   assert.equal(tell(med, 'stroke-dasharray'), tell(uten, 'stroke-dasharray') + 1);
   const svg = med;
   assert.ok(!svg.includes('NaN'));
+});
+
+test('Tallene over vangen overlapper aldri, heller ikke på en lang vange', () => {
+  for (const inndata of [
+    EKSEMPELTRAPP,
+    { hoyde: 2700, lengdevalg: 'lengde', lengde: 4420, type: 'boenhet' },  // 14 hakk, som Kennys skjermbilde
+    { hoyde: 3300, lengdevalg: 'fri', type: 'annen' },
+    { hoyde: 400, lengdevalg: 'trinn', inntrinn: 300 },
+  ]) {
+    const l = losTrapp(inndata).valgt;
+    const v = lagVange(l, { vangeBredde: 223 });
+    const svg = tegnVangeFlatt(v, { vangeBredde: 223 });
+    const tall = [...svg.matchAll(/class="v-tall" x="([\d.-]+)" y="[\d.-]+" font-size="([\d.]+)"/g)]
+      .map((t) => ({ x: Number(t[1]), f: Number(t[2]) }));
+    assert.equal(tall.length, v.merker.length);
+    // Tallene står på høykant: hvert tall tar omtrent én skrifthøyde i bredden
+    for (let i = 1; i < tall.length; i++) {
+      assert.ok(tall[i].x - tall[i - 1].x >= tall[i].f * 1.5, `tall ${i} overlapper (${JSON.stringify(inndata)})`);
+    }
+  }
+});
+
+test('Skissene av hakk, bunn og topp har målene som står i stegene', () => {
+  const l = losTrapp(EKSEMPELTRAPP).valgt;
+  const v = lagVange(l, { nese: 20, trinnTykkelse: 28, vangeBredde: 223 });
+  const hakk = tegnHakk(v, l, { vangeBredde: 223 });
+  for (const t of ['Inntrinn 275', 'Opptrinn 170', 'Hakk 144,6', 'Rest 78,4', 'Spiss 0', 'Spiss 323', 'class="v-vinkel"']) {
+    assert.ok(hakk.includes(t), `hakk mangler ${t}`);
+  }
+  const bunn = tegnBunn(v, { vangeBredde: 223 });
+  for (const t of ['>75<', '>142<', 'Bunnkutt 194', 'Spiss 0']) assert.ok(bunn.includes(t), `bunn mangler ${t}`);
+  const topp = tegnTopp(v, { vangeBredde: 223 });
+  for (const t of ['Toppkutt 92', 'Spiss 970']) assert.ok(topp.includes(t), `topp mangler ${t}`);
+  assert.ok(!topp.includes('foran hjørnet'));
+  for (const s of [hakk, bunn, topp]) assert.ok(!s.includes('NaN') && !s.includes('Infinity'));
+
+  // Eget trinn øverst: toppkuttet står nesa foran hjørnet
+  const le = losTrapp({ ...EKSEMPELTRAPP, ovreTrinn: 'eget' }).valgt;
+  const ve = lagVange(le, { nese: 20, trinnTykkelse: 28, vangeBredde: 223 });
+  assert.ok(tegnTopp(ve, { vangeBredde: 223 }).includes('20 foran hjørnet'));
 });
