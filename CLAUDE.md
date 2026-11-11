@@ -240,6 +240,21 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - Alle farger er CSS-variabler i `:root` øverst i `css/stil.css`. Bruk alltid variablene, aldri
   fargekoder rett i koden.
 
+## Utseende og oppbygning av siden (omarbeidet 2026-11-11 etter ønske fra Kenny)
+- Lys grå side (`--side`) med hvite kort. Hver del av skjemaet og resultatet er en
+  `<section class="del">` med `h2` først. Den oransje streken foran `h2` er eneste pynt.
+- Knapper: `.knapp` er vanlig (omriss), `.knapp.primar` er hovedknappen i en del (fylt blå),
+  `.lenkeknapp` er rolig (lys flate) for det som sjelden brukes, `.knapp.fare` sletter eller tømmer.
+- To valg vises som én bryter (`.valgknapper`). Bokser som åpnes (`details`) har egen pil.
+- «Hel vegg» har snarveier øverst (`#v-hurtig`, `visHurtig` i vegg-skjerm.js) som blir stående når
+  man blar: veggen som vises med status, og lenker til delene (`del-resultat`, `del-oppsett`,
+  `del-tegning`, `del-hus`, `del-materialer`). Statusmerket lages ett sted, `statusMerke`.
+- Fra 1100 px bredde står skjemaet til venstre (blir stående og blar for seg selv) og resultatet
+  til høyre. Under det er alt i én kolonne, laget for telefon først.
+- Felt i `.to-kol` står på linje i bunnen, så feltene treffer hverandre når en ledetekst går over
+  to linjer. Felt som kan få noe under seg (målt bredde, hjørnene) står på linje i toppen.
+- Nye farger og mål legges som variabler i `:root` i `css/stil.css`, aldri rett i reglene.
+
 ## Mappestruktur
 ```
 index.html            siden som åpnes i nettleseren

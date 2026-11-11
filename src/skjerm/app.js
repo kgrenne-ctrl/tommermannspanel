@@ -135,7 +135,7 @@ function oppdater() {
   sisteSvar = svar;
 
   if (svar.feil) {
-    resultat.innerHTML = boks('feil', svar.feil.map((t) => `<p>${t}</p>`).join(''));
+    resultat.innerHTML = `<section class="del">${boks('feil', svar.feil.map((t) => `<p>${t}</p>`).join(''))}</section>`;
     return;
   }
   if (!svar.ok) {
@@ -178,7 +178,9 @@ function visLosning(l, alle, indeks) {
   }
 
   return `
-    <h2>Resultat</h2>
+    <section class="del">
+    <div class="del-topp"><h2>Resultat</h2>${l.varsler.length
+    ? '<span class="merke merke-varsel">Sjekk</span>' : '<span class="merke merke-ok">OK</span>'}</div>
     <div class="nokkeltall">
       ${kort('Kloss', `${mm(l.klaring, 1)} mm`, 'Avstand mellom underbordene')}
       ${kort('Omlegg', `${mm(l.omlegg, 1)} mm`, 'Påbordet over underbordet, hver side')}
@@ -187,12 +189,18 @@ function visLosning(l, alle, indeks) {
     </div>
     ${varsler}
     ${andre}
-    <h3>Tegning</h3>
+    </section>
+
+    <section class="del">
+    <h2>Tegning</h2>
     ${zoomBoks('felt', tegnFelt(l))}
     <p class="hjelp">Øverst sett forfra. Under: snitt sett ovenfra med veggen øverst og påbordene nederst. Målene langs
       veggen er i riktig målestokk, bordtykkelsen er tegnet litt tykkere enn den er, så den synes.
       Oransje stiplet = trenger underlag.</p>
-    <h3>Utdelingsmål</h3>
+    </section>
+
+    <section class="del">
+    <h2>Utdelingsmål</h2>
     <p class="hjelp">Løpende mål fra startkanten. Nullpunktet (0) er kanten feltet starter i, her
       ytterkanten av første ${l.start === 'O' ? 'påbord' : 'underbord'}. Feltlengden er målt fra samme kant.
       Underbordene settes opp først, med klossen mellom.</p>
@@ -203,7 +211,8 @@ function visLosning(l, alle, indeks) {
     ${tabell('Underbord', l.underliggere)}
     ${tabell('Påbord', l.overliggere)}
     <p class="hjelp">Ikke spikre gjennom to bord. Én spiker i underbordet, spikrene i
-      påbordet går i mellomrommet mellom underbordene.</p>`;
+      påbordet går i mellomrommet mellom underbordene.</p>
+    </section>`;
 }
 
 function visIngenLosning(svar) {
@@ -218,7 +227,9 @@ function visIngenLosning(svar) {
   }).join('');
 
   return `
-    <h2>Resultat</h2>
+    <section class="del">
+    <div class="del-topp"><h2>Resultat</h2><span class="merke merke-feil">Går ikke opp</span></div>
     ${boks('feil', `<p>${svar.melding}</p>`)}
-    ${forslag ? `<h3>Dette går opp</h3><div class="alternativer">${forslag}</div>` : ''}`;
+    ${forslag ? `<h3>Dette går opp</h3><div class="alternativer">${forslag}</div>` : ''}
+    </section>`;
 }

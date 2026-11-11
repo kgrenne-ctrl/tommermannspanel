@@ -237,7 +237,7 @@ function leggTilApning({ type, x = '', bredde = '', hoyde = '', bunn, fokus = tr
       <label class="felt"><span>Fra venstre hjørne</span><input class="a-x" type="text" inputmode="decimal" value="${x}"></label>
       <label class="felt"><span>Bredde</span><input class="a-bredde" type="text" inputmode="decimal" value="${bredde}"></label>
       <label class="felt"><span>Høyde på karm</span><input class="a-hoyde" type="text" inputmode="decimal" value="${hoyde}"></label>
-      <label class="felt"><span>Fra bakken til underkant karm</span><input class="a-bunn" type="text" inputmode="decimal" value="${bunn ?? standardBunn}"></label>
+      <label class="felt"><span>Underkant fra bakken</span><input class="a-bunn" type="text" inputmode="decimal" value="${bunn ?? standardBunn}"></label>
     </div>`;
   liste.append(kortet);
   if (fokus && x === '') kortet.querySelector('.a-x').focus();
@@ -544,28 +544,43 @@ function oppdater() {
   sisteResultat = null;
   if (melding) {
     resultat.innerHTML = `<p class="hjelp stor">${melding}</p>`;
+    visHurtig(null);
     return;
   }
   const r = husSvar.vegger[hus.aktiv];
   if (r.feil) {
-    resultat.innerHTML = boks('feil', r.feil.map((t) => `<p>${t}</p>`).join(''));
+    resultat.innerHTML = `<section class="del" id="del-resultat"><div class="del-topp"><h2>Resultat</h2>${statusMerke(r)}</div>
+      ${boks('feil', r.feil.map((t) => `<p>${t}</p>`).join(''))}</section>`;
+    visHurtig(r);
     return;
   }
   sisteResultat = r;
   resultat.innerHTML = visVegg(r);
+  visHurtig(r);
 }
 
 // Veggene som knapper øverst, med status på hver
+// Status for en vegg som et lite merke: OK, over anbefalt omlegg, sjekk eller ikke ferdig
+function statusMerke(r) {
+  if (!r) return '<span class="merke">Ikke ferdig</span>';
+  if (r.feil || !r.ok || r.varsler.some((v) => v.alvorlig)) return '<span class="merke merke-feil">Sjekk</span>';
+  const over = r.felt.some((f) => !f.losning.innenforAnbefalt);
+  return over ? `<span class="merke merke-varsel">Over ${mm(r.rytme.maks)}</span>` : '<span class="merke merke-ok">OK</span>';
+}
+
+// Snarveiene øverst, som blir stående når man blar: veggen som vises med status, og lenker
+// til delene som finnes akkurat nå. Kalles etter at resultatet er tegnet.
+function visHurtig(r) {
+  const deler = [['vegg-skjema', 'Mål'], ['del-resultat', 'Resultat'], ['del-oppsett', 'Oppsett'],
+    ['del-tegning', 'Tegning'], ['del-hus', 'Huset'], ['del-materialer', 'Materialer']];
+  finn('v-hurtig').innerHTML = `<span class="hurtig-vegg">${veggNavn(hus.vegger[hus.aktiv], hus.aktiv)} ${statusMerke(r)}</span>`
+    + deler.filter(([id]) => finn(id)).map(([id, tekst]) => `<a href="#${id}">${tekst}</a>`).join('');
+}
+
 function visFaner(husSvar) {
-  const merke = (r) => {
-    if (!r) return '<span class="merke">Ikke ferdig</span>';
-    if (r.feil || !r.ok || r.varsler.some((v) => v.alvorlig)) return '<span class="merke merke-feil">Sjekk</span>';
-    const over = r.felt.some((f) => !f.losning.innenforAnbefalt);
-    return over ? `<span class="merke merke-varsel">Over ${mm(r.rytme.maks)}</span>` : '<span class="merke merke-ok">OK</span>';
-  };
   finn('hus-vegger').innerHTML = hus.vegger.map((t, k) => `
     <button type="button" data-vegg="${k}" class="${k === hus.aktiv ? 'aktiv' : ''}" ${k === hus.aktiv ? 'aria-current="true"' : ''}>
-      ${k + 1}. ${veggNavn(t, k)} ${merke(husSvar.vegger[k])}</button>`).join('');
+      ${k + 1}. ${veggNavn(t, k)} ${statusMerke(husSvar.vegger[k])}</button>`).join('');
   finn('v-slett-vegg').textContent = hus.vegger.length > 1 ? 'Slett denne veggen' : 'Tøm hele veggen';
 }
 
@@ -614,36 +629,45 @@ function visVegg(r) {
   const overMaks = okFelt.filter((f) => !f.losning.innenforAnbefalt);
   const innlegg = r.apninger.map((a) => `<tr><td>${a.navn}</td><td>${mm(a.innlegg.venstre, 1)}</td></tr>`).join('');
 
+  const husDel = visHus();
+  const materialDel = visMaterialer(sisteListe);
+
   return `
-    <h2>Resultat</h2>
-    <div class="knapperad to">
-      <a class="knapp lenkeknapp hopp" href="#v-oppsett">Gå til oppsettet</a>
-      <button type="button" class="knapp lenkeknapp" id="v-skriv-ut">Skriv ut / PDF</button>
-    </div>
+    <section class="del" id="del-resultat">
+    <div class="del-topp"><h2>Resultat</h2>${statusMerke(r)}</div>
     <div class="nokkeltall">
       ${kort('Felt', r.felt.length, `${okFelt.length - overMaks.length} av ${r.felt.length} innenfor anbefalt omlegg`)}
-      ${kort('Mellom påbord', okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.avstandPabord)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.avstandPabord)), 1)}` : '–', `Avstand mellom påbordene (mm). Omlegg ${okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.omlegg)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.omlegg)), 1)}` : '–'}`)}
       ${kort('Klosser', new Set(okFelt.map((f) => Math.round(f.losning.klaring))).size, 'Ulike distanseklosser (hele mm)')}
+      ${kort('Mellom påbord', okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.avstandPabord)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.avstandPabord)), 1)}` : '–', `Avstand mellom påbordene (mm). Omlegg ${okFelt.length ? `${mm(Math.min(...okFelt.map((f) => f.losning.omlegg)), 1)}–${mm(Math.max(...okFelt.map((f) => f.losning.omlegg)), 1)}` : '–'}`)}
     </div>
     ${visVarsler(r)}
+    <div class="knapperad to">
+      <a class="knapp" href="#del-oppsett">Gå til oppsettet</a>
+      <button type="button" class="knapp" id="v-skriv-ut">Skriv ut / PDF</button>
+    </div>
 
     ${visForslag(r)}
+    </section>
 
+    <section class="del" id="del-oppsett">
     ${visOppsett(r)}
+    </section>
 
-    <h3>Tegning</h3>
+    <section class="del" id="del-tegning">
+    <h2>Tegning</h2>
     ${zoomBoks('vegg', tegnVegg(r, snitt.hoyde))}
     <p class="hjelp">Sett forfra. Lyse bord er underbord, blå er påbord, grått er karm.
       Tallene i ringene er feltnumrene. Rød stiplet = feltet går ikke opp.
       Grått i hjørnet = hjørnekasse.</p>
 
     ${visHjorner(r)}
+    </section>
 
-    ${visHus()}
+    ${husDel ? `<section class="del" id="del-hus">${husDel}</section>` : ''}
 
-    ${visMaterialer(sisteListe)}
+    ${materialDel ? `<section class="del" id="del-materialer">${materialDel}</section>` : ''}
 
-    <details class="detaljer" id="v-detaljer" ${detaljerApen ? 'open' : ''}>
+    <details class="detaljer del" id="v-detaljer" ${detaljerApen ? 'open' : ''}>
       <summary>Detaljer for den som planlegger</summary>
       <p class="hjelp">Rytme: senteravstand ${mm(r.rytme.senteravstand, 1)} mm mellom underbordene
         når omlegget er ${mm(r.rytme.omlegg)} mm. Feltene avviker litt fra dette for å gå opp.</p>
@@ -677,11 +701,13 @@ function visHjorner(r) {
     const k = nb[side];
     const nabo = k === null ? null : sisteHus?.vegger[k] ?? null;
     const navn = k === null ? 'Naboveggen' : veggNavn(hus.vegger[k], k);
-    return `<h4>${tittel}</h4>${zoomBoks(`hjorne-${side}`, tegnHjorne(r, side, nabo, navn))}`;
+    return `<div><h4>${tittel}</h4>${zoomBoks(`hjorne-${side}`, tegnHjorne(r, side, nabo, navn))}</div>`;
   };
   return `<h3>Hjørnene sett ovenfra</h3>
+    <div class="hjorner-rad">
     ${tegning('venstre', 'Venstre hjørne')}
     ${tegning('hoyre', 'Høyre hjørne')}
+    </div>
     <p class="hjelp">I riktig målestokk. Utsiden er ned. Grått er veggen med lekter. Lyse bord er
       underbord, blå er påbord, lys oransje er kloss bak påbordet der det ikke er underbord.
       Oransje strek er nullpunktet: hjørnet utenpå lektene, der vegglengden måles fra. Alle mål på
@@ -697,7 +723,7 @@ function visHus() {
   const punkter = hjorneLinjer(sisteHjorner).map((h) => `
     <div class="hjorne-punkt ${h.feil ? 'feil' : h.sjekk ? 'sjekk' : ''}">
       <strong>${h.tittel}</strong>${h.linjer.map((l) => `<p>${l}</p>`).join('')}</div>`).join('');
-  return `<h3>Hele huset sett ovenfra</h3>
+  return `<h2>Hele huset sett ovenfra</h2>
     ${zoomBoks('hus', tegnHus({ vegger: sisteAlle.map((v) => ({ navn: v.navn, lengde: v.lengde })),
       hjorner: sisteHjorner.hjorner, lukket: hus.lukket, aktiv: hus.aktiv }))}
     <p class="hjelp">Skisse med rette hjørner, ikke i skala på tykkelser. Pilene viser rekkefølgen
@@ -784,7 +810,7 @@ function visOppsett(r) {
       ${o.type === 'side' ? '' : `<p class="liten">Bare over og under åpningen. Sidebordene står i feltene ved siden av.</p>`}
     </div>`;
   }).join('');
-  return `<h3 id="v-oppsett">Slik setter du opp</h3>
+  return `<h2 id="v-oppsett">Slik setter du opp</h2>
     <p class="hjelp">Sett første underbord på målet, og bruk klossen mellom underbordene ut feltet.
       Sjekk at det siste slutter på kontrollmålet. Påbordene settes midt over mellomrommet.
       Alle mål er fra venstre hjørne. Mål fra karmen er tryggere ved vinduer og dører.</p>
@@ -803,7 +829,7 @@ function visForslag(r) {
     x.spikring ? `${x.spikring} spikervarsel` : '',
   ].filter(Boolean).join(', ');
 
-  let innhold = '<button type="button" class="knapp lenkeknapp" id="v-finn-forslag">Finn bedre oppsett</button>';
+  let innhold = '<button type="button" class="knapp primar bred" id="v-finn-forslag">Finn bedre oppsett</button>';
   if (sisteForslag) {
     const gruppe = (navn, tittel) => {
       const liste = sisteForslag[navn];
@@ -907,7 +933,7 @@ function visMaterialer(liste) {
         <td><span class="ingen-brudd">${b.dim.navn}</span><span class="liten">${b.del}</span></td></tr>`).join('')
         + (f.kloyves ?? []).map((k) => `<tr><td colspan="3" class="viktig">${k.tekst ?? 'Hjørnebord'} ${k.dim.navn} kløyves til ${mm(k.bredde, 1)} mm bredde</td></tr>`).join('')).join('')}
       </tbody></table></details>`).join('');
-  return `<h3 id="v-materialer">Materialliste for hele huset</h3>
+  return `<h2 id="v-materialer">Materialliste for hele huset</h2>
     <p class="hjelp">Løpemeter per dimensjon (tykkelse × bredde i mm), med ${mm(liste.svinn)} % svinn,
       rundet opp til hel meter. Hvert bord er regnet med ${mm(liste.kapptillegg)} mm kapptillegg.
       Endres under «Materialer for huset».</p>
