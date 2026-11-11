@@ -138,5 +138,5 @@ test('Stegene og tegningene for hel vange', () => {
   const html = lagTrappUtskrift({ tilstand: {}, d: { type: 'utvendig', hoyde: 850, ovreTrinn: 'dekke', lengdevalg: 'trinn' },
     l, vange: v, valg: { ...VALG, vangeTykkelse: 48 }, liste: null, versjon: 't' });
   assert.ok(html.includes('hel (trinn mellom)') && html.includes('Over forkant'));
-  for (const t of [...steg.map((x) => x.tekst), ...ms.map((x) => x.tekst)]) assert.ok(!t.includes('—'));
+  for (const t of [...steg.map((x) => x.tekst), ...ms.map((x) => x.tekst)]) assert.ok(!t.includes('\u2014'));
 });
