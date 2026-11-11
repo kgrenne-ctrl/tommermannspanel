@@ -32,7 +32,7 @@ test('Utskriften har trappa, vangen med skisser, materialene og dataene', () => 
   // Sideriss, vangen lagt flatt og de tre skissene
   assert.equal(tell(html, '<svg'), 5);
   assert.ok(!html.includes('NaN') && !html.includes('undefined'));
-  assert.ok(!html.includes('—'));
+  assert.ok(!html.includes('\u2014'));
 });
 
 test('Dataene i utskriften kan lastes inn igjen og gir samme skjema', () => {

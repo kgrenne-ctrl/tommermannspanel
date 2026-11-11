@@ -91,5 +91,5 @@ test('Lista som tekst har bestilling og kappliste', () => {
   assert.match(tekst, /Vange 48 × 223 mm: 3 stk, hver minst 1\s418 mm lang/);
   assert.match(tekst, /Trinnbord 28 × 145 mm: 10 lm/);
   assert.match(tekst, /8 stk 1\s050 mm trinnbord/);
-  assert.ok(!tekst.includes('—'));
+  assert.ok(!tekst.includes('\u2014'));
 });
