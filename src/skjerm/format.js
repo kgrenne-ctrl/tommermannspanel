@@ -18,6 +18,11 @@ export function mm(tall, desimaler = 0) {
   });
 }
 
+// Skriver en vinkel på norsk med gradtegn: 22,5°. Vinkler vises med én desimal.
+export function grader(tall, desimaler = 1) {
+  return `${mm(tall, desimaler)}°`;
+}
+
 // Navn som brukeren skriver, settes rett inn i siden og i tegningene. Tegnene < og > ville
 // blitt lest som kode og ødelagt visningen, så de tas bort.
 export function trygtNavn(tekst) {

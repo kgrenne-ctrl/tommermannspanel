@@ -39,6 +39,10 @@
   --vange: #EAF0F7;            /* vangen, samme som underbordene */
   --dekke: #D7DEE6;            /* dekket oppe */
 
+  /* Skissene i Matte */
+  --skisse-flate: #EAF0F7;     /* flater i skissen, samme som vangen */
+  --skisse-strek: #074EA2;     /* streker i skissen, merkeblå */
+
   --font: Aptos, system-ui, sans-serif;
   --radius: 14px;              /* kort */
   --radius-liten: 10px;        /* felt og knapper */
@@ -896,6 +900,57 @@ footer p { margin: 4px 0; }
 .hjemskjerm > summary { font-weight: 600; min-height: 44px; justify-content: center; }
 .hjemskjerm > summary::after { margin-left: 4px; }
 
+/* ---------- Matte ---------- */
+
+/* Menyen: én stor knapp per utregning, med tittel og én linje om hva den gjør */
+.matte-meny {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.del > h2 + h3 { margin-top: 4px; }
+
+.matte-valg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  font: inherit;
+  text-align: left;
+  color: var(--tekst);
+  background: var(--flate);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-liten);
+  cursor: pointer;
+}
+
+.matte-valg strong { font-size: 17px; color: var(--bakoy-bla); }
+.matte-valg span { font-size: 14.5px; color: var(--tekst-gra); }
+.matte-valg:hover { border-color: var(--bla-lys); }
+.matte-valg:focus-visible { outline: 0; box-shadow: 0 0 0 3px var(--fokus); }
+
+.matte-felt > .felt { margin-bottom: 6px; }
+.matte-felt > .hjelp { margin: 0 0 14px; }
+
+.matte-tegning {
+  margin: 4px 0 12px;
+  border: 1px solid var(--linje);
+  border-radius: var(--radius-liten);
+  overflow: hidden;
+}
+
+.matte-tegning .tegning { max-width: 520px; margin: 0 auto; }
+
+.matte-utregning p { font-size: 15px; margin: 6px 0; font-variant-numeric: tabular-nums; }
+
+@media (min-width: 600px) {
+  .matte-meny { grid-template-columns: 1fr 1fr; }
+}
+
 /* ---------- Større skjermer ---------- */
 
 @media (min-width: 600px) {
@@ -916,14 +971,14 @@ footer p { margin: 4px 0; }
 @media (min-width: 1100px) {
   main { max-width: 1320px; padding: 20px 24px; }
   .modusvalg { max-width: 440px; }
-  #felt-del, #vegg-del, #trapp-del {
+  #felt-del, #vegg-del, #trapp-del, .matte-kalk {
     display: grid;
     grid-template-columns: 440px minmax(0, 1fr);
     gap: 0 20px;
     align-items: start;
   }
   .hurtig { grid-column: 1 / -1; }
-  #skjema, #vegg-skjema, #trapp-skjema {
+  #skjema, #vegg-skjema, #trapp-skjema, #matte-skjema {
     position: sticky;
     top: 12px;
     max-height: calc(100vh - 24px);
@@ -935,6 +990,8 @@ footer p { margin: 4px 0; }
     top: calc(var(--hurtig-hoyde) + 12px);
     max-height: calc(100vh - var(--hurtig-hoyde) - 24px);
   }
+  .matte-tilbake { max-width: 440px; }
+  .matte-meny { grid-template-columns: repeat(3, 1fr); }
 }
 
 

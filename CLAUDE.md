@@ -1,7 +1,8 @@
 # Bakøy tømrerverktøy – regler for prosjektet
 
-Webapp for Bakøys tømrere med to verktøy: **Kledning** (inndeling av stående tømmermannskledning,
-planen i `PLAN.md`) og **Trapp** (inndeling og merking av vange, planen i `PLAN-trapp.md`).
+Webapp for Bakøys tømrere med tre verktøy: **Kledning** (inndeling av stående tømmermannskledning,
+planen i `PLAN.md`), **Trapp** (inndeling og merking av vange, planen i `PLAN-trapp.md`) og
+**Matte** (små utregninger for fall, vinkler, inndeling og mengder, planen i `PLAN-matte.md`).
 Planene er fasit. Er noe i en plan uklart eller ser feil ut: spør Kenny før du koder, ikke etterpå.
 Appen het «Tømmermannspanel» fram til 2026-11-11. Repoet og adressen har beholdt det navnet.
 
@@ -24,7 +25,7 @@ Appen het «Tømmermannspanel» fram til 2026-11-11. Repoet og adressen har beho
 ## Regnemodellen ligger for seg selv
 - All matematikk ligger i `src/`, uten noe skjermkode (ingen `document`, ingen HTML).
 - Én mappe per kledningstype eller verktøy. Tømmermannskledning: `src/tommermann/`. Trapp:
-  `src/trapp/`. Noe nytt får egen mappe, uten å endre det som finnes.
+  `src/trapp/`. Matte: `src/matte/`. Noe nytt får egen mappe, uten å endre det som finnes.
 - `solver.js` regner ut ett felt. `fagverdier.js` holder standardverdiene.
 - Skjermdelen leser bare resultatet fra regnemodellen. Den regner aldri selv.
 
@@ -257,10 +258,11 @@ Claude-mappe. Ved uenighet gjelder den fila.
   to linjer. Felt som kan få noe under seg (målt bredde, hjørnene) står på linje i toppen.
 - Nye farger og mål legges som variabler i `:root` i `css/stil.css`, aldri rett i reglene.
 
-## Verktøyvelger (fase T0, 2026-11-11)
-- Bryteren «Kledning | Trapp» øverst i `index.html` (`name="verktoy"`) styres av
-  `src/skjerm/verktoy.js`. Den viser `#kledning-del` eller `#trapp-del`, bytter tittelen i
-  toppbåndet (`#topp-tittel`, `#topp-under`) og husker valget (nøkkel `verktoy`).
+## Verktøyvelger (fase T0, 2026-11-11, Matte lagt til i fase M0)
+- Bryteren «Kledning | Trapp | Matte» øverst i `index.html` (`name="verktoy"`, `.valgknapper.tre`)
+  styres av `src/skjerm/verktoy.js`. Den viser `#kledning-del`, `#trapp-del` eller `#matte-del`,
+  bytter tittelen i toppbåndet (`#topp-tittel`, `#topp-under`) og husker valget (nøkkel `verktoy`).
+- Undertittelen i toppbåndet må være kort nok til å stå på én linje på 375 px.
 - Alt for kledning ligger inne i `#kledning-del`, også bryteren «Ett felt | Hel vegg». Kledningsdelen
   er ellers uendret.
 - Sidetittel og hjemskjerm heter «Bakøy tømrerverktøy» («Tømrerverktøy» som kort navn). Utskrift
@@ -432,6 +434,39 @@ Claude-mappe. Ved uenighet gjelder den fila.
   trinnet. Hel vange trenger bredere bord enn uttatt.
 - Tester: `test/trapp-helvange.test.js` (reist opp stemmer, strekene blir vannrette i riktig høyde).
 
+## Matte (fase M0, 2026-11-11, avklart med Kenny)
+- Planen er `PLAN-matte.md`. Faser M0–M10, én om gangen. Trapp er satt på pause etter T6, og
+  T7 (sprosser) skal bruke inndelingen for spiler fra `src/matte/inndeling.js` når den kommer (M2).
+- Matte er mange små utregninger, ikke ett stort skjema. Hver utregning er én oppføring i
+  `src/skjerm/matte-liste.js` (`KALKULATORER`): felt, `mangler`, `regn`, `vis`, `tegn` og `eksempel`.
+  Formatet står øverst i fila. `src/skjerm/matte-skjerm.js` bygger meny, skjema og resultat av
+  oppføringene. **En ny utregning skal ikke endre `index.html`**: legg til en oppføring, en
+  regnefunksjon i `src/matte/` og tester. `#matte-del` i `index.html` er tom og fylles av skjermen.
+- Regnefunksjonene tar ett objekt inn og gir `{ ok: true, ..., varsler }` eller `{ ok: false, feil }`,
+  med uavrundede tall. Varsler har samme form som i trapp (`niva`, `type`, `tekst`, `kilde`).
+- Felt kan skjules og byttes etter verdiene (`vis`, og ledetekst, plassholder og hjelp som
+  funksjon). Skjemaet tegnes ikke på nytt ved hver endring, bare skjul/vis og tekster byttes, så
+  man blir stående i feltet man skriver i. Skjulte felt regnes som tomme (`lesInndata`).
+- Tomt felt gir en rolig beskjed (`mangler`), ikke en feil. Umulige mål gir `feil`, aldri NaN.
+- Hver utregning viser nøkkeltall, varsler i de tre gruppene, en skisse (`matte-tegning.js`, ingen
+  kobling til nettleseren) og «Slik er det regnet» med formelen og tallene satt inn.
+- Skissene: viewBox 400 bred, høyden følger figuren. Vinkler som ikke kan tegnes lesbart (under 6°
+  og over 70° i fall), tegnes overdrevet, og da står «Ikke i målestokk». Mål på høyre side må ha plass
+  til «12 345 mm». Farger: `--skisse-flate`, `--skisse-strek`, oransje bare på vinkelbuen.
+- Lagring under nøkkelen `matte`: `{ apen, verdier: { [id]: {...} }, sist: [id] }`. Åpen utregning
+  og verdiene i hver huskes. «Sist brukt» vises i menyen først når det er minst 5 utregninger.
+- `format.js` har `grader(v)` (én desimal og gradtegn). Forhold skrives med `forholdTekst`:
+  1:50, 1:68,6, og to desimaler under 1:10 (1:2,48).
+- **Fall og takvinkel** (`regnFall` i `src/matte/tak.js`): grader, prosent, 1:x, mm per meter eller
+  målt høydeforskjell på en lengde. Alt regnes fra tangens. Valgfri lengde gir høydeforskjellen.
+  Under 5° vises «greit å vite» om fall til sluk (TEK17 § 13-15, preaksepterte ytelser, lest på
+  dibk.no 2026-11-11 via sammendrag).
+- Tester: `test/matte-tak.test.js` (kontrolleksempelet i planen punkt 4 først, skal aldri slettes)
+  og `test/matte-skjerm.test.js` (hver oppføring er fullstendig, eksempelet går opp uten NaN eller
+  tankestrek, skissen). Nye utregninger fanges opp av de felles testene automatisk.
+- Se appen lokalt i nettleseren inne i Claude-appen: `python3 -m http.server 8000 --bind 127.0.0.1`
+  (uten `--bind` svarte ikke serveren der 2026-11-11).
+
 ## Mappestruktur
 ```
 index.html            siden som åpnes i nettleseren
@@ -443,12 +478,14 @@ assets/               logo og app-ikoner
 src/tommermann/       regnemodellen for kledning: felt, vegg, hus (hjørner), materialer, fagverdier
 src/trapp/            regnemodellen for trapp: inndeling og trinnliste (solver.js), uttatt vange
                       (vange.js), trapphull og fri høyde, materialer og fagverdier
-src/skjerm/           skjermdelen (felt, vegg, trapp, merking av vange, tegning, utskrift, lagring,
-                      tallformat, felles biter, versjonssjekk, verktøyvelger)
+src/matte/            regnemodellen for Matte: fall og tak (tak.js), flere filer per fase
+src/skjerm/           skjermdelen (felt, vegg, trapp, merking av vange, matte, tegning, utskrift,
+                      lagring, tallformat, felles biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)
 scripts/lag-ikon.swift lager app-ikonene
 .githooks/            git-kroker (pre-commit setter versjon)
 test/                 automatiske tester
 PLAN.md               planen for kledning (fasit)
 PLAN-trapp.md         planen for trapp (fasit)
+PLAN-matte.md         planen for Matte (fasit)
 ```

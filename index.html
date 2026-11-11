@@ -13,38 +13,42 @@
   <meta name="apple-mobile-web-app-title" content="Tømrerverktøy">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd) -->
-  <script>window.APP_VERSJON = '20261111-132010';</script>
+  <script>window.APP_VERSJON = '20261111-145843';</script>
   <script type="importmap">
   {
     "imports": {
-      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-132010",
-      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-132010",
-      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-132010",
-      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-132010",
-      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-132010",
-      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-132010",
-      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-132010",
-      "./src/skjerm/trapp-merking.js": "./src/skjerm/trapp-merking.js?v=20261111-132010",
-      "./src/skjerm/trapp-skjerm.js": "./src/skjerm/trapp-skjerm.js?v=20261111-132010",
-      "./src/skjerm/trapp-tegning.js": "./src/skjerm/trapp-tegning.js?v=20261111-132010",
-      "./src/skjerm/trapp-utskrift.js": "./src/skjerm/trapp-utskrift.js?v=20261111-132010",
-      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-132010",
-      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-132010",
-      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261111-132010",
-      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-132010",
-      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-132010",
-      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-132010",
-      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-132010",
-      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-132010",
-      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261111-132010",
-      "./src/trapp/materialer.js": "./src/trapp/materialer.js?v=20261111-132010",
-      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261111-132010",
-      "./src/trapp/trapphull.js": "./src/trapp/trapphull.js?v=20261111-132010",
-      "./src/trapp/vange.js": "./src/trapp/vange.js?v=20261111-132010"
+      "./src/matte/tak.js": "./src/matte/tak.js?v=20261111-145843",
+      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-145843",
+      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-145843",
+      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-145843",
+      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-145843",
+      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-145843",
+      "./src/skjerm/matte-liste.js": "./src/skjerm/matte-liste.js?v=20261111-145843",
+      "./src/skjerm/matte-skjerm.js": "./src/skjerm/matte-skjerm.js?v=20261111-145843",
+      "./src/skjerm/matte-tegning.js": "./src/skjerm/matte-tegning.js?v=20261111-145843",
+      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-145843",
+      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-145843",
+      "./src/skjerm/trapp-merking.js": "./src/skjerm/trapp-merking.js?v=20261111-145843",
+      "./src/skjerm/trapp-skjerm.js": "./src/skjerm/trapp-skjerm.js?v=20261111-145843",
+      "./src/skjerm/trapp-tegning.js": "./src/skjerm/trapp-tegning.js?v=20261111-145843",
+      "./src/skjerm/trapp-utskrift.js": "./src/skjerm/trapp-utskrift.js?v=20261111-145843",
+      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-145843",
+      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-145843",
+      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261111-145843",
+      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-145843",
+      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-145843",
+      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-145843",
+      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-145843",
+      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-145843",
+      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261111-145843",
+      "./src/trapp/materialer.js": "./src/trapp/materialer.js?v=20261111-145843",
+      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261111-145843",
+      "./src/trapp/trapphull.js": "./src/trapp/trapphull.js?v=20261111-145843",
+      "./src/trapp/vange.js": "./src/trapp/vange.js?v=20261111-145843"
     }
   }
   </script>
-  <link rel="stylesheet" href="css/stil.css?v=20261111-132010">
+  <link rel="stylesheet" href="css/stil.css?v=20261111-145843">
   <!-- versjon:slutt -->
 </head>
 <body>
@@ -58,10 +62,11 @@
   </header>
 
   <main>
-    <!-- Hvilket verktøy: kledning eller trapp. Valget huskes (src/skjerm/verktoy.js) -->
-    <div class="valgknapper modusvalg" role="radiogroup" aria-label="Velg verktøy">
+    <!-- Hvilket verktøy: kledning, trapp eller matte. Valget huskes (src/skjerm/verktoy.js) -->
+    <div class="valgknapper modusvalg tre" role="radiogroup" aria-label="Velg verktøy">
       <label><input type="radio" name="verktoy" value="kledning" checked><span>Kledning</span></label>
       <label><input type="radio" name="verktoy" value="trapp"><span>Trapp</span></label>
+      <label><input type="radio" name="verktoy" value="matte"><span>Matte</span></label>
     </div>
 
     <!-- ===================== KLEDNING ===================== -->
@@ -512,6 +517,11 @@
 
       <section id="trapp-resultat" aria-live="polite"></section>
     </div>
+
+    <!-- ===================== MATTE ===================== -->
+    <!-- Bygges helt av src/skjerm/matte-skjerm.js ut fra oppføringene i src/skjerm/matte-liste.js.
+         En ny utregning legges inn der, ikke her. -->
+    <div id="matte-del" hidden></div>
   </main>
 
   <footer>

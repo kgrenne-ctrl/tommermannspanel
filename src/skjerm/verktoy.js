@@ -1,12 +1,13 @@
-// Bytter mellom verktøyene i appen: Kledning (tømmermannspanel) og Trapp.
+// Bytter mellom verktøyene i appen: Kledning (tømmermannspanel), Trapp og Matte.
 // Valget huskes på telefonen. Toppbåndet viser navnet på verktøyet som er valgt.
-// Hvert verktøy har sin egen del på siden (#kledning-del, #trapp-del).
+// Hvert verktøy har sin egen del på siden (#kledning-del, #trapp-del, #matte-del).
 
 import { lagre, hent } from './lagring.js';
 
 const VERKTOY = {
   kledning: { del: 'kledning-del', tittel: 'Tømmermannspanel', under: 'Inndeling av stående kledning' },
   trapp: { del: 'trapp-del', tittel: 'Trapp', under: 'Inndeling og merking av vange' },
+  matte: { del: 'matte-del', tittel: 'Matte', under: 'Fall, vinkler og mengder' },
 };
 
 function visVerktoy(navn) {

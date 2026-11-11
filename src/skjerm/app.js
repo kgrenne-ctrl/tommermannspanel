@@ -11,6 +11,7 @@ import { EGEN, fyllBreddevalg, lesBredde, settBredde, kort, boks, tabell, zoomBo
 import { lagre, hent } from './lagring.js';
 import './vegg-skjerm.js';
 import './trapp-skjerm.js';
+import './matte-skjerm.js';
 import './verktoy.js';
 
 const INNSTILLING_FELT = ['oMin', 'oIdeal', 'oMax', 'toSpikreFraBredde', 'spikeravstand'];
