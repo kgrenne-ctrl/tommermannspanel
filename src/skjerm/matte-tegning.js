@@ -586,3 +586,110 @@ export function tegnTakflate(r) {
   deler.push(malelinje(x0, x0 + bredde, yBunn + 18, `Bredde ${mm(r.bredde)} mm, vannrett`));
   return svg(B, yBunn + 48, deler.join(''), `${r.taktype === 'saltak' ? 'Saltak' : 'Pulttak'} ${grader(r.vinkel)}, takflate ${mm(r.takflate, 2)} m²`);
 }
+
+// Gjæring i hjørne sett ovenfra: to lister møtes i hjørnet, og gjæringen deler vinkelen likt.
+// Vinkler under 40° og over 170° tegnes med 40° og 170°, så skissen blir lesbar.
+export function tegnGjaering(r) {
+  const B = 400;
+  const vist = klem(r.hjorne, 40, 170);
+  const overdrevet = vist !== r.hjorne;
+  const h = vist * RAD;
+  const L = 160;
+  const t = 26;
+  const inn = r.type === 'innvendig';
+  const u1 = [1, 0];
+  const u2 = [Math.cos(h), -Math.sin(h)];
+  const b = [Math.cos(h / 2), -Math.sin(h / 2)];
+  const n1 = inn ? [0, -1] : [0, 1];
+  const n2 = inn ? [Math.sin(h), Math.cos(h)] : [-Math.sin(h), -Math.cos(h)];
+  const q = (inn ? 1 : -1) * (t / Math.sin(h / 2));
+  const P = [B / 2 - (L + L * Math.min(0, Math.cos(h))) / 2, 40 + L * Math.sin(h) + (inn ? 0 : 6)];
+  const pt = (base, ...ledd) => ledd.reduce((acc, [v, k]) => [acc[0] + v[0] * k, acc[1] + v[1] * k], base);
+  const Q = pt(P, [b, q]);
+  const fmt = (p) => `${p[0]},${p[1]}`;
+  const band = (u, n) => [P, pt(P, [u, L]), pt(P, [u, L], [n, t]), Q].map(fmt).join(' ');
+  const deler = [
+    // Veggene
+    `<line x1="${P[0]}" y1="${P[1]}" x2="${pt(P, [u1, L + 10])[0]}" y2="${P[1]}" stroke="var(--tekst-gra)" stroke-width="5"/>`,
+    `<line x1="${P[0]}" y1="${P[1]}" x2="${pt(P, [u2, L + 10])[0]}" y2="${pt(P, [u2, L + 10])[1]}" stroke="var(--tekst-gra)" stroke-width="5"/>`,
+    `<polygon points="${band(u1, n1)}" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="2" stroke-linejoin="round"/>`,
+    `<polygon points="${band(u2, n2)}" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="2" stroke-linejoin="round"/>`,
+    // Gjæringen
+    `<line x1="${P[0]}" y1="${P[1]}" x2="${Q[0]}" y2="${Q[1]}" stroke="var(--bla-mork)" stroke-width="3"/>`,
+  ];
+  // Vinkelen i hjørnet, mellom veggene
+  const rb = 64;
+  const a2 = pt(P, [u2, rb]);
+  deler.push(`<path d="M ${P[0] + rb} ${P[1]} A ${rb} ${rb} 0 0 0 ${a2[0]} ${a2[1]}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="3"/>`);
+  const lp = pt(P, [b, inn ? rb + 46 : rb + 14]);
+  deler.push(tekst(lp[0], lp[1] + 5, `Hjørne ${grader(r.hjorne)}`, { vekt: 700, farge: 'var(--bla-mork)' }));
+  const y = P[1] + (inn ? 28 : 46);
+  deler.push(tekst(B / 2, y, `Saga på ${grader(r.sag)}. Vinkel på emnet ${grader(r.emne)}.`, { storrelse: 14 }));
+  deler.push(tekst(B / 2, y + 20, inn ? 'Lista er lengst på baksiden, mot veggen.' : 'Lista er lengst på forsiden.',
+    { storrelse: 13, farge: 'var(--tekst-gra)' }));
+  if (overdrevet) deler.push(tekst(B / 2, y + 38, 'Ikke i målestokk', { storrelse: 12, farge: 'var(--tekst-gra)' }));
+  return svg(B, y + (overdrevet ? 46 : 30), deler.join(''), `Gjæring i ${r.type} hjørne på ${grader(r.hjorne)}`);
+}
+
+// Mangekant: ramme med gjæring i hvert hjørne, en flate nederst.
+export function tegnMangekant(r) {
+  const B = 400;
+  const n = r.sider;
+  const Ro = 120;
+  const w = 18;
+  const halv = Math.PI / n;
+  const Ri = Ro - w / Math.cos(halv);
+  const cx = B / 2;
+  const cy = 30 + Ro;
+  const hjorne = (R, k) => {
+    const a = Math.PI / 2 + halv + (k * 2 * Math.PI) / n;
+    return [cx + R * Math.cos(a), cy + R * Math.sin(a)];
+  };
+  const ytre = Array.from({ length: n }, (_, k) => hjorne(Ro, k));
+  const indre = Array.from({ length: n }, (_, k) => hjorne(Ri, k));
+  const deler = [
+    `<polygon points="${ytre.map((p) => p.join(',')).join(' ')}" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="2"/>`,
+    `<polygon points="${indre.map((p) => p.join(',')).join(' ')}" fill="var(--hvit)" stroke="var(--skisse-strek)" stroke-width="2"/>`,
+    ...ytre.map((p, k) => `<line x1="${p[0]}" y1="${p[1]}" x2="${indre[k][0]}" y2="${indre[k][1]}" stroke="var(--bla-mork)" stroke-width="2"/>`),
+  ];
+  const bunn = cy + Ro * Math.cos(halv);
+  if (r.sidelengde !== null) {
+    deler.push(tekst(cx, bunn + 22, `Side ${mm(r.sidelengde, 1)} mm utvendig`, { vekt: 700, farge: 'var(--bla-mork)' }));
+  }
+  if (r.mal !== null) {
+    deler.push(tekst(cx, cy + 5, `${r.malType === 'flater' ? 'Over flatene' : 'Over hjørnene'} ${mm(r.mal)} mm`, { storrelse: 14 }));
+  }
+  deler.push(tekst(cx, bunn + (r.sidelengde !== null ? 44 : 24), `Saga på ${grader(r.sag)}. Vinkel på emnet ${grader(r.emne)}.`, { storrelse: 14 }));
+  return svg(B, bunn + (r.sidelengde !== null ? 56 : 36), deler.join(''), `Mangekant med ${n} sider, saga på ${grader(r.sag)}`);
+}
+
+// Sammensatt gjæring: snitt gjennom taklista i hjørnet mellom vegg og tak, med helningen.
+export function tegnSammensatt(r) {
+  const B = 400;
+  const vist = klem(r.helning, 10, 80) * RAD;
+  const xv = 150;
+  const yt = 40;
+  const Lb = 150;
+  const tk = 18;
+  const w = [xv, yt + Lb * Math.cos(vist)];
+  const c = [xv + Lb * Math.sin(vist), yt];
+  const nn = [Math.cos(vist), Math.sin(vist)];
+  const pts = [w, c, [c[0] + tk * nn[0], c[1] + tk * nn[1]], [w[0] + tk * nn[0], w[1] + tk * nn[1]]];
+  const yBunn = Math.max(w[1] + 40, 220);
+  const deler = [
+    `<line x1="${xv - 30}" y1="${yt}" x2="${B - 20}" y2="${yt}" stroke="var(--tekst-gra)" stroke-width="5"/>`,
+    `<line x1="${xv}" y1="${yt - 10}" x2="${xv}" y2="${yBunn}" stroke="var(--tekst-gra)" stroke-width="5"/>`,
+    tekst(B - 24, yt - 10, 'Tak', { anker: 'end', storrelse: 13, farge: 'var(--tekst-gra)' }),
+    tekst(xv - 10, yBunn - 4, 'Vegg', { anker: 'end', storrelse: 13, farge: 'var(--tekst-gra)' }),
+    `<polygon points="${pts.map((p) => p.join(',')).join(' ')}" fill="var(--skisse-flate)" stroke="var(--skisse-strek)" stroke-width="2" stroke-linejoin="round"/>`,
+    tekst((w[0] + c[0]) / 2 + nn[0] * 46, (w[1] + c[1]) / 2 + nn[1] * 46 + 5, 'Taklist', { anker: 'start', storrelse: 13 }),
+  ];
+  // Helningen: mellom veggen (opp) og baksiden av lista
+  const rb = 46;
+  const a = [w[0] + rb * Math.sin(vist), w[1] - rb * Math.cos(vist)];
+  deler.push(`<path d="M ${w[0]} ${w[1] - rb} A ${rb} ${rb} 0 0 1 ${a[0]} ${a[1]}" fill="none" stroke="var(--bakoy-oransje)" stroke-width="3"/>`);
+  deler.push(tekst(w[0] - 10, w[1] - rb / 2, `Helning ${grader(r.helning)}`, { anker: 'end', vekt: 700, farge: 'var(--bla-mork)' }));
+  deler.push(tekst(B / 2, yBunn + 26, `Dreieskiva ${grader(r.dreieskive)}, bladet ${grader(r.blad)}`, { storrelse: 14 }));
+  deler.push(tekst(B / 2, yBunn + 46, `Hjørnet mellom veggene: ${grader(r.vegg)}`, { storrelse: 13, farge: 'var(--tekst-gra)' }));
+  return svg(B, yBunn + 56, deler.join(''), `Taklist med helning ${grader(r.helning)} i hjørne på ${grader(r.vegg)}`);
+}

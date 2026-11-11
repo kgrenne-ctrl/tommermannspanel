@@ -6,11 +6,11 @@ import assert from 'node:assert/strict';
 import { GRUPPER, KALKULATORER, finnKalkulator, startverdier, lesInndata, tekstFor, erSynlig } from '../src/skjerm/matte-liste.js';
 import {
   tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnSpilerUtsetting, tegnBord,
-  tegnSperre, tegnFuglemunn, tegnGavlstendere, tegnStenderTopp, tegnTakflate,
+  tegnSperre, tegnFuglemunn, tegnGavlstendere, tegnStenderTopp, tegnTakflate, tegnGjaering, tegnMangekant, tegnSammensatt,
 } from '../src/skjerm/matte-tegning.js';
 import { fordelLikt, fordelSpiler, fordelBord } from '../src/matte/inndeling.js';
 import { regnFall, regnTrekant, regnOppforing, regnSperre, regnGavlstendere, regnTakflate } from '../src/matte/tak.js';
-import { regnDiagonal } from '../src/matte/vinkel.js';
+import { regnDiagonal, regnGjaering, regnMangekant, regnSammensatt } from '../src/matte/vinkel.js';
 import { grader } from '../src/skjerm/format.js';
 
 // Alt som skal vises: nøkkeltall, utregning og skisse
@@ -329,4 +329,53 @@ test('Skissene i M3: mål, ingen NaN, og ingen fuglemunn uten sete', () => {
   for (const ord of ['Takflate 36,95 m²', 'Langs taket 2 309 mm', 'Bredde 4 000 mm']) assert.ok(t.includes(ord), ord);
   const flatt = rens(tegnTakflate(regnTakflate({ lengde: 8000, bredde: 4000, vinkel: 0, taktype: 'pulttak' })));
   for (const svgTekst of [o, f, bratt, gs, topp, enStender, t, flatt]) assert.ok(!/NaN|undefined|Infinity/.test(svgTekst));
+});
+
+// ---------- Fase M4 ----------
+
+test('Gjæring i hjørne: eksempelet 87° gir 46,5 på saga og 43,5 på emnet', () => {
+  const { verdi, forklaring, svar } = nokkel('gjaering', finnKalkulator('gjaering').eksempel);
+  assert.equal(verdi('Saga'), '46,5°');
+  assert.equal(verdi('Vinkel på emnet'), '43,5°');
+  assert.ok(forklaring[0].includes('baksiden'));
+  assert.equal(svar.varsler[0].type, 'sag-vinkel');
+  assert.ok(nokkel('gjaering', { type: 'utvendig', hjorne: '90' }).forklaring[0].includes('forsiden'));
+});
+
+test('Mangekant: eksempelet er åttekanten på 2000 mm, og bredden vises først med mål', () => {
+  const { verdi } = nokkel('mangekant', finnKalkulator('mangekant').eksempel);
+  assert.equal(verdi('Saga'), '22,5°');
+  assert.equal(verdi('Vinkel på emnet'), '67,5°');
+  assert.equal(verdi('Sidelengde'), '828,4 mm');
+  const k = finnKalkulator('mangekant');
+  const bredde = k.felt.find((f) => f.id === 'bredde');
+  assert.equal(erSynlig(bredde, startverdier(k, { sider: '8' })), false);
+  assert.equal(erSynlig(bredde, startverdier(k, { sider: '8', mal: '2000' })), true);
+  assert.equal(nokkel('mangekant', { sider: '4', mal: '1000', bredde: '70' }).verdi('Innsiden'), '860 mm');
+  // Odde antall sider: forklaring om hva «over flatene» betyr
+  assert.equal(nokkel('mangekant', { sider: '5', mal: '1000' }).forklaring.length, 2);
+});
+
+test('Sammensatt gjæring: eksempelet 38° og 90° gir 31,6 og 33,9, og 45° opp-ned', () => {
+  const { verdi, forklaring } = nokkel('sammensatt', finnKalkulator('sammensatt').eksempel);
+  assert.equal(verdi('Dreieskiva'), '31,6°');
+  assert.equal(verdi('Bladet'), '33,9°');
+  assert.equal(verdi('Opp-ned mot anlegget'), '45°');
+  assert.ok(forklaring[1].includes('opp-ned mot anlegget'));
+});
+
+test('Skissene i M4: vinkler, mål og ingen NaN', () => {
+  const g = rens(tegnGjaering(regnGjaering({ hjorne: 87, type: 'innvendig' })));
+  for (const ord of ['Hjørne 87°', 'Saga på 46,5°', 'Vinkel på emnet 43,5°', 'baksiden']) assert.ok(g.includes(ord), ord);
+  assert.ok(!g.includes('målestokk'));
+  const spiss = rens(tegnGjaering(regnGjaering({ hjorne: 20, type: 'utvendig' })));
+  assert.ok(spiss.includes('Ikke i målestokk'));
+  const m = rens(tegnMangekant(regnMangekant({ sider: 8, malType: 'flater', mal: 2000 })));
+  for (const ord of ['Side 828,4 mm utvendig', 'Over flatene 2 000 mm', 'Saga på 22,5°']) assert.ok(m.includes(ord), ord);
+  assert.equal((m.match(/stroke="var\(--bla-mork\)" stroke-width="2"/g) ?? []).length, 8, 'åtte gjæringer');
+  const tre = rens(tegnMangekant(regnMangekant({ sider: 3, malType: 'hjorner' })));
+  const sm = rens(tegnSammensatt(regnSammensatt({ helning: 38, vegg: 90 })));
+  for (const ord of ['Helning 38°', 'Dreieskiva 31,6°, bladet 33,9°', 'Taklist', 'Vegg', 'Tak']) assert.ok(sm.includes(ord), ord);
+  const flat = rens(tegnSammensatt(regnSammensatt({ helning: 0, vegg: 180 })));
+  for (const s of [g, spiss, m, tre, sm, flat]) assert.ok(!/NaN|undefined|Infinity/.test(s));
 });

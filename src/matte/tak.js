@@ -252,8 +252,8 @@ function sjekkVinkel(vinkel, feil, { nullLov = false } = {}) {
   }
 }
 
-// «Greit å vite» når et kapp er over 45° på saga, som i trekanten
-function sagVarsel(grader, hva) {
+// «Greit å vite» når et kapp er over 45° på saga, som i trekanten. Brukes også av vinkel.js.
+export function sagVarsel(grader, hva) {
   if (grader <= SAG_SIKKER_GRADER) return [];
   return [{
     niva: 'vite',

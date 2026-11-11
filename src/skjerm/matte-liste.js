@@ -20,12 +20,12 @@
 import {
   regnFall, regnTrekant, regnOppforing, regnSperre, regnGavlstendere, regnTakflate,
 } from '../matte/tak.js';
-import { regnDiagonal } from '../matte/vinkel.js';
+import { regnDiagonal, regnGjaering, regnMangekant, regnSammensatt } from '../matte/vinkel.js';
 import { fordelLikt, fordelSpiler, fordelBord } from '../matte/inndeling.js';
 import { lesTall, mm, grader } from './format.js';
 import {
   tegnFall, forholdTekst, tegnTrekant, tegnOppforing, tegnDiagonal, tegnInndeling, tegnSpiler, tegnSpilerUtsetting, tegnBord,
-  tegnSperre, tegnFuglemunn, tegnGavlstendere, tegnStenderTopp, tegnTakflate,
+  tegnSperre, tegnFuglemunn, tegnGavlstendere, tegnStenderTopp, tegnTakflate, tegnGjaering, tegnMangekant, tegnSammensatt,
 } from './matte-tegning.js';
 
 // Rekkefølgen på gruppene i menyen. Grupper uten utregninger vises ikke.
@@ -775,9 +775,175 @@ const takflate = {
   eksempel: { taktype: 'saltak', lengde: '8000', bredde: '4000', vinkel: '30' },
 };
 
+// ---------- Gjæring i hjørne (fase M4) ----------
+
+const gjaering = {
+  id: 'gjaering',
+  gruppe: 'vinkel',
+  tittel: 'Gjæring i hjørne',
+  beskrivelse: 'Målt vinkel i hjørnet gir vinkel på emnet og hva saga skal stå på',
+  felt: [
+    {
+      id: 'type',
+      type: 'valg',
+      ledetekst: 'Hjørnet er',
+      standard: 'innvendig',
+      valg: [{ verdi: 'innvendig', tekst: 'Innvendig' }, { verdi: 'utvendig', tekst: 'Utvendig' }],
+    },
+    {
+      id: 'hjorne',
+      type: 'tall',
+      ledetekst: 'Vinkel i hjørnet (grader)',
+      plassholder: 'f.eks. 90',
+      hjelp: 'Mål med vinkelmåler mellom de to flatene lista skal ligge mot. Både innvendig og utvendig hjørne måles i veggen.',
+    },
+  ],
+  mangler: (d) => (d.hjorne === null ? 'Skriv inn vinkelen i hjørnet.' : null),
+  regn: (d) => regnGjaering(d),
+  vis: (r) => ({
+    nokkeltall: [
+      ['Saga', grader(r.sag), 'Fra rett kapp'],
+      ['Vinkel på emnet', grader(r.emne), 'Mellom kappet og kanten'],
+    ],
+    forklaring: [
+      r.type === 'innvendig'
+        ? 'Innvendig hjørne: lista er lengst på baksiden, mot veggen.'
+        : 'Utvendig hjørne: lista er lengst på forsiden, den du ser.',
+      'Står hjørnet ikke i 90°, deles vinkelen likt på de to listene. Mål hjørnet, ikke regn med 90°.',
+    ],
+    utregning: [
+      `Vinkel på emnet: hjørne / 2 = ${grader(r.hjorne, 2)} / 2 = ${grader(r.emne, 2)}.`,
+      `Saga: 90° − ${grader(r.emne, 2)} = ${grader(r.sag, 2)}. 0° på saga er rett kapp.`,
+    ],
+  }),
+  tegn: (r) => tegnGjaering(r),
+  eksempel: { type: 'innvendig', hjorne: '87' },
+};
+
+// ---------- Mangekant (fase M4) ----------
+
+const mangekant = {
+  id: 'mangekant',
+  gruppe: 'vinkel',
+  tittel: 'Mangekant',
+  beskrivelse: 'Gjæring og sidelengde for sekskant, åttekant og andre mangekanter',
+  felt: [
+    { id: 'sider', type: 'tall', ledetekst: 'Antall sider', plassholder: 'f.eks. 8' },
+    {
+      id: 'malType',
+      type: 'valg',
+      ledetekst: 'Målet er',
+      standard: 'flater',
+      valg: [{ verdi: 'flater', tekst: 'Over flatene' }, { verdi: 'hjorner', tekst: 'Over hjørnene' }],
+    },
+    {
+      id: 'mal',
+      type: 'tall',
+      ledetekst: (v) => (v.malType === 'hjorner' ? 'Mål over hjørnene (mm), kan stå tomt' : 'Mål over flatene (mm), kan stå tomt'),
+      plassholder: 'f.eks. 2000',
+      hjelp: 'Utvendig mål. Gir lengden på hver side.',
+    },
+    {
+      id: 'bredde',
+      type: 'tall',
+      ledetekst: 'Bredde på emnet (mm), kan stå tomt',
+      plassholder: 'f.eks. 70',
+      hjelp: 'Gir lengden på innsiden av hver side.',
+      vis: (v) => lesTall(v.mal) !== null,
+    },
+  ],
+  mangler: (d) => (d.sider === null ? 'Skriv inn antall sider.' : null),
+  regn: (d) => regnMangekant(d),
+  vis: (r) => {
+    const nokkeltall = [
+      ['Saga', grader(r.sag), 'Fra rett kapp'],
+      ['Vinkel på emnet', grader(r.emne), 'Mellom kappet og kanten'],
+    ];
+    if (r.sidelengde !== null) nokkeltall.push(['Sidelengde', `${mm(r.sidelengde, 1)} mm`, 'Utsiden, langpunkt til langpunkt']);
+    if (r.innside !== null) nokkeltall.push(['Innsiden', `${mm(r.innside, 1)} mm`, 'Kortpunkt til kortpunkt']);
+    const t = mm(Math.tan((180 / r.sider) * Math.PI / 180), 4);
+    const utregning = [
+      `Saga: 180° / ${r.sider} = ${grader(r.sag, 2)}.`,
+      `Vinkel på emnet: 90° − ${grader(r.sag, 2)} = ${grader(r.emne, 2)}.`,
+    ];
+    if (r.sidelengde !== null) {
+      utregning.push(r.malType === 'flater'
+        ? `Sidelengde: mål × tan(${grader(r.sag, 2)}) = ${mm(r.mal)} × ${t} = ${mm(r.sidelengde, 1)} mm.`
+        : `Sidelengde: mål × sin(${grader(r.sag, 2)}) = ${mm(r.mal)} × ${mm(Math.sin((180 / r.sider) * Math.PI / 180), 4)} = ${mm(r.sidelengde, 1)} mm.`);
+    }
+    if (r.innside !== null) {
+      utregning.push(`Innsiden: ${mm(r.sidelengde, 1)} − 2 × ${mm(r.bredde)} × ${t} = ${mm(r.innside, 1)} mm.`);
+    }
+    const forklaring = [`Kapp begge ender av hver side med saga på ${grader(r.sag)}. Alle ${r.sider} sidene er like.`];
+    if (r.sider % 2 === 1 && r.mal !== null && r.malType === 'flater') {
+      forklaring.push('Med odde antall sider står en flate rett mot et hjørne. Målet over flatene er da diameteren på '
+        + 'sirkelen som berører alle flatene.');
+    }
+    return { nokkeltall, forklaring, utregning };
+  },
+  tegn: (r) => tegnMangekant(r),
+  eksempel: { sider: '8', malType: 'flater', mal: '2000' },
+};
+
+// ---------- Sammensatt gjæring (fase M4) ----------
+
+const sammensatt = {
+  id: 'sammensatt',
+  gruppe: 'vinkel',
+  tittel: 'Sammensatt gjæring',
+  beskrivelse: 'Taklist som ligger flatt på saga: dreieskive og blad, og den enkle metoden',
+  felt: [
+    {
+      id: 'helning',
+      type: 'tall',
+      ledetekst: 'Helning på lista (grader)',
+      plassholder: 'f.eks. 38',
+      hjelp: 'Vinkelen mellom baksiden av lista og veggen, se skissen.',
+    },
+    {
+      id: 'vegg',
+      type: 'tall',
+      ledetekst: 'Vinkel i hjørnet (grader)',
+      plassholder: 'f.eks. 90',
+      hjelp: 'Mellom veggene, målt med vinkelmåler.',
+    },
+  ],
+  mangler: (d) => {
+    if (d.helning === null) return 'Skriv inn helningen på lista.';
+    if (d.vegg === null) return 'Skriv inn vinkelen i hjørnet.';
+    return null;
+  },
+  regn: (d) => regnSammensatt(d),
+  vis: (r) => {
+    const sinS = mm(Math.sin(r.helning * Math.PI / 180), 4);
+    const cosS = mm(Math.cos(r.helning * Math.PI / 180), 4);
+    return {
+      nokkeltall: [
+        ['Dreieskiva', grader(r.dreieskive), 'Gjæring'],
+        ['Bladet', grader(r.blad), 'Skråstilling'],
+        ['Opp-ned mot anlegget', grader(r.oppNed), 'Bare dreieskiva, bladet på 0°'],
+      ],
+      forklaring: [
+        `Flatt på bordet: lista ligger med baksiden ned. Still dreieskiva på ${grader(r.dreieskive)} og bladet på ${grader(r.blad)}.`,
+        `Enklere: still lista opp-ned mot anlegget, slik den står i taket, med takkanten ned mot bordet og veggkanten `
+          + `mot anlegget. Da trengs bare vanlig gjæring på ${grader(r.oppNed)}.`,
+      ],
+      utregning: [
+        `Dreieskiva: atan(sin(helning) / tan(hjørne / 2)) = atan(${sinS} / tan(${grader(r.vegg / 2, 2)})) = ${grader(r.dreieskive, 2)}.`,
+        `Bladet: asin(cos(helning) × cos(hjørne / 2)) = asin(${cosS} × cos(${grader(r.vegg / 2, 2)})) = ${grader(r.blad, 2)}.`,
+        `Opp-ned mot anlegget: 90° − hjørne / 2 = ${grader(r.oppNed, 2)}.`,
+        'Formlene er regnet og stemmer med kjente tabellverdier. De er ikke hentet fra en fagkilde.',
+      ],
+    };
+  },
+  tegn: (r) => tegnSammensatt(r),
+  eksempel: { helning: '38', vegg: '90' },
+};
+
 // Alle utregningene, i den rekkefølgen de står i menyen innenfor hver gruppe.
 export const KALKULATORER = Object.freeze([
-  fallOgTakvinkel, trekanten, oppforing, sperre, gavlstendere, takflate, diagonal, likAvstand, spiler, bord,
+  fallOgTakvinkel, trekanten, oppforing, sperre, gavlstendere, takflate,
+  gjaering, mangekant, sammensatt, diagonal, likAvstand, spiler, bord,
 ]);
 
 export function finnKalkulator(id) {

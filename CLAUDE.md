@@ -506,6 +506,14 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - Skissene for sperre og gavl er to per utregning: oversikt i riktig forhold og en forstørret
   detalj (fuglemunnen, toppen av stenderen). Fuglemunnen bruker clipPath `fuglemunn-klipp`, og svilla
   tegnes minst så dyp som hakket (bratt tak gir dypt hakk). Smalt utstikk får målet på egen linje.
+- **Fase M4 (2026-11-11):** «Gjæring i hjørne» (`regnGjaering`), «Mangekant» (`regnMangekant`) og
+  «Sammensatt gjæring» (`regnSammensatt`) i `src/matte/vinkel.js`, under «Vinkler og gjæring».
+  Gjæring: emnet = hjørne / 2, saga = 90 − hjørne / 2. Innvendig/utvendig endrer bare hvilken side som
+  er lengst. Mangekant: saga = 180 / n, side = mål × tan (over flatene) eller × sin (over hjørnene),
+  valgfri bredde gir innsiden. Sammensatt: dreieskive = atan(sin S / tan(W / 2)), blad =
+  asin(cos S × cos(W / 2)), S er vinkelen mellom baksiden av lista og **veggen** (som i planen), og
+  opp-ned mot anlegget = 90 − W / 2. Formlene er en antakelse til Kenny har prøvd dem på ekte list.
+  Alltid «greit å vite» om to prøvestumper. `sagVarsel` er eksportert fra tak.js og brukes i vinkel.js.
 - Tester: `test/matte-tak.test.js`, `test/matte-vinkel.test.js` og `test/matte-inndeling.test.js` (kontrolleksemplene i planen punkt 4 først, skal aldri slettes)
   og `test/matte-skjerm.test.js` (hver oppføring er fullstendig, eksempelet går opp uten NaN eller
   tankestrek, skissen). Nye utregninger fanges opp av de felles testene automatisk.

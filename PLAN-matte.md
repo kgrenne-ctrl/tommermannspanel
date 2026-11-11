@@ -2,7 +2,7 @@
 
 Plan 2026-11-11, oppdatert samme dag etter Kennys svar (punkt 10). Skrevet da appen sto på commit cdb69f1 (Kledning og Trapp til og med fase T3). Planen er skrevet for Opus 5.5 i Claude Code og bygges én fase om gangen, rett på `main`.
 
-Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 publisert samme dag (commit 8c89330, 181 tester). M2 publisert samme dag (commit 4257cfd), med `fordelSpiler` i `src/matte/inndeling.js` klar for T7. Utsettingsskisse for spiler publisert (commit 216f0c6). M3 bygget samme dag (205 tester). T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
+Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 publisert samme dag (commit 8c89330, 181 tester). M2 publisert samme dag (commit 4257cfd), med `fordelSpiler` i `src/matte/inndeling.js` klar for T7. Utsettingsskisse for spiler publisert (commit 216f0c6). M3 publisert samme dag (commit c5e48ed). M4 bygget samme dag (214 tester), ikke prøvd på ekte list ennå. T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
 
 ## 1. Mål
 
@@ -72,10 +72,10 @@ Modulen skal se ut og oppføre seg som Kledning og Trapp: samme toppbånd, kort,
 
 ### Vinkler og gjæring
 
-**Gjæring i hjørne.** Inn: målt vinkel mellom de to flatene. Vinkel på emnet = hjørne / 2. Still saga på 90 − hjørne / 2.
+**Gjæring i hjørne.** Inn: målt vinkel mellom de to flatene, og om hjørnet er innvendig eller utvendig (lagt til i M4, endrer bare hvilken side av lista som er lengst). Vinkel på emnet = hjørne / 2. Still saga på 90 − hjørne / 2.
 - Kontroll: 90° gir 45,0 på saga. 135° gir 22,5. 87° gir 46,5.
 
-**Mangekant.** Inn: antall sider, og valgfritt mål over flatene eller over hjørnene. Still saga på 180 / n. Sidelengde = D × tan(180 / n) over flatene, D × sin(180 / n) over hjørnene.
+**Mangekant.** Inn: antall sider, og valgfritt mål over flatene eller over hjørnene, og (lagt til i M4) bredden på emnet, som gir lengden på innsiden: utside − 2 × bredde × tan(180 / n). Med odde antall sider er «over flatene» diameteren på sirkelen som berører alle flatene, og appen sier det. Still saga på 180 / n. Sidelengde = D × tan(180 / n) over flatene, D × sin(180 / n) over hjørnene.
 - Kontroll: seks sider 30,0, åtte sider 22,5. Åttekant 2000 mm over flatene har side 828,4.
 
 **Sammensatt gjæring (taklist som ligger flatt på saga).** Inn: veggvinkel W og listens helning S (vinkelen mellom baksiden av lista og veggen).
