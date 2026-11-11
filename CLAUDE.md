@@ -344,6 +344,7 @@ Claude-mappe. Ved uenighet gjelder den fila.
 - `tegnVangeFlatt`: tallene står på høykant, og skriften er aldri høyere enn 55 % av avstanden
   mellom spissene, så tallene ikke kan overlappe (test i `trapp-skjerm.test.js`). Lange vanger
   får fast bredde (om lag 56 piksler mellom spissene) og skyves sideveis på telefonen.
+  Under vangen står målet fra enden av bordet til spiss 0 (`v-ende`, Kenny 2026-11-11).
 - Oransje bare på streker og flater i skissene (spiss 0, vinkelen), aldri på tekst.
 - «Se det steg for steg» (Kenny 2026-11-11 ba om en interaktiv fremstilling av merkingen): boksen
   øverst i «Slik merker du vangen». `lagMerkesteg` (`src/skjerm/trapp-merking.js`) lager stegene:

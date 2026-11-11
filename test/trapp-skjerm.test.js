@@ -85,6 +85,9 @@ test('Vangen lagt flatt: ett merke per hakk, emnelengde og 0 i oransje', () => {
   assert.ok(svg.includes('Emne minst 1\u00a0368 mm') || svg.includes('Emne minst 1 368 mm'));
   assert.ok(svg.includes('var(--bakoy-oransje)'));
   assert.ok(!svg.includes('NaN'));
+  // Målet fra enden av bordet til spiss 0 står i tegningen (Kenny 2026-11-11)
+  assert.equal(tell(svg, 'class="v-ende"'), 1);
+  assert.ok(svg.includes('>75 mm fra enden til spiss 0<'));
 });
 
 test('Sideriss med belegg nede viser stiplet linje der vangen står', () => {

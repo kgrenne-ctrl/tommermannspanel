@@ -121,7 +121,8 @@ export function tegnVangeFlatt(vange, { vangeBredde = 223 } = {}) {
   const merkeTopp = -skrift * 0.6;
   const lengsteTall = Math.max(...vange.merker.map((m) => mm(m.avstand).length));
   const yMin = merkeTopp - skrift * 0.3 - lengsteTall * skrift * 0.62;
-  const yUnder = W + skrift * 1.6;
+  const yEnde = W + skrift * 1.1;            // målet fra enden av bordet til spiss 0
+  const yUnder = W + skrift * 2.9;           // lengden på emnet
 
   const deler = [emneOgVange(vange, W, strek, skrift * 0.4)];
   for (const merke of vange.merker) {
@@ -136,6 +137,15 @@ export function tegnVangeFlatt(vange, { vangeBredde = 223 } = {}) {
       + `fill="${merke.hjelp ? 'var(--tekst-gra)' : 'var(--tekst)'}" font-weight="600" transform="rotate(-90 ${x} ${y})">${mm(merke.avstand)}</text>`);
   }
   const pil = skrift * 0.35;
+  // Fra enden av bordet til spiss 0 (Kenny 2026-11-11): hjelpestreker ned fra enden og fra spiss 0
+  deler.push(`<g class="v-ende" stroke="var(--tekst)" stroke-width="${strek}">`
+    + `<line x1="${fra}" y1="${W}" x2="${fra}" y2="${yEnde + pil}" stroke-dasharray="${skrift * 0.2}"/>`
+    + `<line x1="0" y1="0" x2="0" y2="${yEnde + pil}" stroke-dasharray="${skrift * 0.2}"/>`
+    + `<line x1="${fra}" y1="${yEnde}" x2="0" y2="${yEnde}"/>`
+    + `<line x1="${fra}" y1="${yEnde - pil}" x2="${fra}" y2="${yEnde + pil}"/>`
+    + `<line x1="0" y1="${yEnde - pil}" x2="0" y2="${yEnde + pil}"/></g>`);
+  deler.push(tekst(skrift * 0.4, yEnde + skrift * 0.35, skrift, `${mm(vange.spissFraEnden)} mm fra enden til spiss 0`,
+    { anker: 'start', vekt: '600' }));
   deler.push(`<g stroke="var(--tekst)" stroke-width="${strek}">`
     + `<line x1="${fra}" y1="${yUnder}" x2="${fra + lengde}" y2="${yUnder}"/>`
     + `<line x1="${fra}" y1="${yUnder - pil}" x2="${fra}" y2="${yUnder + pil}"/>`
