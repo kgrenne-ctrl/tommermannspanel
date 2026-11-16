@@ -75,7 +75,10 @@ Alle skal kunne endres i innstillinger.
   (nyeste versjon når det er dekning), alt annet fra lageret først (filene har ?v=nummer).
 - `scripts/versjon.mjs` skriver fillista og versjonsnummeret i `sw.js` ved hver commit. Nytt nummer
   = ny service worker, som henter alt på nytt og sletter det gamle lageret.
-- `manifest.webmanifest` og ikonene (`assets/ikon-*.png`, laget med `swift scripts/lag-ikon.swift`)
+- `manifest.webmanifest` og ikonene (`assets/ikon-*.png`, laget fra `assets/ikon.svg` med `sh scripts/lag-ikon.sh`.
+  Ikonet er vinkelhake og blyant uten tekst, valgt av Kenny 2026-11-16 fordi tekst ble uleselig.
+  Innholdet er krympet til 82 % mot midten, så det tåler at Android beskjærer til sirkel. Etter bytte
+  av ikon må appen legges til hjemskjermen på nytt for at telefonen skal vise det nye)
   gjør at appen kan legges på hjemskjermen.
 - Nettleseren inne i Claude-appen godtar ikke service worker. Test uten nett i Chrome (localhost),
   og fjern registreringen etterpå.
@@ -551,7 +554,7 @@ src/matte/            regnemodellen for Matte: fall og tak (tak.js), diagonal (v
 src/skjerm/           skjermdelen (felt, vegg, trapp, merking av vange, matte, tegning, utskrift,
                       lagring, tallformat, felles biter, versjonssjekk, verktøyvelger)
 scripts/versjon.mjs   setter versjonsnummer på filene (kjøres ved commit)
-scripts/lag-ikon.swift lager app-ikonene
+scripts/lag-ikon.sh    lager app-ikonene fra assets/ikon.svg
 .githooks/            git-kroker (pre-commit setter versjon)
 test/                 automatiske tester
 PLAN.md               planen for kledning (fasit)

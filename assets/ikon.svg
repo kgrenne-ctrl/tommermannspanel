@@ -1,0 +1,15 @@
+<svg viewBox="0 0 512 512" width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+<!-- App-ikon for Bakøy tømrerverktøy (valgt av Kenny 2026-11-16, forslag C): vinkelhake og blyant.
+     Innholdet er krympet mot midten, så det holder seg innenfor sirkelen Android kan beskjære til.
+     PNG-ene lages med: sh scripts/lag-ikon.sh -->
+<rect width="512" height="512" fill="#074EA2"/>
+<g transform="translate(256 256) scale(0.82) translate(-276 -245)">
+<path d="M110 70h80v270h252v80H110z" fill="#fff"/>
+<rect x="180" y="372" width="6" height="16" fill="#074EA2"/><rect x="210" y="372" width="6" height="16" fill="#074EA2"/><rect x="240" y="372" width="6" height="28" fill="#074EA2"/><rect x="270" y="372" width="6" height="16" fill="#074EA2"/><rect x="300" y="372" width="6" height="16" fill="#074EA2"/><rect x="330" y="372" width="6" height="28" fill="#074EA2"/><rect x="360" y="372" width="6" height="16" fill="#074EA2"/><rect x="390" y="372" width="6" height="16" fill="#074EA2"/><rect x="150" y="332" width="28" height="6" fill="#074EA2"/><rect x="150" y="302" width="16" height="6" fill="#074EA2"/><rect x="150" y="272" width="16" height="6" fill="#074EA2"/><rect x="150" y="242" width="28" height="6" fill="#074EA2"/><rect x="150" y="212" width="16" height="6" fill="#074EA2"/><rect x="150" y="182" width="16" height="6" fill="#074EA2"/><rect x="150" y="152" width="28" height="6" fill="#074EA2"/><rect x="150" y="122" width="16" height="6" fill="#074EA2"/>
+<g transform="rotate(-45 330 220)">
+  <rect x="190" y="194" width="230" height="52" rx="6" fill="#F36F21"/>
+  <path d="M190 194l-56 26 56 26z" fill="#F6D2B0"/>
+  <path d="M134 220l18-8.4v16.8z" fill="#1D232C"/>
+  <rect x="408" y="194" width="16" height="52" fill="#fff" opacity="0.85"/>
+</g></g>
+</svg>
