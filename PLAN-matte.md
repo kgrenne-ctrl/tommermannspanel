@@ -2,7 +2,7 @@
 
 Plan 2026-11-11, oppdatert samme dag etter Kennys svar (punkt 10). Skrevet da appen sto på commit cdb69f1 (Kledning og Trapp til og med fase T3). Planen er skrevet for Opus 5.5 i Claude Code og bygges én fase om gangen, rett på `main`.
 
-Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 publisert samme dag (commit 8c89330, 181 tester). M2 publisert samme dag (commit 4257cfd), med `fordelSpiler` i `src/matte/inndeling.js` klar for T7. Utsettingsskisse for spiler publisert (commit 216f0c6). M3 publisert samme dag (commit c5e48ed). M4 bygget samme dag (214 tester), ikke prøvd på ekte list ennå. T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
+Trapp er satt på pause etter fase T6 (commit 0cd6980, 153 grønne tester), og Matte startet med fase M0 samme dag (Kenny 2026-11-11). M0 publisert 2026-11-11 (commit 7b76ce3, 166 tester). M1 publisert samme dag (commit 8c89330, 181 tester). M2 publisert samme dag (commit 4257cfd), med `fordelSpiler` i `src/matte/inndeling.js` klar for T7. Utsettingsskisse for spiler publisert (commit 216f0c6). M3 publisert samme dag (commit c5e48ed). M4 publisert samme dag (commit b994fd5, 214 tester), ikke prøvd på ekte list ennå. Forside og symboler i Matte-menyen publisert 2026-11-16 (commit 2458351 og fa4322d). T7–T10 i `PLAN-trapp.md` tas senere. T7 (sprosser i rekkverk) skal da bruke inndelingen for spiler fra `src/matte/inndeling.js` (fase M2).
 
 ## 1. Mål
 
@@ -206,7 +206,7 @@ En oppføring i `matte-liste.js` ser omtrent slik ut:
 | M9 Kappliste | Biter og lengder inn, bestilling og kapp ut, nedre grense | Kontrolleksempelet går grønt, og en ekte kappliste fra Kenny gir et svar han godtar |
 | M10 Finpuss | Favoritter, søk i lista, kopier eller del svaret, utskrift | Avklares med Kenny da |
 
-Én fase om gangen. Opus går ikke videre før Kenny sier fra, og publiserer ikke før Kenny har sagt ja. Hver fase avsluttes med grønne tester og at skjermen er sett på i mobil og bred bredde.
+Én fase om gangen. Opus går ikke videre før Kenny sier fra. Ferdige faser publiseres uten å spørre (Kenny 2026-11-16, se appens CLAUDE.md). Hver fase avsluttes med grønne tester og at skjermen er sett på i mobil og bred bredde.
 
 ## 8. Tester som må finnes
 

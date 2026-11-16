@@ -99,6 +99,10 @@ Alle skal kunne endres i innstillinger.
   eller annet internt i repoet.
 - Appen: https://kgrenne-ctrl.github.io/tommermannspanel/ . GitHub Pages bygger fra `main`,
   rotmappa. Hver `git push` til `main` oppdaterer siden etter et par minutter.
+- **Publiser automatisk (Kenny 2026-11-16, «Ja, alltid»):** når en endring er ferdig, testene er
+  grønne og skjermen er sett på, committes og pushes den til `main` uten å spørre først. Sjekk etterpå
+  at nettsiden viser ny `versjon.json`, og si fra hva som ble publisert. Neste fase startes fortsatt
+  ikke før Kenny sier fra.
 
 ## Skjermdelen (fase 2)
 - `src/skjerm/app.js` leser skjemaet og viser svaret. `tegning.js` lager SVG, `format.js` tall.
