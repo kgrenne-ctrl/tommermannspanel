@@ -479,6 +479,9 @@ Claude-mappe. Ved uenighet gjelder den fila.
   Over 45° på saga kommer «greit å vite» om å merke og kappe etter strek, uten tall for hva sager går til.
 - Skjevheten forutsetter at motstående sider er like lange. Det står alltid som «greit å vite», og
   «Slik er det regnet» viser kontrollen √((d1² + d2²) / 2) mot diagonalen. Ingen toleranse er lagt inn.
+- **Symboler i menyen (2026-11-16):** hver utregning har et symbol i `src/skjerm/matte-ikoner.js`
+  (`IKONER`, nøkkel = id), samme stil som forsiden: strek på blå boks, klassen `a` er oransje aksent
+  og `t` er tynn strek. **En ny utregning trenger også et symbol**, ellers feiler testen.
 - `vis` kan også gi `forklaring` (avsnitt rett under nøkkeltallene: hva tømreren skal gjøre) og
   `liste` (tabell med løpende mål, `maltabell matte-liste`).
 - Tallene i kortene i Matte er 22 px og kan bryte før «mm» (`#matte-resultat .kort-verdi`), fordi

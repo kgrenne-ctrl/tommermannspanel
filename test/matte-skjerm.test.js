@@ -379,3 +379,16 @@ test('Skissene i M4: vinkler, mål og ingen NaN', () => {
   const flat = rens(tegnSammensatt(regnSammensatt({ helning: 0, vegg: 180 })));
   for (const s of [g, spiss, m, tre, sm, flat]) assert.ok(!/NaN|undefined|Infinity/.test(s));
 });
+
+// ---------- Symbolene i menyen (2026-11-16) ----------
+
+test('Hver utregning i Matte har et symbol, og ingen symboler er til overs', async () => {
+  const { IKONER, ikonSvg } = await import('../src/skjerm/matte-ikoner.js');
+  for (const k of KALKULATORER) {
+    const s = ikonSvg(k.id);
+    assert.ok(s.startsWith('<svg viewBox="0 0 24 24"'), `${k.id} mangler symbol`);
+    assert.ok(!/NaN|undefined/.test(s));
+  }
+  assert.deepEqual(Object.keys(IKONER).sort(), KALKULATORER.map((k) => k.id).sort());
+  assert.equal(ikonSvg('finnes-ikke'), '');
+});

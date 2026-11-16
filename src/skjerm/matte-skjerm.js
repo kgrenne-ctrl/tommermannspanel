@@ -5,6 +5,7 @@
 import { GRUPPER, KALKULATORER, finnKalkulator, tekstFor, startverdier, erSynlig, lesInndata } from './matte-liste.js';
 import { kort, boks } from './biter.js';
 import { lagre, hent } from './lagring.js';
+import { ikonSvg } from './matte-ikoner.js';
 
 const rot = document.getElementById('matte-del');
 
@@ -25,7 +26,8 @@ const lagreTilstand = () => lagre('matte', tilstand);
 
 function menyKnapp(k) {
   return `<button type="button" class="matte-valg" data-kalk="${k.id}">
-    <strong>${k.tittel}</strong><span>${k.beskrivelse}</span></button>`;
+    <span class="matte-ikon">${ikonSvg(k.id)}</span>
+    <span class="matte-valg-tekst"><strong>${k.tittel}</strong><span>${k.beskrivelse}</span></span></button>`;
 }
 
 function visMeny() {
