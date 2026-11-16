@@ -13,66 +13,116 @@
   <meta name="apple-mobile-web-app-title" content="Tømrerverktøy">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <!-- versjon:start (settes av scripts/versjon.mjs, ikke rediger for hånd) -->
-  <script>window.APP_VERSJON = '20261111-161344';</script>
+  <script>window.APP_VERSJON = '20261116-203809';</script>
   <script type="importmap">
   {
     "imports": {
-      "./src/matte/inndeling.js": "./src/matte/inndeling.js?v=20261111-161344",
-      "./src/matte/tak.js": "./src/matte/tak.js?v=20261111-161344",
-      "./src/matte/vinkel.js": "./src/matte/vinkel.js?v=20261111-161344",
-      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261111-161344",
-      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261111-161344",
-      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261111-161344",
-      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261111-161344",
-      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261111-161344",
-      "./src/skjerm/matte-liste.js": "./src/skjerm/matte-liste.js?v=20261111-161344",
-      "./src/skjerm/matte-skjerm.js": "./src/skjerm/matte-skjerm.js?v=20261111-161344",
-      "./src/skjerm/matte-tegning.js": "./src/skjerm/matte-tegning.js?v=20261111-161344",
-      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261111-161344",
-      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261111-161344",
-      "./src/skjerm/trapp-merking.js": "./src/skjerm/trapp-merking.js?v=20261111-161344",
-      "./src/skjerm/trapp-skjerm.js": "./src/skjerm/trapp-skjerm.js?v=20261111-161344",
-      "./src/skjerm/trapp-tegning.js": "./src/skjerm/trapp-tegning.js?v=20261111-161344",
-      "./src/skjerm/trapp-utskrift.js": "./src/skjerm/trapp-utskrift.js?v=20261111-161344",
-      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261111-161344",
-      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261111-161344",
-      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261111-161344",
-      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261111-161344",
-      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261111-161344",
-      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261111-161344",
-      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261111-161344",
-      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261111-161344",
-      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261111-161344",
-      "./src/trapp/materialer.js": "./src/trapp/materialer.js?v=20261111-161344",
-      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261111-161344",
-      "./src/trapp/trapphull.js": "./src/trapp/trapphull.js?v=20261111-161344",
-      "./src/trapp/vange.js": "./src/trapp/vange.js?v=20261111-161344"
+      "./src/matte/inndeling.js": "./src/matte/inndeling.js?v=20261116-203809",
+      "./src/matte/tak.js": "./src/matte/tak.js?v=20261116-203809",
+      "./src/matte/vinkel.js": "./src/matte/vinkel.js?v=20261116-203809",
+      "./src/skjerm/app.js": "./src/skjerm/app.js?v=20261116-203809",
+      "./src/skjerm/biter.js": "./src/skjerm/biter.js?v=20261116-203809",
+      "./src/skjerm/eksempel.js": "./src/skjerm/eksempel.js?v=20261116-203809",
+      "./src/skjerm/format.js": "./src/skjerm/format.js?v=20261116-203809",
+      "./src/skjerm/lagring.js": "./src/skjerm/lagring.js?v=20261116-203809",
+      "./src/skjerm/matte-liste.js": "./src/skjerm/matte-liste.js?v=20261116-203809",
+      "./src/skjerm/matte-skjerm.js": "./src/skjerm/matte-skjerm.js?v=20261116-203809",
+      "./src/skjerm/matte-tegning.js": "./src/skjerm/matte-tegning.js?v=20261116-203809",
+      "./src/skjerm/oppdater.js": "./src/skjerm/oppdater.js?v=20261116-203809",
+      "./src/skjerm/tegning.js": "./src/skjerm/tegning.js?v=20261116-203809",
+      "./src/skjerm/trapp-merking.js": "./src/skjerm/trapp-merking.js?v=20261116-203809",
+      "./src/skjerm/trapp-skjerm.js": "./src/skjerm/trapp-skjerm.js?v=20261116-203809",
+      "./src/skjerm/trapp-tegning.js": "./src/skjerm/trapp-tegning.js?v=20261116-203809",
+      "./src/skjerm/trapp-utskrift.js": "./src/skjerm/trapp-utskrift.js?v=20261116-203809",
+      "./src/skjerm/utskrift.js": "./src/skjerm/utskrift.js?v=20261116-203809",
+      "./src/skjerm/vegg-skjerm.js": "./src/skjerm/vegg-skjerm.js?v=20261116-203809",
+      "./src/skjerm/verktoy.js": "./src/skjerm/verktoy.js?v=20261116-203809",
+      "./src/tommermann/fagverdier.js": "./src/tommermann/fagverdier.js?v=20261116-203809",
+      "./src/tommermann/hus.js": "./src/tommermann/hus.js?v=20261116-203809",
+      "./src/tommermann/materialer.js": "./src/tommermann/materialer.js?v=20261116-203809",
+      "./src/tommermann/solver.js": "./src/tommermann/solver.js?v=20261116-203809",
+      "./src/tommermann/vegg.js": "./src/tommermann/vegg.js?v=20261116-203809",
+      "./src/trapp/fagverdier.js": "./src/trapp/fagverdier.js?v=20261116-203809",
+      "./src/trapp/materialer.js": "./src/trapp/materialer.js?v=20261116-203809",
+      "./src/trapp/solver.js": "./src/trapp/solver.js?v=20261116-203809",
+      "./src/trapp/trapphull.js": "./src/trapp/trapphull.js?v=20261116-203809",
+      "./src/trapp/vange.js": "./src/trapp/vange.js?v=20261116-203809"
     }
   }
   </script>
-  <link rel="stylesheet" href="css/stil.css?v=20261111-161344">
+  <link rel="stylesheet" href="css/stil.css?v=20261116-203809">
   <!-- versjon:slutt -->
 </head>
 <body>
   <header class="toppband">
-    <img src="assets/BAKOY_logo_hvit_transparent.png" alt="Bakøy Entreprenør AS">
+    <!-- Logoen går til forsiden -->
+    <a class="topp-hjem" href="#" aria-label="Til forsiden">
+      <img src="assets/BAKOY_logo_hvit_transparent.png" alt="Bakøy Entreprenør AS">
+    </a>
     <div class="tittel">
-      <!-- Navnet på verktøyet som er valgt. Byttes av src/skjerm/verktoy.js -->
-      <h1 id="topp-tittel">Tømmermannspanel</h1>
-      <p id="topp-under" class="undertittel">Inndeling av stående kledning</p>
+      <!-- Navnet på verktøyet som er valgt, eller appen på forsiden. Byttes av src/skjerm/verktoy.js -->
+      <h1 id="topp-tittel">Tømrerverktøy</h1>
+      <p id="topp-under" class="undertittel">Bakøy Entreprenør AS</p>
     </div>
   </header>
 
   <main>
-    <!-- Hvilket verktøy: kledning, trapp eller matte. Valget huskes (src/skjerm/verktoy.js) -->
-    <div class="valgknapper modusvalg tre" role="radiogroup" aria-label="Velg verktøy">
-      <label><input type="radio" name="verktoy" value="kledning" checked><span>Kledning</span></label>
-      <label><input type="radio" name="verktoy" value="trapp"><span>Trapp</span></label>
-      <label><input type="radio" name="verktoy" value="matte"><span>Matte</span></label>
+    <!-- ===================== FORSIDE ===================== -->
+    <!-- Ett kort per verktøy. Vises når adressen ikke har #kledning, #trapp eller #matte
+         (src/skjerm/verktoy.js). Symbolene er tegnet her, i strek med currentColor. -->
+    <section id="forside" class="forside" aria-labelledby="forside-tittel">
+      <h2 id="forside-tittel" class="forside-tittel">Hva skal du regne på?</h2>
+      <nav class="forside-valg" aria-label="Verktøy">
+        <a class="forside-kort" href="#kledning" data-verktoy="kledning">
+          <span class="forside-ikon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="5.5" height="18" rx="0.6"/><rect x="9.25" y="3" width="5.5" height="18" rx="0.6"/><rect x="16.5" y="3" width="5.5" height="18" rx="0.6"/><rect class="fylt" x="6.4" y="2" width="3.9" height="20" rx="0.6"/><rect class="fylt" x="13.7" y="2" width="3.9" height="20" rx="0.6"/></svg>
+          </span>
+          <span class="forside-tekst">
+            <strong>Kledning</strong>
+            <span>Tømmermannspanel for ett felt eller en hel vegg</span>
+          </span>
+          <span class="forside-merke" hidden>Sist brukt</span>
+          <svg class="forside-pil" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+        <a class="forside-kort" href="#trapp" data-verktoy="trapp">
+          <span class="forside-ikon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M2 21.5h5v-4.75h5V12h5V7.25h5V2.5"/><path d="M2 21.5h20V2.5" class="tynn"/></svg>
+          </span>
+          <span class="forside-tekst">
+            <strong>Trapp</strong>
+            <span>Inndeling og merking av vange</span>
+          </span>
+          <span class="forside-merke" hidden>Sist brukt</span>
+          <svg class="forside-pil" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+        <a class="forside-kort" href="#matte" data-verktoy="matte">
+          <span class="forside-ikon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M2 21.5h20V3z"/><path class="bue" d="M9 21.5a7 7 0 0 0-1.65-4.5"/><path d="M18.5 21.5V18H22" class="tynn"/></svg>
+          </span>
+          <span class="forside-tekst">
+            <strong>Matte</strong>
+            <span id="forside-matte-tekst">Fall, tak, gjæring og inndeling</span>
+          </span>
+          <span class="forside-merke" hidden>Sist brukt</span>
+          <svg class="forside-pil" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </nav>
+    </section>
+
+    <!-- Inne i et verktøy: hjem til forsiden og bryter mellom verktøyene (src/skjerm/verktoy.js) -->
+    <div id="verktoyrad" class="verktoyrad" hidden>
+      <a class="hjemknapp" href="#" aria-label="Til forsiden" title="Til forsiden">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/></svg>
+      </a>
+      <div class="valgknapper modusvalg tre" role="radiogroup" aria-label="Velg verktøy">
+        <label><input type="radio" name="verktoy" value="kledning" checked><span>Kledning</span></label>
+        <label><input type="radio" name="verktoy" value="trapp"><span>Trapp</span></label>
+        <label><input type="radio" name="verktoy" value="matte"><span>Matte</span></label>
+      </div>
     </div>
 
     <!-- ===================== KLEDNING ===================== -->
-    <div id="kledning-del">
+    <div id="kledning-del" hidden>
     <div class="valgknapper modusvalg undervalg" role="radiogroup" aria-label="Hva vil du regne ut?">
       <label><input type="radio" name="modus" value="felt" checked><span>Ett felt</span></label>
       <label><input type="radio" name="modus" value="vegg"><span>Hel vegg</span></label>

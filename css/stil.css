@@ -900,6 +900,109 @@ footer p { margin: 4px 0; }
 .hjemskjerm > summary { font-weight: 600; min-height: 44px; justify-content: center; }
 .hjemskjerm > summary::after { margin-left: 4px; }
 
+/* ---------- Forsiden ---------- */
+
+/* Logoen er en lenke til forsiden */
+.topp-hjem { display: block; flex: none; border-radius: 6px; }
+.topp-hjem:focus-visible { outline: 3px solid var(--fokus); outline-offset: 3px; }
+
+.forside-tittel {
+  margin: 10px 4px 14px;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--bla-mork);
+}
+
+.forside-valg { display: grid; gap: 12px; }
+
+/* Ett kort per verktøy: symbol, navn og én linje, og pil til høyre */
+.forside-kort {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 88px;
+  padding: 14px 14px 14px 16px;
+  border-radius: var(--radius);
+  background: var(--hvit);
+  color: var(--tekst);
+  text-decoration: none;
+  box-shadow: var(--skygge);
+  border: 1px solid var(--linje);
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+.forside-kort:hover { border-color: var(--bakoy-bla); transform: translateY(-1px); }
+.forside-kort:active { transform: translateY(0); }
+.forside-kort:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--fokus); }
+
+.forside-ikon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--bakoy-bla);
+  color: var(--hvit);
+}
+.forside-ikon svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.forside-ikon .fylt { fill: var(--bakoy-oransje); stroke: var(--bakoy-oransje); }
+.forside-ikon .tynn { stroke-width: 1; opacity: 0.6; }
+.forside-ikon .bue { stroke: var(--bakoy-oransje); stroke-width: 2.2; }
+
+.forside-tekst { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.forside-tekst strong { font-size: 19px; color: var(--bakoy-bla); }
+.forside-tekst span { font-size: 15px; color: var(--tekst-gra); line-height: 1.35; }
+
+.forside-merke {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bla-mork);
+  background: var(--flate);
+}
+
+.forside-pil { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--bakoy-bla); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Inne i et verktøy: hjemknapp og bryter på samme rad */
+.verktoyrad { display: flex; gap: 8px; align-items: stretch; margin: 0 0 12px; }
+.verktoyrad .modusvalg { flex: 1; min-width: 0; margin: 0; }
+.hjemknapp {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  border-radius: 12px;
+  background: var(--hvit);
+  border: 1px solid var(--linje);
+  box-shadow: var(--skygge);
+  color: var(--bakoy-bla);
+}
+.hjemknapp svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hjemknapp:hover { background: var(--bakoy-bla); color: var(--hvit); }
+.hjemknapp:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--fokus); }
+
+/* Bredere skjerm: kortene står ved siden av hverandre, med symbolet øverst */
+@media (min-width: 700px) {
+  .forside { max-width: 980px; margin: 0 auto; }
+  .forside-tittel { font-size: 28px; margin: 16px 4px 20px; }
+  .forside-valg { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .forside-kort { flex-direction: column; align-items: flex-start; gap: 16px; min-height: 220px; padding: 22px; }
+  .forside-ikon { width: 64px; height: 64px; border-radius: 16px; }
+  .forside-ikon svg { width: 38px; height: 38px; }
+  .forside-pil { position: absolute; right: 18px; bottom: 18px; }
+  .forside-merke { top: 14px; right: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forside-kort { transition: none; }
+  .forside-kort:hover { transform: none; }
+}
+
 /* ---------- Matte ---------- */
 
 /* Menyen: én stor knapp per utregning, med tittel og én linje om hva den gjør */
@@ -981,6 +1084,8 @@ footer p { margin: 4px 0; }
 @media (min-width: 1100px) {
   main { max-width: 1320px; padding: 20px 24px; }
   .modusvalg { max-width: 440px; }
+  .verktoyrad { max-width: 504px; }
+  .verktoyrad .modusvalg { max-width: none; }
   #felt-del, #vegg-del, #trapp-del, .matte-kalk {
     display: grid;
     grid-template-columns: 440px minmax(0, 1fr);

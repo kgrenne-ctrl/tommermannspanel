@@ -258,10 +258,19 @@ Claude-mappe. Ved uenighet gjelder den fila.
   to linjer. Felt som kan få noe under seg (målt bredde, hjørnene) står på linje i toppen.
 - Nye farger og mål legges som variabler i `:root` i `css/stil.css`, aldri rett i reglene.
 
-## Verktøyvelger (fase T0, 2026-11-11, Matte lagt til i fase M0)
-- Bryteren «Kledning | Trapp | Matte» øverst i `index.html` (`name="verktoy"`, `.valgknapper.tre`)
-  styres av `src/skjerm/verktoy.js`. Den viser `#kledning-del`, `#trapp-del` eller `#matte-del`,
-  bytter tittelen i toppbåndet (`#topp-tittel`, `#topp-under`) og husker valget (nøkkel `verktoy`).
+## Forside og verktøyvelger (forside 2026-11-16 etter ønske fra Kenny, bryter fra fase T0)
+- Appen åpner på en forside (`#forside` i `index.html`) med ett kort per verktøy: symbol (SVG i
+  strek, tegnet rett i index.html, oransje som aksent), navn, én linje og pil. Kortet for sist brukte
+  verktøy får merket «Sist brukt». Matte-kortet viser antall utregninger fra `KALKULATORER`.
+- Adressen styrer visningen (`src/skjerm/verktoy.js`): `#kledning`, `#trapp`, `#matte` viser verktøyet,
+  alt annet viser forsiden. Tilbakeknappen på telefonen går derfor til forsiden. Logoen (`.topp-hjem`)
+  og hjemknappen (`.hjemknapp`) er lenker til `#`. Bryteren bytter med `location.replace`, så den lager
+  ikke nye steg i historikken.
+- Inne i et verktøy står hjemknappen og bryteren «Kledning | Trapp | Matte» på samme rad
+  (`#verktoyrad`, `name="verktoy"`, `.valgknapper.tre`). Delene og raden har `hidden` fra start.
+- Toppbåndet viser «Tømrerverktøy / Bakøy Entreprenør AS» på forsiden, ellers verktøyets navn
+  (`#topp-tittel`, `#topp-under`). Sist brukte verktøy huskes (nøkkel `verktoy`).
+- Fra 700 px står kortene ved siden av hverandre med symbolet øverst. Test: `test/forside.test.js`.
 - Undertittelen i toppbåndet må være kort nok til å stå på én linje på 375 px.
 - Alt for kledning ligger inne i `#kledning-del`, også bryteren «Ett felt | Hel vegg». Kledningsdelen
   er ellers uendret.
